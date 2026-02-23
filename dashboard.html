@@ -109,6 +109,15 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 .page-subtitle { font-size:0.8rem;color:var(--text-muted); }
 .topbar-actions { display:flex;gap:10px;align-items:center; }
 .menu-toggle { display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;padding:6px; }
+.btn-back {
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+  border-radius:10px;padding:7px 14px;color:var(--text-muted);
+  font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;
+  cursor:pointer;transition:all 0.2s ease;
+}
+.btn-back:hover { background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--primary); }
+.btn-back:active { transform:scale(0.97); }
 
 /* CONTENT */
 .content {
@@ -375,10 +384,13 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <div>
+    <div style="display:flex;align-items:center;gap:12px">
       <button class="menu-toggle" id="menuToggle">☰</button>
-      <span class="page-title" id="pageTitle">Dashboard</span><br>
-      <span class="page-subtitle" id="pageSubtitle">Bienvenido al panel de administración</span>
+      <button class="btn-back" id="backBtn" style="display:none" onclick="goBack()">← Atrás</button>
+      <div>
+        <span class="page-title" id="pageTitle">Dashboard</span><br>
+        <span class="page-subtitle" id="pageSubtitle">Bienvenido al panel de administración</span>
+      </div>
     </div>
     <div class="topbar-actions">
       <button class="btn btn-primary btn-sm" id="topbarAction" style="display:none"></button>
@@ -430,11 +442,18 @@ function getAvatarUrl(seed, bg) {
 
 // Nav
 let currentPage = 'home';
+let prevPage = 'home';
+
+window.goBack = () => {
+  navTo(prevPage === currentPage ? 'home' : prevPage);
+};
+
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
     item.classList.add('active');
     const page = item.dataset.page;
+    prevPage = currentPage;
     currentPage = page;
     renderPage(page);
     if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
@@ -479,6 +498,9 @@ async function renderPage(page) {
   };
   title.textContent = titles[page]||page;
   subtitle.textContent = subtitles[page]||'';
+  // Mostrar botón atrás en todas las páginas excepto home
+  const backBtn = document.getElementById('backBtn');
+  if(backBtn) backBtn.style.display = page === 'home' ? 'none' : 'inline-flex';
   if (pages[page]) await pages[page](content, action);
 }
 
@@ -546,6 +568,7 @@ async function renderHome(container) {
   `;
 }
 window.navTo = (page) => {
+  prevPage = currentPage;
   document.querySelector(`[data-page="${page}"]`).click();
 };
 
