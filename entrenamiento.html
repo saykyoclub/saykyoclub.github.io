@@ -206,6 +206,18 @@ select.glass-input option { background:#0d1a35; }
 .spinner-sm { width:28px;height:28px;border:3px solid rgba(0,200,255,0.15);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite; }
 .loading-box { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px;color:var(--text-muted);font-size:0.9rem; }
 
+/* BACK BUTTON */
+.btn-back {
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px;padding:8px 14px;
+  color:var(--text-muted);font-family:'Exo 2',sans-serif;
+  font-size:0.85rem;font-weight:600;cursor:pointer;
+  transition:all 0.2s ease;margin-bottom:14px;
+}
+.btn-back:hover { background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--primary); }
+
 /* REVISION BLOCKS */
 .rev-block {
   background:rgba(255,255,255,0.03);
@@ -284,18 +296,15 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// Auth check: verificar sesión en sessionStorage Y en Firebase Auth
+// Auth
 const session = sessionStorage.getItem('saykyo_user');
 if(!session) { window.location.href='index.html'; }
 const currentUser = JSON.parse(session||'{}');
-// Asegurar que currentUser.id siempre esté disponible (uid y id apuntan al mismo UID de Auth)
 if(!currentUser.id && currentUser.uid) { currentUser.id = currentUser.uid; }
 if(currentUser.rol==='admin') { window.location.href='dashboard.html'; }
 
-// Verificar que la sesión de Firebase Auth siga activa
 onAuthStateChanged(auth, (user) => {
   if(!user) {
-    // La sesión de Firebase expiró → limpiar y redirigir al login
     sessionStorage.removeItem('saykyo_user');
     window.location.href='index.html';
   }
@@ -469,9 +478,29 @@ window.anamnesisNext = async () => {
 
 // ============ TABS ============
 window.switchTab = (tab) => {
+  state.prevTab = state.tab; // guardar vista anterior para el botón atrás
   state.tab = tab;
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   renderTab(tab);
+};
+
+window.goBack = async () => {
+  // Si estamos en sesión activa → confirmar cancelación y volver al día
+  if(state.sesionActiva) {
+    const res = await Swal.fire({
+      icon:'warning', title:'¿Cancelar sesión?',
+      text:'Perderás el progreso de la sesión actual.',
+      showCancelButton:true, confirmButtonText:'Sí, salir',
+      cancelButtonText:'Seguir entrenando',
+      confirmButtonColor:'#ff4d6d', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+    });
+    if(!res.isConfirmed) return;
+    state.sesionActiva = null;
+    state.ejercicioActual = 0;
+    state.seriesData = {};
+  }
+  // Siempre volver a la tab entrenar desde cualquier sub-vista
+  switchTab('entrenar');
 };
 
 async function renderTab(tab) {
@@ -893,6 +922,7 @@ function renderEjercicioActual() {
 
   const p = document.getElementById('mainPage');
   p.innerHTML = `
+    <button class="btn-back" onclick="goBack()">← Volver al día</button>
     <div style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:0.8rem;color:var(--text-muted)">Ejercicio ${current} de ${total}</span>
@@ -1445,7 +1475,7 @@ window.resetProgreso = async () => {
 // ============ PROGRESO ============
 async function renderProgreso() {
   const p = document.getElementById('mainPage');
-  p.innerHTML = '<div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
+  p.innerHTML = '<button class="btn-back" onclick="goBack()">← Volver</button><div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
   
   const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
   const hist = histSnap.val()||{};
@@ -1539,6 +1569,7 @@ async function renderPerfil() {
   const QLABELS = ['Edad','Peso','Talla','Objetivo','Lesiones/condiciones','Nivel actividad','Días entrenamiento','Experiencia','Deporte adicional','Horario','Suplementos','Horas sueño','Restricciones alimentarias','Nivel estrés','Meta 3 meses'];
 
   document.getElementById('mainPage').innerHTML = `
+    <button class="btn-back" onclick="goBack()">← Volver</button>
     <div class="glass-card">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
         <img src="${currentUser.avatar||`https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`}" 
