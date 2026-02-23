@@ -108,16 +108,10 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 .page-title { font-size:1.3rem;font-weight:700; }
 .page-subtitle { font-size:0.8rem;color:var(--text-muted); }
 .topbar-actions { display:flex;gap:10px;align-items:center; }
-.menu-toggle { display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;padding:6px; }
-.btn-back {
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
-  border-radius:10px;padding:7px 14px;color:var(--text-muted);
-  font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;
-  cursor:pointer;transition:all 0.2s ease;
-}
+.menu-toggle { display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;padding:6px;flex-shrink:0; }
+.btn-back { display:none;align-items:center;gap:6px;flex-shrink:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:7px 14px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s ease;white-space:nowrap; }
 .btn-back:hover { background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--primary); }
-.btn-back:active { transform:scale(0.97); }
+.btn-back.visible { display:inline-flex; }
 
 /* CONTENT */
 .content {
@@ -215,13 +209,11 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 
 /* AVATAR SELECTOR */
 .avatar-grid {
-  display:grid;
-  grid-template-columns:repeat(5, 1fr);
-  gap:10px;
+  display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
   max-height:360px; overflow-y:auto; padding:8px 4px;
 }
 @media (min-width:600px) {
-  .avatar-grid { grid-template-columns:repeat(auto-fill, minmax(72px, 1fr)); gap:12px; }
+  .avatar-grid { grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:12px; }
 }
 .avatar-option {
   cursor:pointer; border-radius:50%; border:3px solid transparent;
@@ -279,6 +271,22 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 .anamnesis-q { font-size:0.8rem;color:var(--text-muted);margin-bottom:4px; }
 .anamnesis-a { font-size:0.92rem;font-weight:600; }
 
+/* SEARCH + PAGINATION */
+.table-toolbar { display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--glass-border);flex-wrap:wrap; }
+.search-box { position:relative;flex:1;min-width:180px; }
+.search-box input { width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px 8px 34px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.85rem;outline:none;transition:all 0.2s ease; }
+.search-box input:focus { border-color:var(--primary);background:rgba(0,200,255,0.07);box-shadow:0 0 0 2px rgba(0,200,255,0.1); }
+.search-box input::placeholder { color:rgba(232,244,255,0.3); }
+.search-box .search-icon { position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.9rem;pointer-events:none; }
+.pagination { display:flex;align-items:center;gap:6px;padding:12px 16px;border-top:1px solid var(--glass-border);justify-content:flex-end;flex-wrap:wrap; }
+.page-info { font-size:0.78rem;color:var(--text-muted);margin-right:auto; }
+.page-btn { width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease; }
+.page-btn:hover:not(:disabled) { background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--primary); }
+.page-btn.active { background:rgba(0,200,255,0.15);border-color:var(--primary);color:var(--primary); }
+.page-btn:disabled { opacity:0.3;cursor:not-allowed; }
+.per-page-select { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:5px 8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.8rem;outline:none;cursor:pointer; }
+.per-page-select option { background:#0d1a35; }
+
 /* SCROLLBAR */
 .rev-info-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px; }
 .ric-label { font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px; }
@@ -317,6 +325,11 @@ textarea.glass-input { resize:vertical; min-height:80px; }
   .form-grid { grid-template-columns:1fr; }
   .stats-grid { grid-template-columns:1fr; }
   .routine-builder { flex-direction:column; }
+  .rutinas-layout { grid-template-columns:1fr !important; height:auto !important; }
+  .rutinas-layout > .glass-panel:first-child { max-height:220px; }
+}
+.rutinas-layout {
+  display:grid; grid-template-columns:280px 1fr; gap:16px; height:calc(100vh - 160px);
 }
 
 /* LOADING */
@@ -364,6 +377,9 @@ textarea.glass-input { resize:vertical; min-height:80px; }
     <div class="nav-item" data-page="rutinas">
       <span class="nav-icon">📋</span> Rutinas
     </div>
+    <div class="nav-item" data-page="atletas">
+      <span class="nav-icon">🏃</span> Seguimiento
+    </div>
     <div class="nav-divider"></div>
     <div class="nav-section">Reportes</div>
     <div class="nav-item" data-page="estadisticas">
@@ -384,12 +400,12 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
       <button class="menu-toggle" id="menuToggle">☰</button>
-      <button class="btn-back" id="backBtn" style="display:none" onclick="goBack()">← Atrás</button>
-      <div>
-        <span class="page-title" id="pageTitle">Dashboard</span><br>
-        <span class="page-subtitle" id="pageSubtitle">Bienvenido al panel de administración</span>
+      <button class="btn-back" id="backBtn" onclick="goBack()">← Atrás</button>
+      <div style="min-width:0">
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="page-subtitle" id="pageSubtitle">Bienvenido al panel de administración</div>
       </div>
     </div>
     <div class="topbar-actions">
@@ -431,30 +447,156 @@ document.getElementById('adminName').textContent = currentUser.nombres + ' ' + (
 document.getElementById('adminAvatar').src = currentUser.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`;
 
 // Avatar seeds for picker
-const AVATAR_SEEDS = ['Felix','Luna','Zoe','Mia','Max','Sam','Alex','Jordan','Taylor','Morgan',
-  'Casey','Riley','Avery','Quinn','Sage','River','Blake','Drew','Reese','Hayden',
-  'Peyton','Logan','Rowan','Emery','Finley','Harper','Skylar','Phoenix','Dakota','Kendall'];
-const AVATAR_BG = ['059ff2','7b2fff','ff6b35','00e5a0','ffd60a','ff4d6d','00c8ff','a855f7','f59e0b','10b981'];
-
+// Biblioteca de avatares (131 combinaciones únicas)
+const AVATAR_LIST = [
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Luna&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Mia&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Max&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sam&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Alex&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Jordan&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Taylor&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Morgan&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Casey&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Riley&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Avery&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Quinn&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sage&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=River&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Blake&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Drew&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Reese&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Hayden&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Peyton&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Logan&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Rowan&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Emery&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Finley&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Harper&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Skylar&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Phoenix&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Dakota&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Kendall&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Adrian&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Beatriz&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Carlos&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Diana&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Eduardo&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Fernanda&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Gabriel&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Helena&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Ivan&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Julia&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Kevin&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Laura&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Miguel&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Natalia&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Oscar&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Patricia&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Rafael&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sofia&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Thomas&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Valentina&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=William&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Ximena&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Yamil&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zara&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Andres&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Brenda&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Camilo&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Daniela&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Esteban&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Fatima&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Shadow&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Storm&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Blaze&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Frost&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Thunder&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Viper&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Raven&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Wolf&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Eagle&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Fox&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Cobra&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Titan&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Nova&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Orion&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Atlas&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zenith&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Apex&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Nexus&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Vortex&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Cipher&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User001&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User002&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User003&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User004&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User005&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User006&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User007&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User008&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User009&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User010&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Alpha01&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Beta02&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Gamma03&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Delta04&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sigma05&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Omega06&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Lambda07&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Theta08&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Kappa09&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Psi10&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=OldMike&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=GrayWolf&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=DarkBear&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=IronMan&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=SteelFox&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=BlackHawk&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=GoldRush&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=SilverBack&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=BronzeAge&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=CopperKing&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=NightOwl&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=DawnRider&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=DuskHunter&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=MidnightRun&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=SunriseHero&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=CoachPro&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=TrainHard&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=LiftBig&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=RunFast&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=pro_player9&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=gym_rat_10&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=iron_will11&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=steel_mind12&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=fire_soul13&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=ice_veins14&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=thunder_fist&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=lightning_kick&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=shadow_punch&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=golden_hook&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=silver_jab&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=bronze_cross&backgroundColor=2980b9"
+];
 function getAvatarUrl(seed, bg) {
-  return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=${bg||'059ff2'}`;
+  // Compatibilidad con avatares de seed antiguo
+  if(seed && seed.startsWith('http')) return seed;
+  return AVATAR_LIST[0];
 }
 
 // Nav
 let currentPage = 'home';
 let prevPage = 'home';
-
-window.goBack = () => {
-  navTo(prevPage === currentPage ? 'home' : prevPage);
-};
-
+window.goBack = () => { const t=(prevPage&&prevPage!==currentPage)?prevPage:'home'; navTo(t); };
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
     item.classList.add('active');
     const page = item.dataset.page;
-    prevPage = currentPage;
-    currentPage = page;
+    prevPage = currentPage; currentPage = page;
     renderPage(page);
     if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
   });
@@ -482,26 +624,105 @@ async function renderPage(page) {
     home: renderHome, usuarios: renderUsuarios,
     categorias: renderCategorias, ejercicios: renderEjercicios,
     rutinas: renderRutinas, estadisticas: renderEstadisticas,
-    anamnesis: renderAnamnesis, revisiones: renderRevisiones
+    anamnesis: renderAnamnesis, revisiones: renderRevisiones,
+    atletas: renderAtletas
   };
   const titles = {
     home:'Dashboard', usuarios:'Gestionar Usuarios',
     categorias:'Categorías', ejercicios:'Ejercicios',
     rutinas:'Rutinas', estadisticas:'Estadísticas',
-    anamnesis:'Anamnesis de Usuarios', revisiones:'Revisiones de Atletas'
+    anamnesis:'Anamnesis de Usuarios', revisiones:'Revisiones de Atletas',
+    atletas:'Seguimiento de Atletas'
   };
   const subtitles = {
     home:'Panel principal', usuarios:'Crea y administra los perfiles de tus atletas',
     categorias:'Organiza los grupos musculares', ejercicios:'Biblioteca de movimientos',
     rutinas:'Diseña programas de entrenamiento', estadisticas:'Análisis y reportes',
-    anamnesis:'Historial de cuestionarios', revisiones:'Revisiones semanales y mensuales'
+    anamnesis:'Historial de cuestionarios', revisiones:'Revisiones semanales y mensuales',
+    atletas:'Historial de sesiones y registro de entrenamientos en nombre del atleta'
   };
   title.textContent = titles[page]||page;
   subtitle.textContent = subtitles[page]||'';
-  // Mostrar botón atrás en todas las páginas excepto home
   const backBtn = document.getElementById('backBtn');
-  if(backBtn) backBtn.style.display = page === 'home' ? 'none' : 'inline-flex';
+  if(backBtn) backBtn.classList.toggle('visible', page!=='home');
   if (pages[page]) await pages[page](content, action);
+}
+
+// ============ TABLA PAGINADA ============
+// Crea búsqueda + paginación en cualquier tabla.
+// Uso: initPagedTable(panelEl, rows, colsHtml, renderRow, opts)
+function initPagedTable(panel, allRows, theadHtml, renderRow, opts={}) {
+  const PAGE_SIZES = [10, 25, 50, 100];
+  let perPage  = opts.perPage || 10;
+  let page     = 1;
+  let query    = '';
+  let filtered = allRows;
+
+  const toolbar   = panel.querySelector('.table-toolbar');
+  const tbody     = panel.querySelector('tbody');
+  const pagination= panel.querySelector('.pagination');
+
+  function applyFilter() {
+    const q = query.toLowerCase().trim();
+    filtered = q ? allRows.filter(r => opts.filterFn(r, q)) : allRows;
+    page = 1;
+    render();
+  }
+
+  function render() {
+    const total   = filtered.length;
+    const pages   = Math.max(1, Math.ceil(total / perPage));
+    page = Math.min(page, pages);
+    const start   = (page-1)*perPage;
+    const slice   = filtered.slice(start, start+perPage);
+
+    tbody.innerHTML = slice.length
+      ? slice.map(renderRow).join('')
+      : `<tr><td colspan="99"><div class="empty-state"><div class="empty-icon">${opts.emptyIcon||'🔍'}</div><div class="empty-text">${query?'Sin resultados para "'+query+'"':(opts.emptyText||'Sin datos')}</div></div></td></tr>`;
+
+    // Page info
+    const info = panel.querySelector('.page-info');
+    if(info) info.textContent = total===0 ? 'Sin resultados' : `Mostrando ${start+1}–${Math.min(start+perPage,total)} de ${total}`;
+
+    // Page buttons
+    const btnsWrap = panel.querySelector('.page-btns');
+    if(!btnsWrap) return;
+    btnsWrap.innerHTML = '';
+
+    // Prev
+    const prev = document.createElement('button');
+    prev.className='page-btn'; prev.textContent='‹'; prev.disabled=page<=1;
+    prev.onclick=()=>{page--;render();};
+    btnsWrap.appendChild(prev);
+
+    // Numbers (max 5 visible)
+    const delta = 2;
+    let lo = Math.max(1,page-delta), hi = Math.min(pages,page+delta);
+    if(page<=delta) hi=Math.min(pages,1+delta*2);
+    if(page>=pages-delta) lo=Math.max(1,pages-delta*2);
+    if(lo>1){ const b=document.createElement('button');b.className='page-btn';b.textContent='1';b.onclick=()=>{page=1;render();};btnsWrap.appendChild(b); if(lo>2){const sp=document.createElement('span');sp.textContent='…';sp.style.cssText='color:var(--text-muted);font-size:0.8rem;padding:0 2px';btnsWrap.appendChild(sp);}}
+    for(let i=lo;i<=hi;i++){const b=document.createElement('button');b.className='page-btn'+(i===page?' active':'');b.textContent=i;b.onclick=(()=>{const n=i;return()=>{page=n;render();};})();btnsWrap.appendChild(b);}
+    if(hi<pages){if(hi<pages-1){const sp=document.createElement('span');sp.textContent='…';sp.style.cssText='color:var(--text-muted);font-size:0.8rem;padding:0 2px';btnsWrap.appendChild(sp);}const b=document.createElement('button');b.className='page-btn';b.textContent=pages;b.onclick=()=>{page=pages;render();};btnsWrap.appendChild(b);}
+
+    // Next
+    const next = document.createElement('button');
+    next.className='page-btn'; next.textContent='›'; next.disabled=page>=pages;
+    next.onclick=()=>{page++;render();};
+    btnsWrap.appendChild(next);
+  }
+
+  // Search input
+  const searchInput = toolbar.querySelector('input[type="search"]');
+  if(searchInput) searchInput.addEventListener('input', e=>{query=e.target.value;applyFilter();});
+
+  // Per-page select
+  const perPageSel = toolbar.querySelector('.per-page-select');
+  if(perPageSel) {
+    perPageSel.value = perPage;
+    perPageSel.addEventListener('change', e=>{perPage=+e.target.value;page=1;render();});
+  }
+
+  render();
 }
 
 // ============ HOME ============
@@ -584,11 +805,20 @@ async function renderUsuarios(container, action) {
   const snap = await get(ref(db,'usuarios'));
   const users = snap.val()||{};
 
+  const rows = Object.entries(users).filter(([,u])=>u.rol!=='admin');
   container.innerHTML = `
-    <div class="glass-panel">
+    <div class="glass-panel" id="panelUsuarios">
       <div class="panel-header">
-        <span class="panel-title">👥 Usuarios (${Object.keys(users).filter(k=>users[k].rol!=='admin').length})</span>
+        <span class="panel-title">👥 Usuarios (${rows.length})</span>
         <button class="btn btn-primary btn-sm" onclick="showUserModal()">+ Nuevo</button>
+      </div>
+      <div class="table-toolbar">
+        <div class="search-box"><span class="search-icon">🔍</span><input type="search" placeholder="Buscar por nombre, usuario..."></div>
+        <select class="per-page-select">
+          <option value="10">10 / pág</option>
+          <option value="25">25 / pág</option>
+          <option value="50">50 / pág</option>
+        </select>
       </div>
       <div style="overflow-x:auto">
         <table class="data-table">
@@ -596,29 +826,43 @@ async function renderUsuarios(container, action) {
             <th>Avatar</th><th>Usuario</th><th>Nombre</th><th>Válido hasta</th>
             <th>Método</th><th>Estado</th><th>Acciones</th>
           </tr></thead>
-          <tbody>
-            ${Object.entries(users).filter(([,u])=>u.rol!=='admin').map(([id,u])=>`
-              <tr>
-                <td><img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:36px;height:36px;border-radius:50%;border:2px solid rgba(0,200,255,0.3)"></td>
-                <td><code style="color:var(--primary)">@${u.usuario}</code></td>
-                <td>${u.nombres} ${u.apellidos||''}</td>
-                <td style="font-size:0.82rem">${u.validoHasta||'—'}</td>
-                <td><span class="badge ${u.metodo==='RPE'?'badge-rpe':'badge-rir'}">${u.metodo}</span></td>
-                <td><span class="badge ${u.activo?'badge-active':'badge-inactive'}">${u.activo?'Activo':'Inactivo'}</span></td>
-                <td>
-                  <div style="display:flex;gap:6px">
-                    <button class="btn btn-secondary btn-sm" onclick="showUserModal('${id}')">✏️</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteUser('${id}')">🗑️</button>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
+          <tbody></tbody>
         </table>
-        ${Object.keys(users).filter(k=>users[k].rol!=='admin').length===0?'<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">No hay usuarios. ¡Crea el primero!</div></div>':''}
+      </div>
+      <div class="pagination">
+        <span class="page-info"></span>
+        <div class="page-btns" style="display:flex;gap:4px;flex-wrap:wrap"></div>
       </div>
     </div>
   `;
+  initPagedTable(
+    document.getElementById('panelUsuarios'),
+    rows,
+    '', // thead ya está en el HTML
+    ([id,u]) => `
+      <tr>
+        <td><img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:36px;height:36px;border-radius:50%;border:2px solid rgba(0,200,255,0.3)"></td>
+        <td><code style="color:var(--primary)">@${u.usuario}</code></td>
+        <td>${u.nombres} ${u.apellidos||''}</td>
+        <td style="font-size:0.82rem">${u.validoHasta||'—'}</td>
+        <td><span class="badge ${u.metodo==='RPE'?'badge-rpe':'badge-rir'}">${u.metodo}</span></td>
+        <td><span class="badge ${u.activo?'badge-active':'badge-inactive'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td><div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" onclick="showUserModal('${id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteUser('${id}')">🗑️</button>
+        </div></td>
+      </tr>`,
+    {
+      perPage: 10,
+      emptyIcon: '👤',
+      emptyText: 'No hay usuarios. ¡Crea el primero!',
+      filterFn: ([,u], q) =>
+        u.usuario?.toLowerCase().includes(q) ||
+        u.nombres?.toLowerCase().includes(q) ||
+        u.apellidos?.toLowerCase().includes(q) ||
+        u.metodo?.toLowerCase().includes(q)
+    }
+  );
 }
 
 window.showUserModal = async (userId=null) => {
@@ -628,13 +872,11 @@ window.showUserModal = async (userId=null) => {
     const snap = await get(ref(db,`usuarios/${userId}`));
     user = snap.val()||{};
   }
-  selectedAvatar = user.avatar || getAvatarUrl(AVATAR_SEEDS[0], AVATAR_BG[0]);
+  selectedAvatar = user.avatar || AVATAR_LIST[0];
 
-  const avatarGridHtml = AVATAR_SEEDS.map((seed,i) => {
-    const bg = AVATAR_BG[i % AVATAR_BG.length];
-    const url = getAvatarUrl(seed, bg);
+  const avatarGridHtml = AVATAR_LIST.map((url,i) => {
     return `<div class="avatar-option ${selectedAvatar===url?'selected':''}" onclick="selectAvatar('${url}', this)">
-      <img src="${url}" alt="${seed}" loading="lazy">
+      <img src="${url}" loading="lazy">
     </div>`;
   }).join('');
 
@@ -815,32 +1057,56 @@ async function renderCategorias(container, action) {
   const snap = await get(ref(db,'categorias'));
   const cats = snap.val()||{};
 
+  const rowsCat = Object.entries(cats);
   container.innerHTML = `
-    <div class="glass-panel">
+    <div class="glass-panel" id="panelCategorias">
       <div class="panel-header">
-        <span class="panel-title">📂 Categorías (${Object.keys(cats).length})</span>
+        <span class="panel-title">📂 Categorías (${rowsCat.length})</span>
         <button class="btn btn-primary btn-sm" onclick="showCatModal()">+ Nueva</button>
+      </div>
+      <div class="table-toolbar">
+        <div class="search-box"><span class="search-icon">🔍</span><input type="search" placeholder="Buscar categoría..."></div>
+        <select class="per-page-select">
+          <option value="10">10 / pág</option>
+          <option value="25">25 / pág</option>
+          <option value="50">50 / pág</option>
+        </select>
       </div>
       <div style="overflow-x:auto">
         <table class="data-table">
           <thead><tr><th>Nombre</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
-          <tbody>
-            ${Object.entries(cats).map(([id,c])=>`
-              <tr>
-                <td><strong>${c.nombre}</strong></td>
-                <td style="color:var(--text-muted);font-size:0.85rem">${c.descripcion||'—'}</td>
-                <td><span class="badge ${c.estado?'badge-active':'badge-inactive'}">${c.estado?'Activa':'Inactiva'}</span></td>
-                <td><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="showCatModal('${id}')">✏️</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteCat('${id}')">🗑️</button>
-                </div></td>
-              </tr>
-            `).join('')||'<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No hay categorías</div></div></td></tr>'}
-          </tbody>
+          <tbody></tbody>
         </table>
+      </div>
+      <div class="pagination">
+        <span class="page-info"></span>
+        <div class="page-btns" style="display:flex;gap:4px;flex-wrap:wrap"></div>
       </div>
     </div>
   `;
+  initPagedTable(
+    document.getElementById('panelCategorias'),
+    rowsCat,
+    '',
+    ([id,c]) => `
+      <tr>
+        <td><strong>${c.nombre}</strong></td>
+        <td style="color:var(--text-muted);font-size:0.85rem">${c.descripcion||'—'}</td>
+        <td><span class="badge ${c.estado?'badge-active':'badge-inactive'}">${c.estado?'Activa':'Inactiva'}</span></td>
+        <td><div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" onclick="showCatModal('${id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCat('${id}')">🗑️</button>
+        </div></td>
+      </tr>`,
+    {
+      perPage: 10,
+      emptyIcon: '📂',
+      emptyText: 'No hay categorías',
+      filterFn: ([,c], q) =>
+        c.nombre?.toLowerCase().includes(q) ||
+        c.descripcion?.toLowerCase().includes(q)
+    }
+  );
 }
 
 window.showCatModal = async (catId=null) => {
@@ -894,34 +1160,59 @@ async function renderEjercicios(container, action) {
   const ejs = ejSnap.val()||{};
   const cats = catSnap.val()||{};
 
+  const rowsEj = Object.entries(ejs);
   container.innerHTML = `
-    <div class="glass-panel">
+    <div class="glass-panel" id="panelEjercicios">
       <div class="panel-header">
-        <span class="panel-title">💪 Ejercicios (${Object.keys(ejs).length})</span>
+        <span class="panel-title">💪 Ejercicios (${rowsEj.length})</span>
         <button class="btn btn-primary btn-sm" onclick="showEjModal()">+ Nuevo</button>
+      </div>
+      <div class="table-toolbar">
+        <div class="search-box"><span class="search-icon">🔍</span><input type="search" placeholder="Buscar por nombre, categoría..."></div>
+        <select class="per-page-select">
+          <option value="10">10 / pág</option>
+          <option value="25">25 / pág</option>
+          <option value="50">50 / pág</option>
+        </select>
       </div>
       <div style="overflow-x:auto">
         <table class="data-table">
           <thead><tr><th>Nombre</th><th>Categoría</th><th>Biextremidad</th><th>Estado</th><th>Video</th><th>Acciones</th></tr></thead>
-          <tbody>
-            ${Object.entries(ejs).map(([id,e])=>`
-              <tr>
-                <td><strong>${e.nombre}</strong><br><span style="font-size:0.78rem;color:var(--text-muted)">${e.descripcion||''}</span></td>
-                <td>${cats[e.categoria]?.nombre||'—'}</td>
-                <td>${e.biextremidad?'<span class="badge badge-active">Sí</span>':'<span class="badge badge-inactive">No</span>'}</td>
-                <td><span class="badge ${e.estado?'badge-active':'badge-inactive'}">${e.estado?'Activo':'Inactivo'}</span></td>
-                <td>${e.urlVideo?`<button class="btn btn-secondary btn-sm" onclick="previewVideo('${e.urlVideo}')">▶️</button>`:'—'}</td>
-                <td><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="showEjModal('${id}')">✏️</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteEj('${id}')">🗑️</button>
-                </div></td>
-              </tr>
-            `).join('')||'<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">💪</div><div class="empty-text">No hay ejercicios</div></div></td></tr>'}
-          </tbody>
+          <tbody></tbody>
         </table>
+      </div>
+      <div class="pagination">
+        <span class="page-info"></span>
+        <div class="page-btns" style="display:flex;gap:4px;flex-wrap:wrap"></div>
       </div>
     </div>
   `;
+  initPagedTable(
+    document.getElementById('panelEjercicios'),
+    rowsEj,
+    '',
+    ([id,e]) => `
+      <tr>
+        <td><strong>${e.nombre}</strong><br><span style="font-size:0.78rem;color:var(--text-muted)">${e.descripcion||''}</span></td>
+        <td>${cats[e.categoria]?.nombre||'—'}</td>
+        <td>${e.biextremidad?'<span class="badge badge-active">Sí</span>':'<span class="badge badge-inactive">No</span>'}</td>
+        <td><span class="badge ${e.estado?'badge-active':'badge-inactive'}">${e.estado?'Activo':'Inactivo'}</span></td>
+        <td>${e.urlVideo?`<button class="btn btn-secondary btn-sm" onclick="previewVideo('${e.urlVideo}')">▶️</button>`:'—'}</td>
+        <td><div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" onclick="showEjModal('${id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEj('${id}')">🗑️</button>
+        </div></td>
+      </tr>`,
+    {
+      perPage: 10,
+      emptyIcon: '💪',
+      emptyText: 'No hay ejercicios',
+      filterFn: ([,e], q) =>
+        e.nombre?.toLowerCase().includes(q) ||
+        e.descripcion?.toLowerCase().includes(q) ||
+        cats[e.categoria]?.nombre?.toLowerCase().includes(q)
+    }
+  );
 }
 
 function convertYoutubeUrl(url) {
@@ -1024,7 +1315,7 @@ async function renderRutinas(container, action) {
   const users = usSnap.val()||{};
 
   container.innerHTML = `
-    <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;height:calc(100vh-160px)">
+    <div class="rutinas-layout">
       <div class="glass-panel" style="overflow:hidden;display:flex;flex-direction:column">
         <div class="panel-header"><span class="panel-title">📋 Rutinas</span><button class="btn btn-primary btn-sm" onclick="showRutinaModal()">+</button></div>
         <div style="overflow-y:auto;flex:1;padding:12px">
@@ -1057,6 +1348,24 @@ async function renderRutinas(container, action) {
 window.selectRutina = async (id) => {
   rutinaState.selectedRutina = id;
   rutinaState.selectedMes = null; rutinaState.selectedSemana = null; rutinaState.selectedDia = null;
+  rutinaState._nextMes = null; rutinaState._nextSem = null; rutinaState._nextDia = null;
+
+  // Auto-expandir al día siguiente del atleta asignado
+  try {
+    const rSnap = await get(ref(db,`rutinas/${id}`));
+    const r = rSnap.val()||{};
+    if(r.usuario) {
+      const progSnap = await get(ref(db,`sesiones/${r.usuario}/progreso`));
+      const prog = progSnap.val()||{mesActual:1,semanaActual:1,diaActual:1};
+      rutinaState.selectedMes    = prog.mesActual;
+      rutinaState.selectedSemana = prog.semanaActual;
+      rutinaState.selectedDia    = prog.diaActual;
+      rutinaState._nextMes       = prog.mesActual;
+      rutinaState._nextSem       = prog.semanaActual;
+      rutinaState._nextDia       = prog.diaActual;
+    }
+  } catch(e) {}
+
   await renderRutinaDetail(id);
   document.querySelectorAll('.rb-item').forEach(i=>i.classList.toggle('active',i.getAttribute('onclick')===`selectRutina('${id}')`));
 };
@@ -1078,6 +1387,9 @@ async function renderRutinaDetail(rutinaId) {
   const mesActual = rutinaState.selectedMes;
   const semActual = rutinaState.selectedSemana;
   const diaActual = rutinaState.selectedDia;
+  const nextMes   = rutinaState._nextMes;
+  const nextSem   = rutinaState._nextSem;
+  const nextDia   = rutinaState._nextDia;
   const diasData = mesActual&&semActual ? (meses[mesActual]?.semanas?.[semActual]?.dias||{}) : {};
   const diaData = diaActual ? diasData[diaActual] : null;
   const ejsDia = diaData?.ejercicios||{};
@@ -1095,12 +1407,22 @@ async function renderRutinaDetail(rutinaId) {
         ${mesActual&&semActual&&diaActual?`<button class="btn btn-primary btn-sm" onclick="addEjercicioDia('${rutinaId}',${mesActual},${semActual},${diaActual})">+ Ejercicio</button>`:''}
       </div>
     </div>
+    ${nextMes?`
+    <div style="padding:10px 16px;background:linear-gradient(135deg,rgba(0,200,255,0.08),rgba(123,47,255,0.08));border-bottom:1px solid rgba(0,200,255,0.2);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:1.1rem">📍</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">Día siguiente del atleta:</span>
+      <span style="font-size:0.88rem;font-weight:800;color:var(--primary)">Mes ${nextMes} · Semana ${nextSem} · Día ${nextDia}</span>
+      <span style="font-size:0.72rem;background:rgba(0,200,255,0.15);border:1px solid rgba(0,200,255,0.3);border-radius:20px;padding:2px 10px;color:var(--primary)">➡️ Próxima sesión</span>
+    </div>`:''}
     <div style="display:flex;gap:12px;padding:12px;flex-wrap:wrap;border-bottom:1px solid var(--glass-border)">
       <!-- MESES -->
       <div style="min-width:80px">
         <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Mes</div>
         ${Object.keys(meses).sort((a,b)=>a-b).map(m=>`
-          <div class="rb-item ${mesActual==m?'active':''}" style="padding:6px 12px;margin-bottom:4px" onclick="selMes('${rutinaId}',${m})">${m}</div>
+          <div class="rb-item ${mesActual==m?'active':''}" style="padding:6px 12px;margin-bottom:4px;position:relative" onclick="selMes('${rutinaId}',${m})">
+            ${m}
+            ${nextMes==m?'<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;background:rgba(0,200,255,0.2);color:var(--primary);border-radius:10px;padding:1px 6px">●</span>':''}
+          </div>
         `).join('')||'<div style="font-size:0.8rem;color:var(--text-muted)">Sin meses</div>'}
       </div>
       <!-- SEMANAS -->
@@ -1108,7 +1430,10 @@ async function renderRutinaDetail(rutinaId) {
         <div style="min-width:90px">
           <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Semana</div>
           ${[1,2,3,4].map(s=>`
-            <div class="rb-item ${semActual==s?'active':''}" style="padding:6px 12px;margin-bottom:4px" onclick="selSemana('${rutinaId}',${mesActual},${s})">S${s}</div>
+            <div class="rb-item ${semActual==s?'active':''}" style="padding:6px 12px;margin-bottom:4px;position:relative" onclick="selSemana('${rutinaId}',${mesActual},${s})">
+              S${s}
+              ${nextMes==mesActual&&nextSem==s?'<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;background:rgba(0,200,255,0.2);color:var(--primary);border-radius:10px;padding:1px 6px">●</span>':''}
+            </div>
           `).join('')}
         </div>
       `:''}
@@ -1117,7 +1442,10 @@ async function renderRutinaDetail(rutinaId) {
         <div style="min-width:70px">
           <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Día</div>
           ${[1,2,3,4,5].map(d=>`
-            <div class="rb-item ${diaActual==d?'active':''}" style="padding:6px 12px;margin-bottom:4px" onclick="selDia('${rutinaId}',${mesActual},${semActual},${d})">D${d}</div>
+            <div class="rb-item ${diaActual==d?'active':''}" style="padding:6px 12px;margin-bottom:4px;position:relative;${nextMes==mesActual&&nextSem==semActual&&nextDia==d&&diaActual!=d?'border-color:rgba(0,200,255,0.5);background:rgba(0,200,255,0.06);':''}" onclick="selDia('${rutinaId}',${mesActual},${semActual},${d})">
+              D${d}
+              ${nextMes==mesActual&&nextSem==semActual&&nextDia==d?'<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;background:rgba(0,229,160,0.25);color:var(--success);border-radius:10px;padding:1px 6px;font-weight:700">HOY</span>':''}
+            </div>
           `).join('')}
         </div>
       `:''}
@@ -1273,6 +1601,430 @@ window.deleteRutina = async (e, id) => {
     document.querySelector('[data-page="rutinas"]').click();
   }
 };
+
+// ============ ATLETAS / SEGUIMIENTO ============
+async function renderAtletas(container, action) {
+  const [usSnap, rutSnap, ejSnap] = await Promise.all([
+    get(ref(db,'usuarios')), get(ref(db,'rutinas')), get(ref(db,'ejercicios'))
+  ]);
+  const users = usSnap.val()||{};
+  const ruts  = rutSnap.val()||{};
+  const ejs   = ejSnap.val()||{};
+  const atletas = Object.entries(users).filter(([,u])=>u.rol!=='admin');
+
+  if(!atletas.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-text">No hay atletas registrados</div></div>`;
+    return;
+  }
+
+  // Estado local de la vista
+  if(!window._atletaState) window._atletaState = { uid: atletas[0][0], sesId: null };
+  const st = window._atletaState;
+
+  const renderVista = async () => {
+    const uid  = st.uid;
+    const user = users[uid]||{};
+    const rutina = Object.values(ruts).find(r=>r.usuario===uid && r.activa);
+    const [sesSnap, progSnap] = await Promise.all([
+      get(ref(db,`sesiones/${uid}/historial`)),
+      get(ref(db,`sesiones/${uid}/progreso`))
+    ]);
+    const historial = sesSnap.val()||{};
+    const progreso  = progSnap.val()||{};
+    const sesiones  = Object.entries(historial)
+      .map(([k,v])=>({...v, _key:k}))
+      .sort((a,b)=>(b.fecha||b.fechaFin||0)-(a.fecha||a.fechaFin||0));
+
+    const sesActual = st.sesId ? sesiones.find(s=>s._key===st.sesId) : sesiones[0];
+    if(sesActual && !st.sesId) st.sesId = sesActual._key;
+
+    // Selector de atleta
+    const atletaOpts = atletas.map(([id,u])=>`
+      <option value="${id}" ${id===uid?'selected':''}>${u.nombres} ${u.apellidos||''}</option>
+    `).join('');
+
+    // Card posición actual
+    const posCard = progreso.mesActual ? `
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.2);border-radius:14px;padding:12px 18px;flex:1;min-width:120px;text-align:center">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Posición actual</div>
+          <div style="font-size:1.4rem;font-weight:900;color:var(--primary)">M${progreso.mesActual}·S${progreso.semanaActual}·D${progreso.diaActual}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">${rutina?rutina.nombre:'Sin rutina activa'}</div>
+        </div>
+        <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:14px;padding:12px 18px;flex:1;min-width:120px;text-align:center">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Sesiones totales</div>
+          <div style="font-size:1.4rem;font-weight:900;color:#00e5a0">${sesiones.length}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">Completadas</div>
+        </div>
+      </div>` : `<div style="margin-bottom:16px;padding:12px;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:12px;font-size:0.85rem;color:#ff6b35">⚠️ Sin progreso registrado aún</div>`;
+
+    // Timeline de sesiones (pills)
+    const timeline = sesiones.length ? `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+        ${sesiones.slice(0,20).map(s=>{
+          const ts = s.fecha||s.fechaFin||s.fechaInicio||0;
+          const fecha = ts ? new Date(ts).toLocaleDateString('es-CO',{day:'2-digit',month:'short'}) : '—';
+          const isActive = s._key === st.sesId;
+          return `<button onclick="window._atletaState.sesId='${s._key}';window._atletaRefresh()" style="
+            padding:5px 10px;border-radius:20px;border:1px solid ${isActive?'var(--primary)':'rgba(255,255,255,0.12)'};
+            background:${isActive?'rgba(0,200,255,0.15)':'rgba(255,255,255,0.04)'};
+            color:${isActive?'var(--primary)':'var(--text-muted)'};
+            font-size:0.72rem;font-family:'Exo 2',sans-serif;cursor:pointer;white-space:nowrap;
+            font-weight:${isActive?'700':'400'}"
+          >M${s.mes}·S${s.semana}·D${s.dia}<br><span style="font-size:0.62rem">${fecha}</span></button>`;
+        }).join('')}
+      </div>` : `<div style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px">Sin sesiones aún</div>`;
+
+    // Detalle sesión seleccionada
+    let detalleSesion = '';
+    if(sesActual) {
+      const ts = sesActual.fecha||sesActual.fechaFin||sesActual.fechaInicio||0;
+      const fechaStr = ts ? new Date(ts).toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      const ejercicios = Object.values(sesActual.ejerciciosCompletados||{});
+      const ejRows = ejercicios.map(ec => {
+        const ejInfo = ejs[ec.ejercicioId]||{};
+        const esBiext = ec.series?.some(s=>s.rirRpeIzq!=null);
+        const serieRows = (ec.series||[]).map((s,i)=>{
+          const rpeCell = esBiext
+            ? `<td style="text-align:center"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span>/<span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
+            : `<td style="text-align:center;color:#a78bfa">${s.rirRpe??'—'}</td>`;
+          return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+            <td style="padding:5px 8px;text-align:center;color:var(--primary)">${i+1}</td>
+            <td style="padding:5px 8px;text-align:center">${s.reps??'—'}</td>
+            <td style="padding:5px 8px;text-align:center">${s.peso?s.peso+' kg':'—'}</td>
+            ${rpeCell}
+          </tr>`;
+        }).join('');
+        const metodoH = esBiext ? 'Izq/Der' : (user.metodo||'RPE');
+        return `<div style="margin-bottom:14px">
+          <div style="font-weight:700;font-size:0.9rem;margin-bottom:6px;color:#e8f4ff">${ejInfo.nombre||ec.ejercicioId}</div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem">
+              <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
+                <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">#</th>
+                <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">REPS</th>
+                <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">PESO</th>
+                <th style="padding:4px 8px;color:#a78bfa;font-weight:600;font-size:0.7rem">${metodoH}</th>
+              </tr></thead>
+              <tbody style="color:#e8f4ff">${serieRows}</tbody>
+            </table>
+          </div>
+        </div>`;
+      }).join('<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:10px 0">');
+
+      detalleSesion = `
+        <div style="background:rgba(0,0,0,0.25);border:1px solid var(--glass-border);border-radius:16px;padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div>
+              <span style="font-weight:700;color:var(--primary)">M${sesActual.mes}·S${sesActual.semana}·D${sesActual.dia}</span>
+              <span style="font-size:0.78rem;color:var(--text-muted);margin-left:8px">${fechaStr}</span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:0.75rem;background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:3px 8px;color:#ff6b35">
+                😓 Fatiga fin: ${sesActual.nivelCansancioFin??'—'}/10
+              </span>
+              <button onclick="window._registrarComoAdmin('${uid}')" style="
+                padding:6px 12px;background:rgba(123,47,255,0.2);border:1px solid rgba(123,47,255,0.4);
+                border-radius:10px;color:#a78bfa;font-family:'Exo 2',sans-serif;font-size:0.78rem;
+                font-weight:600;cursor:pointer">
+                ✏️ Registrar sesión
+              </button>
+            </div>
+          </div>
+          ${ejercicios.length ? ejRows : '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:20px">Sin ejercicios registrados</div>'}
+        </div>`;
+    }
+
+    container.innerHTML = `
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <label style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Atleta</label>
+            <select class="glass-input" onchange="window._atletaState.uid=this.value;window._atletaState.sesId=null;window._atletaRefresh()">${atletaOpts}</select>
+          </div>
+          <button onclick="window._registrarComoAdmin('${uid}')" style="
+            margin-top:18px;padding:10px 16px;background:linear-gradient(135deg,rgba(123,47,255,0.3),rgba(0,200,255,0.2));
+            border:1px solid rgba(123,47,255,0.5);border-radius:12px;color:#e8f4ff;
+            font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;white-space:nowrap">
+            ➕ Nueva sesión para este atleta
+          </button>
+        </div>
+      </div>
+      ${posCard}
+      <div class="glass-panel" style="padding:16px;margin-bottom:16px">
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📅 Sesiones recientes (toca para ver detalle)</div>
+        ${timeline}
+      </div>
+      ${detalleSesion ? `<div class="glass-panel" style="padding:16px"><div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">📋 Detalle de sesión</div>${detalleSesion}</div>` : ''}
+    `;
+  };
+
+  window._atletaRefresh = () => renderVista();
+  await renderVista();
+}
+
+// ── Abrir modal de registro de sesión como admin ──
+window._registrarComoAdmin = async (targetUid) => {
+  const [usSnap, rutSnap, ejSnap, histSnap] = await Promise.all([
+    get(ref(db,`usuarios/${targetUid}`)),
+    get(ref(db,'rutinas')),
+    get(ref(db,'ejercicios')),
+    get(ref(db,`sesiones/${targetUid}/historial`))
+  ]);
+  const user    = usSnap.val()||{};
+  const ruts    = rutSnap.val()||{};
+  const ejs     = ejSnap.val()||{};
+  const hist    = histSnap.val()||{};
+  const rutEntry = Object.entries(ruts).find(([,r])=>r.usuario===targetUid && r.activa);
+  if(!rutEntry) return Swal.fire({icon:'warning',title:'Sin rutina activa',text:'Este atleta no tiene una rutina activa asignada.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  const [rutinaId, rutina] = rutEntry;
+  const progSnap = await get(ref(db,`sesiones/${targetUid}/progreso`));
+  const progreso = progSnap.val()||{mesActual:1,semanaActual:1,diaActual:1};
+  const { mesActual=1, semanaActual=1, diaActual=1 } = progreso;
+
+  // Construir lista de todos los días de la rutina con su estado
+  const meses = rutina.meses||{};
+  const sesionesHechas = new Set(
+    Object.values(hist).map(s => `${s.mes}-${s.semana}-${s.dia}`)
+  );
+
+  const diasDisponibles = [];
+  Object.keys(meses).sort((a,b)=>a-b).forEach(m => {
+    const semanas = meses[m]?.semanas||{};
+    Object.keys(semanas).sort((a,b)=>a-b).forEach(s => {
+      const dias = semanas[s]?.dias||{};
+      [1,2,3,4,5].forEach(d => {
+        const ejsCount = Object.keys(dias[d]?.ejercicios||{}).length;
+        if(ejsCount > 0) {
+          const key = `${m}-${s}-${d}`;
+          const hecho = sesionesHechas.has(key);
+          const esSiguiente = +m===mesActual && +s===semanaActual && +d===diaActual;
+          diasDisponibles.push({ m:+m, s:+s, d:+d, ejsCount, hecho, esSiguiente });
+        }
+      });
+    });
+  });
+
+  if(!diasDisponibles.length) return Swal.fire({icon:'info',title:'Sin días configurados',text:'La rutina no tiene días con ejercicios.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  // Mostrar selector de día antes de abrir el formulario
+  _mostrarSelectorDia(targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles);
+};
+
+// ── Selector de día ──
+window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles) => {
+  const { mesActual, semanaActual, diaActual } = progreso;
+
+  const filas = [...diasDisponibles].reverse().map(({m,s,d,ejsCount,hecho,esSiguiente}) => {
+    let badge = '';
+    let rowStyle = 'padding:10px 14px;border-radius:12px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border:1px solid;transition:all 0.2s ease;';
+    if(hecho) {
+      // Hecho siempre tiene prioridad visual, incluso si también es el "siguiente"
+      rowStyle += 'background:rgba(0,229,160,0.06);border-color:rgba(0,229,160,0.2);opacity:0.7;';
+      badge = '<span style="font-size:0.7rem;background:rgba(0,229,160,0.15);color:var(--success);border:1px solid rgba(0,229,160,0.3);border-radius:20px;padding:2px 10px">✅ Hecho</span>';
+    } else if(esSiguiente) {
+      rowStyle += 'background:rgba(0,200,255,0.12);border-color:rgba(0,200,255,0.5);';
+      badge = '<span style="font-size:0.7rem;background:rgba(0,200,255,0.2);color:var(--primary);border:1px solid rgba(0,200,255,0.4);border-radius:20px;padding:2px 10px;font-weight:700">➡️ SIGUIENTE</span>';
+    } else {
+      rowStyle += 'background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);';
+      badge = '<span style="font-size:0.7rem;background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2px 10px">⏳ Pendiente</span>';
+    }
+    return `
+      <div style="${rowStyle}" onclick="window._iniciarAdminSesionDia('${targetUid}','${rutinaId}',${m},${s},${d})">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:1rem;font-weight:800;color:${hecho?'var(--success)':esSiguiente?'var(--primary)':'var(--text-muted)'}">M${m}·S${s}·D${d}</span>
+          <span style="font-size:0.75rem;color:var(--text-muted)">${ejsCount} ejercicio${ejsCount!==1?'s':''}</span>
+        </div>
+        ${badge}
+      </div>`;
+  }).join('');
+
+  showOverlay(`
+    <div class="overlay-header">
+      <span class="overlay-title">📅 Selecciona el día a registrar — ${user.nombres}</span>
+      <button class="btn-close" onclick="closeOverlay()">✕</button>
+    </div>
+    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:14px">
+      El día marcado como <strong style="color:var(--primary)">➡️ SIGUIENTE</strong> es el que corresponde según el progreso actual del atleta.
+    </div>
+    <div style="max-height:60vh;overflow-y:auto;padding-right:4px">
+      ${filas}
+    </div>
+  `);
+
+  // Guardar contexto para cuando se elija el día
+  window._adminSesionCtx = { targetUid, rutinaId, rutina, ejs, user, progreso };
+};
+
+window._iniciarAdminSesionDia = (targetUid, rutinaId, m, s, d) => {
+  closeOverlay();
+  const { rutina, ejs, user, progreso } = window._adminSesionCtx;
+  const diaData = rutina.meses?.[m]?.semanas?.[s]?.dias?.[d];
+  const ejsDia  = Object.values(diaData?.ejercicios||{});
+
+  if(!ejsDia.length) return Swal.fire({icon:'info',title:'Día sin ejercicios',text:`M${m}·S${s}·D${d} no tiene ejercicios configurados.`,background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  window._adminSesion = {
+    targetUid, rutinaId,
+    mesActual: m, semanaActual: s, diaActual: d,
+    ejsDia, ejs, user, rutina, progreso,
+    ejercicioActual: 0, ejerciciosCompletados: {}, fechaInicio: Date.now()
+  };
+  _renderAdminEjercicio();
+};
+
+function _renderAdminEjercicio() {
+  const s = window._adminSesion;
+  const { ejsDia, ejs, user, ejercicioActual, mesActual, semanaActual, diaActual } = s;
+  if(ejercicioActual >= ejsDia.length) { _finalizarAdminSesion(); return; }
+
+  const ejConfig = ejsDia[ejercicioActual];
+  const ejInfo   = ejs[ejConfig.ejercicioId]||{};
+  const total    = ejsDia.length;
+  const current  = ejercicioActual + 1;
+  const metodo   = user.metodo||'RPE';
+  const esBiext  = ejInfo.biextremidad === true;
+  const metodoLabel = metodo==='RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
+  const metodoMin   = metodo==='RPE' ? 1 : -1;
+  const metodoMax   = metodo==='RPE' ? 10 : 6;
+
+  const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
+    <div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">
+      <div style="width:24px;text-align:center;font-weight:700;color:var(--primary)">${i+1}</div>
+      <div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:var(--text-muted)">Reps</label>
+          <input type="number" id="adm_reps_${i}" value="${ejConfig.repsMin||0}" min="0"
+            style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:var(--text-muted)">Peso kg</label>
+          <input type="number" id="adm_peso_${i}" value="${ejConfig.peso||0}" min="0" step="0.5"
+            style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>
+        ${esBiext ? `
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:#00e5a0">Izq ${metodo}</label>
+          <input type="number" id="adm_rpe_izq_${i}" value="${ejConfig.rirRpe||0}" min="${metodoMin}" max="${metodoMax}"
+            style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:#ff6b35">Der ${metodo}</label>
+          <input type="number" id="adm_rpe_der_${i}" value="${ejConfig.rirRpe||0}" min="${metodoMin}" max="${metodoMax}"
+            style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>` : `
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:#a78bfa">${metodoLabel}</label>
+          <input type="number" id="adm_rpe_${i}" value="${ejConfig.rirRpe||0}" min="${metodoMin}" max="${metodoMax}"
+            style="background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>`}
+      </div>
+    </div>
+  `).join('');
+
+  showOverlay(`
+    <div class="overlay-header">
+      <span class="overlay-title">✏️ ${user.nombres} — M${mesActual}·S${semanaActual}·D${diaActual}</span>
+      <button class="btn-close" onclick="closeOverlay()">✕</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:0.8rem;color:var(--text-muted)">Ejercicio ${current} de ${total}</span>
+        <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${Math.round(((current-1)/total)*100)}%</span>
+      </div>
+      <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px">
+        <div style="height:100%;background:var(--primary);border-radius:2px;width:${Math.round(((current-1)/total)*100)}%"></div>
+      </div>
+    </div>
+    <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px">${ejInfo.nombre||'Ejercicio'}</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">
+      ${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ${metodo} ${ejConfig.rirRpe} · ⏱ ${ejConfig.descanso}s
+    </div>
+    <div>${seriesRows}</div>
+    <div style="margin-top:4px">
+      <label style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;margin-top:14px">Nivel de fatiga al terminar este ejercicio (0-10)</label>
+      <input type="number" id="adm_fatiga" value="5" min="0" max="10"
+        style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      ${ejercicioActual>0?`<button class="btn btn-secondary" onclick="window._adminSesion.ejercicioActual--;_renderAdminEjercicio()">← Anterior</button>`:''}
+      <button class="btn btn-primary" style="flex:1" onclick="_completarAdminEj()">
+        ${current<total?'Siguiente ejercicio →':'✅ Finalizar sesión'}
+      </button>
+    </div>
+  `);
+}
+
+window._completarAdminEj = () => {
+  const s = window._adminSesion;
+  const ejConfig = s.ejsDia[s.ejercicioActual];
+  const ejInfo   = s.ejs[ejConfig.ejercicioId]||{};
+  const n        = ejConfig.series||3;
+  const esBiext  = ejInfo.biextremidad === true;
+  const series   = Array.from({length:n},(_,i)=>{
+    const base = {
+      reps: +document.getElementById(`adm_reps_${i}`)?.value||0,
+      peso: +document.getElementById(`adm_peso_${i}`)?.value||0,
+      completada: true
+    };
+    if(esBiext) {
+      base.rirRpeIzq = +document.getElementById(`adm_rpe_izq_${i}`)?.value||0;
+      base.rirRpeDer = +document.getElementById(`adm_rpe_der_${i}`)?.value||0;
+      base.rirRpe    = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
+    } else {
+      base.rirRpe = +document.getElementById(`adm_rpe_${i}`)?.value||0;
+    }
+    return base;
+  });
+  s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series };
+  s.nivelCansancioFin = +document.getElementById('adm_fatiga')?.value||5;
+  s.ejercicioActual++;
+  _renderAdminEjercicio();
+};
+
+async function _finalizarAdminSesion() {
+  const s = window._adminSesion;
+  closeOverlay();
+  const { targetUid, rutinaId, mesActual, semanaActual, diaActual, ejerciciosCompletados, fechaInicio, nivelCansancioFin } = s;
+  const now = Date.now();
+  const sesId = `ses_${now}`;
+  const sesData = {
+    mes: mesActual, semana: semanaActual, dia: diaActual,
+    rutinaActiva: rutinaId,
+    fechaInicio, fechaFin: now, fecha: now,
+    nivelCansancioInicio: 0, nivelCansancioFin: nivelCansancioFin||5,
+    ejerciciosCompletados,
+    registradoPorAdmin: true
+  };
+  await set(ref(db,`sesiones/${targetUid}/historial/${sesId}`), sesData);
+
+  // Avanzar progreso: solo si el día registrado ES el día del progreso actual,
+  // o si el día registrado está DESPUÉS del progreso actual (para no retroceder).
+  const prog = s.progreso;
+  const progKey  = prog.mesActual * 10000 + prog.semanaActual * 100 + prog.diaActual;
+  const regKey   = mesActual     * 10000 + semanaActual     * 100 + diaActual;
+
+  if(regKey >= progKey) {
+    // Avanzar desde el día que se registró, no desde el progreso guardado
+    let m = mesActual, sem = semanaActual, dia = diaActual;
+    dia++; if(dia>5){dia=1;sem++;} if(sem>4){sem=1;m++;}
+    const maxMes = Math.max(...Object.keys(s.rutina.meses||{1:{}}).map(Number));
+    if(m>maxMes){m=maxMes;sem=4;dia=5;}
+    await set(ref(db,`sesiones/${targetUid}/progreso`), { rutinaActiva:rutinaId, mesActual:m, semanaActual:sem, diaActual:dia });
+  }
+  // Si registró un día ANTERIOR al progreso actual, no tocamos el progreso
+
+  // Guardar estado para restaurar la vista de atletas tras el reload
+  sessionStorage.setItem('saykyo_reload_page', 'atletas');
+  sessionStorage.setItem('saykyo_reload_uid', targetUid);
+
+  await Swal.fire({icon:'success',title:'✅ Sesión registrada',
+    text:`Sesión M${mesActual}·S${semanaActual}·D${diaActual} guardada para ${s.user.nombres}`,
+    timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+
+  window.location.reload();
+}
 
 // ============ ESTADÍSTICAS ============
 async function renderEstadisticas(container) {
@@ -1610,16 +2362,25 @@ window.switchRevTab = (uid, tab) => {
   document.getElementById(`rev_mes_${uid}`).style.display = tab==='mes' ? '' : 'none';
 };
 
-// Init: esperar token de Firebase antes de leer la BD
+// Init
 onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    sessionStorage.removeItem('saykyo_user');
-    window.location.href = 'index.html';
-    return;
-  }
+  if (!user) { sessionStorage.removeItem('saykyo_user'); window.location.href='index.html'; return; }
   if (typeof window._appInited === 'undefined') {
     window._appInited = true;
-    renderPage('home');
+    // Restaurar página tras reload post-sesión admin
+    const reloadPage = sessionStorage.getItem('saykyo_reload_page');
+    const reloadUid  = sessionStorage.getItem('saykyo_reload_uid');
+    if (reloadPage) {
+      sessionStorage.removeItem('saykyo_reload_page');
+      sessionStorage.removeItem('saykyo_reload_uid');
+      if (reloadUid) window._atletaState = { uid: reloadUid, sesId: null };
+      // Activar el nav item correcto
+      const navItem = document.querySelector(`[data-page="${reloadPage}"]`);
+      if (navItem) { document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active')); navItem.classList.add('active'); }
+      renderPage(reloadPage);
+    } else {
+      renderPage('home');
+    }
   }
 });
 </script>
