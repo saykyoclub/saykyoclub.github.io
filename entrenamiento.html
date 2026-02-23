@@ -144,6 +144,14 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 .fatigue-dot:hover { transform:scaleY(1.1); }
 .fatigue-dot.active { box-shadow:0 0 12px rgba(0,200,255,0.3); }
 
+/* AVATAR SELECTOR */
+.avatar-grid-user { display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:280px;overflow-y:auto;padding:4px; }
+@media(min-width:400px){ .avatar-grid-user { grid-template-columns:repeat(auto-fill,minmax(60px,1fr)); } }
+.av-opt { cursor:pointer;border-radius:50%;border:3px solid transparent;transition:all 0.2s ease;overflow:hidden;aspect-ratio:1;display:flex;align-items:center;justify-content:center; }
+.av-opt img { width:100%;height:100%;object-fit:cover;border-radius:50%; }
+.av-opt:hover { border-color:rgba(0,200,255,0.5);transform:scale(1.08); }
+.av-opt.selected { border-color:var(--primary);box-shadow:0 0 15px rgba(0,200,255,0.4);transform:scale(1.05); }
+
 /* FORMS */
 .glass-input { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none;width:100%;transition:all 0.3s ease; }
 .glass-input:focus { border-color:var(--primary);background:rgba(0,200,255,0.08);box-shadow:0 0 0 3px rgba(0,200,255,0.1); }
@@ -205,18 +213,6 @@ select.glass-input option { background:#0d1a35; }
 .spinner { width:40px;height:40px;border:3px solid rgba(0,200,255,0.15);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto; }
 .spinner-sm { width:28px;height:28px;border:3px solid rgba(0,200,255,0.15);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite; }
 .loading-box { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px;color:var(--text-muted);font-size:0.9rem; }
-
-/* BACK BUTTON */
-.btn-back {
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(255,255,255,0.06);
-  border:1px solid rgba(255,255,255,0.12);
-  border-radius:12px;padding:8px 14px;
-  color:var(--text-muted);font-family:'Exo 2',sans-serif;
-  font-size:0.85rem;font-weight:600;cursor:pointer;
-  transition:all 0.2s ease;margin-bottom:14px;
-}
-.btn-back:hover { background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3);color:var(--primary); }
 
 /* REVISION BLOCKS */
 .rev-block {
@@ -281,7 +277,7 @@ select.glass-input option { background:#0d1a35; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getDatabase, ref, get, set, push, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCDlQGoWTNtAna8unwVNgJZH8WNRsYF0MU",
@@ -300,26 +296,153 @@ const auth = getAuth(app);
 const session = sessionStorage.getItem('saykyo_user');
 if(!session) { window.location.href='index.html'; }
 const currentUser = JSON.parse(session||'{}');
-if(!currentUser.id && currentUser.uid) { currentUser.id = currentUser.uid; }
 if(currentUser.rol==='admin') { window.location.href='dashboard.html'; }
-
-onAuthStateChanged(auth, (user) => {
-  if(!user) {
-    sessionStorage.removeItem('saykyo_user');
-    window.location.href='index.html';
-  }
-});
 
 // Setup header
 document.getElementById('userName').textContent = currentUser.nombres;
 document.getElementById('userMethod').textContent = currentUser.metodo||'RPE';
 document.getElementById('userAvatar').src = currentUser.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`;
 
-window.logout = () => {
-  auth.signOut().catch(()=>{});
-  sessionStorage.removeItem('saykyo_user');
-  window.location.href='index.html';
-};
+window.logout = () => { sessionStorage.removeItem('saykyo_user'); signOut(auth).finally(() => { window.location.href='index.html'; }); };
+
+// Biblioteca de avatares (131 combinaciones únicas)
+const AVATAR_LIST = [
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Luna&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Mia&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Max&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sam&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Alex&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Jordan&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Taylor&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Morgan&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Casey&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Riley&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Avery&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Quinn&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sage&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=River&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Blake&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Drew&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Reese&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Hayden&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Peyton&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Logan&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Rowan&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Emery&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Finley&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Harper&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Skylar&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Phoenix&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Dakota&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Kendall&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Adrian&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Beatriz&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Carlos&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Diana&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Eduardo&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Fernanda&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Gabriel&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Helena&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Ivan&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Julia&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Kevin&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Laura&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Miguel&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Natalia&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Oscar&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Patricia&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Rafael&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sofia&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Thomas&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Valentina&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=William&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Ximena&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Yamil&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zara&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Andres&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Brenda&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Camilo&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Daniela&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Esteban&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Fatima&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Shadow&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Storm&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Blaze&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Frost&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Thunder&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Viper&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Raven&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Wolf&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Eagle&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Fox&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Cobra&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Titan&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Nova&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Orion&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Atlas&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zenith&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Apex&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Nexus&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Vortex&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Cipher&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User001&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User002&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User003&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User004&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User005&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User006&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User007&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User008&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User009&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=User010&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Alpha01&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Beta02&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Gamma03&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Delta04&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Sigma05&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Omega06&backgroundColor=2c3e50",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Lambda07&backgroundColor=059ff2",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Theta08&backgroundColor=7b2fff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Kappa09&backgroundColor=ff6b35",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Psi10&backgroundColor=00e5a0",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=OldMike&backgroundColor=ffd60a",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=GrayWolf&backgroundColor=ff4d6d",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=DarkBear&backgroundColor=00c8ff",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=IronMan&backgroundColor=a855f7",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=SteelFox&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=BlackHawk&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=GoldRush&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=SilverBack&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=BronzeAge&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=CopperKing&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=NightOwl&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=DawnRider&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=DuskHunter&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=MidnightRun&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=SunriseHero&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=CoachPro&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=TrainHard&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=LiftBig&backgroundColor=2980b9",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=RunFast&backgroundColor=d35400",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=pro_player9&backgroundColor=e74c3c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=gym_rat_10&backgroundColor=2ecc71",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=iron_will11&backgroundColor=3498db",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=steel_mind12&backgroundColor=9b59b6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=fire_soul13&backgroundColor=1abc9c",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=ice_veins14&backgroundColor=e67e22",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=thunder_fist&backgroundColor=34495e",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=lightning_kick&backgroundColor=16a085",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=shadow_punch&backgroundColor=8e44ad",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=golden_hook&backgroundColor=c0392b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=silver_jab&backgroundColor=27ae60",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=bronze_cross&backgroundColor=2980b9"
+];
+function getAvatarUrl(seed) {
+  // Compatibilidad: si se pasa un seed antiguo, devolver primer avatar
+  return AVATAR_LIST[0];
+}
 
 // State
 let state = {
@@ -478,29 +601,9 @@ window.anamnesisNext = async () => {
 
 // ============ TABS ============
 window.switchTab = (tab) => {
-  state.prevTab = state.tab; // guardar vista anterior para el botón atrás
   state.tab = tab;
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   renderTab(tab);
-};
-
-window.goBack = async () => {
-  // Si estamos en sesión activa → confirmar cancelación y volver al día
-  if(state.sesionActiva) {
-    const res = await Swal.fire({
-      icon:'warning', title:'¿Cancelar sesión?',
-      text:'Perderás el progreso de la sesión actual.',
-      showCancelButton:true, confirmButtonText:'Sí, salir',
-      cancelButtonText:'Seguir entrenando',
-      confirmButtonColor:'#ff4d6d', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
-    });
-    if(!res.isConfirmed) return;
-    state.sesionActiva = null;
-    state.ejercicioActual = 0;
-    state.seriesData = {};
-  }
-  // Siempre volver a la tab entrenar desde cualquier sub-vista
-  switchTab('entrenar');
 };
 
 async function renderTab(tab) {
@@ -922,7 +1025,6 @@ function renderEjercicioActual() {
 
   const p = document.getElementById('mainPage');
   p.innerHTML = `
-    <button class="btn-back" onclick="goBack()">← Volver al día</button>
     <div style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:0.8rem;color:var(--text-muted)">Ejercicio ${current} de ${total}</span>
@@ -1114,10 +1216,10 @@ async function showRevisionSemana(mes, semana) {
         <div class="rev-block">
           <div class="rev-q">😊 Estado de ánimo general de la semana</div>
           <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">1 = muy bajo · 5 = excelente</div>
-          <div class="mini-scale" id="animoScale" style="max-width:280px">
+          <div class="mini-scale" id="animoScale" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
             ${[{v:1,e:'😞',l:'Muy bajo'},{v:2,e:'😔',l:'Bajo'},{v:3,e:'😐',l:'Regular'},{v:4,e:'🙂',l:'Bueno'},{v:5,e:'😄',l:'Excelente'}]
-              .map(o=>`<div class="mini-dot" data-field="animo" data-val="${o.v}" onclick="selectRevVal('animo',${o.v})" style="aspect-ratio:auto;padding:10px 8px;flex-direction:column;gap:4px;min-width:50px">
-                <span style="font-size:1.4rem">${o.e}</span><span style="font-size:0.68rem">${o.l}</span>
+              .map(o=>`<div class="mini-dot" data-field="animo" data-val="${o.v}" onclick="selectRevVal('animo',${o.v})" style="aspect-ratio:auto;padding:8px 4px;flex-direction:column;gap:3px;min-width:0;width:100%;text-align:center">
+                <span style="font-size:1.3rem">${o.e}</span><span style="font-size:0.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.l}</span>
               </div>`).join('')}
           </div>
         </div>
@@ -1475,7 +1577,7 @@ window.resetProgreso = async () => {
 // ============ PROGRESO ============
 async function renderProgreso() {
   const p = document.getElementById('mainPage');
-  p.innerHTML = '<button class="btn-back" onclick="goBack()">← Volver</button><div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
+  p.innerHTML = '<div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
   
   const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
   const hist = histSnap.val()||{};
@@ -1565,21 +1667,44 @@ async function renderPerfil() {
   const anaSnap = await get(ref(db,`anamnesis/${currentUser.id}`));
   const ana = anaSnap.val()||{};
   const r = ana.respuestas||{};
-  
+  let selectedAvatarUser = currentUser.avatar || AVATAR_LIST[0];
+
   const QLABELS = ['Edad','Peso','Talla','Objetivo','Lesiones/condiciones','Nivel actividad','Días entrenamiento','Experiencia','Deporte adicional','Horario','Suplementos','Horas sueño','Restricciones alimentarias','Nivel estrés','Meta 3 meses'];
 
+  const avatarGridHtml = AVATAR_LIST.map((url,i) => {
+    return `<div class="av-opt ${selectedAvatarUser===url?'selected':''}" onclick="pickAvatar('${url}',this)">
+      <img src="${url}" loading="lazy">
+    </div>`;
+  }).join('');
+
   document.getElementById('mainPage').innerHTML = `
-    <button class="btn-back" onclick="goBack()">← Volver</button>
     <div class="glass-card">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-        <img src="${currentUser.avatar||`https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`}" 
-          style="width:70px;height:70px;border-radius:50%;border:3px solid var(--primary);box-shadow:0 0 20px rgba(0,200,255,0.3)">
+        <div style="position:relative;flex-shrink:0">
+          <img id="perfilAvatar" src="${currentUser.avatar||getAvatarUrl(currentUser.usuario)}"
+            style="width:80px;height:80px;border-radius:50%;border:3px solid var(--primary);box-shadow:0 0 20px rgba(0,200,255,0.3);cursor:pointer"
+            onclick="document.getElementById('avatarPickerWrap').style.display=document.getElementById('avatarPickerWrap').style.display==='none'?'block':'none'"
+            title="Toca para cambiar avatar">
+          <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4)"
+            onclick="document.getElementById('avatarPickerWrap').style.display=document.getElementById('avatarPickerWrap').style.display==='none'?'block':'none'">✏️</div>
+        </div>
         <div>
           <div style="font-size:1.2rem;font-weight:800">${currentUser.nombres} ${currentUser.apellidos||''}</div>
           <div style="font-size:0.8rem;color:var(--text-muted)">@${currentUser.usuario}</div>
           <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--primary)">${currentUser.metodo}</span>
         </div>
       </div>
+
+      <!-- Avatar picker (oculto por defecto) -->
+      <div id="avatarPickerWrap" style="display:none;margin-bottom:16px;background:rgba(0,0,0,0.25);border-radius:14px;padding:14px;border:1px solid var(--glass-border)">
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;text-align:center">Elige tu avatar</div>
+        <div class="avatar-grid-user" id="avatarGrid">${avatarGridHtml}</div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('avatarPickerWrap').style.display='none'">Cancelar</button>
+          <button class="btn btn-primary btn-sm" onclick="saveAvatar()">💾 Guardar avatar</button>
+        </div>
+      </div>
+
       <div style="display:flex;gap:8px;font-size:0.82rem">
         <div style="flex:1;background:rgba(0,229,160,0.08);border-radius:10px;padding:10px;border:1px solid rgba(0,229,160,0.15)">
           <div style="color:var(--success)">✅ Válido hasta</div>
@@ -1609,10 +1734,44 @@ async function renderPerfil() {
       <button class="btn btn-danger btn-sm" onclick="logout()">🚪 Cerrar Sesión</button>
     </div>
   `;
+
+  // Funciones del picker — en scope de renderPerfil para capturar selectedAvatarUser
+  window.pickAvatar = (url, el) => {
+    selectedAvatarUser = url;
+    document.querySelectorAll('.av-opt').forEach(a => a.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('perfilAvatar').src = url;
+  };
+
+  window.saveAvatar = async () => {
+    try {
+      await set(ref(db, `usuarios/${currentUser.id}/avatar`), selectedAvatarUser);
+      // Actualizar sesión local
+      currentUser.avatar = selectedAvatarUser;
+      sessionStorage.setItem('saykyo_user', JSON.stringify(currentUser));
+      // Actualizar header
+      document.getElementById('userAvatar').src = selectedAvatarUser;
+      document.getElementById('avatarPickerWrap').style.display = 'none';
+      Swal.fire({icon:'success',title:'¡Avatar actualizado!',timer:1500,showConfirmButton:false,
+        background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+    } catch(e) {
+      Swal.fire({icon:'error',title:'Error',text:e.message,background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#ff4d6d'});
+    }
+  };
 }
 
-// Init
-init();
+// Init — esperar sesión Firebase antes de leer DB
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    sessionStorage.removeItem('saykyo_user');
+    window.location.href = 'index.html';
+    return;
+  }
+  if (!window._initDone) {
+    window._initDone = true;
+    init();
+  }
+});
 </script>
 </body>
 </html>
