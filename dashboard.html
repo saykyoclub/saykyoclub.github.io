@@ -206,17 +206,20 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 
 /* AVATAR SELECTOR */
 .avatar-grid {
-  display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
-  max-height:280px; overflow-y:auto; padding:8px 4px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
+  gap:12px;
+  max-height:360px; overflow-y:auto; padding:8px 4px;
 }
 .avatar-option {
   cursor:pointer; border-radius:50%; border:3px solid transparent;
   transition:all 0.2s ease; overflow:hidden;
   aspect-ratio:1; display:flex;align-items:center;justify-content:center;
+  width:100%; max-width:90px; margin:0 auto;
 }
 .avatar-option img { width:100%;height:100%;object-fit:cover;border-radius:50%; }
-.avatar-option:hover { border-color:rgba(0,200,255,0.5); transform:scale(1.05); }
-.avatar-option.selected { border-color:var(--primary); box-shadow:0 0 15px rgba(0,200,255,0.4); }
+.avatar-option:hover { border-color:rgba(0,200,255,0.5); transform:scale(1.08); }
+.avatar-option.selected { border-color:var(--primary); box-shadow:0 0 15px rgba(0,200,255,0.4); transform:scale(1.05); }
 .selected-avatar-preview {
   width:60px;height:60px;border-radius:50%;border:3px solid var(--primary);
   overflow:hidden;cursor:pointer;transition:all 0.2s ease;
@@ -402,7 +405,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// Auth check: sessionStorage rápido para la UI
+// Auth check
 const session = sessionStorage.getItem('saykyo_user');
 if (!session) { window.location.href='index.html'; }
 const currentUser = JSON.parse(session||'{}');
@@ -1582,16 +1585,18 @@ window.switchRevTab = (uid, tab) => {
   document.getElementById(`rev_mes_${uid}`).style.display = tab==='mes' ? '' : 'none';
 };
 
-// Init: esperar a que Firebase Auth confirme la sesión antes de leer la BD
+// Init: esperar token de Firebase antes de leer la BD
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     sessionStorage.removeItem('saykyo_user');
     window.location.href = 'index.html';
     return;
   }
-  // Token activo → ya podemos leer la BD sin Permission denied
-  renderPage('home');
-}, { once: true });  // solo necesitamos el primer disparo
+  if (typeof window._appInited === 'undefined') {
+    window._appInited = true;
+    renderPage('home');
+  }
+});
 </script>
 </body>
 </html>
