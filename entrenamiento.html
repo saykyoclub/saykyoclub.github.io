@@ -145,12 +145,21 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 .fatigue-dot.active { box-shadow:0 0 12px rgba(0,200,255,0.3); }
 
 /* AVATAR SELECTOR */
-.avatar-grid-user { display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:280px;overflow-y:auto;padding:4px; }
-@media(min-width:400px){ .avatar-grid-user { grid-template-columns:repeat(auto-fill,minmax(60px,1fr)); } }
-.av-opt { cursor:pointer;border-radius:50%;border:3px solid transparent;transition:all 0.2s ease;overflow:hidden;aspect-ratio:1;display:flex;align-items:center;justify-content:center; }
-.av-opt img { width:100%;height:100%;object-fit:cover;border-radius:50%; }
+.avatar-grid-user {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(62px,1fr));
+  gap:25px;
+  max-height:320px;
+  overflow-y:auto;
+  padding:4px 2px;
+}
+.av-opt { cursor:pointer;border-radius:50%;border:3px solid transparent;transition:all 0.2s ease;overflow:hidden;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04); }
+.av-opt img { width:100%;height:100%;object-fit:cover;border-radius:50%;display:block; }
 .av-opt:hover { border-color:rgba(0,200,255,0.5);transform:scale(1.08); }
 .av-opt.selected { border-color:var(--primary);box-shadow:0 0 15px rgba(0,200,255,0.4);transform:scale(1.05); }
+/* Placeholder mientras carga */
+.av-opt img[data-src] { opacity:0; transition:opacity 0.3s ease; }
+.av-opt img.loaded { opacity:1; }
 
 /* FORMS */
 .glass-input { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none;width:100%;transition:all 0.3s ease; }
@@ -1671,9 +1680,14 @@ async function renderPerfil() {
 
   const QLABELS = ['Edad','Peso','Talla','Objetivo','Lesiones/condiciones','Nivel actividad','Días entrenamiento','Experiencia','Deporte adicional','Horario','Suplementos','Horas sueño','Restricciones alimentarias','Nivel estrés','Meta 3 meses'];
 
+  // Cargar con src directo — SVGs DiceBear son ~3KB cada uno, no fotos pesadas
   const avatarGridHtml = AVATAR_LIST.map((url,i) => {
-    return `<div class="av-opt ${selectedAvatarUser===url?'selected':''}" onclick="pickAvatar('${url}',this)">
-      <img src="${url}" loading="lazy">
+    const isSelected = selectedAvatarUser === url;
+    return `<div class="av-opt ${isSelected?'selected':''}" onclick="pickAvatar('${url}',this)">
+      <img src="${url}" loading="lazy" decoding="async"
+        style="width:100%;height:100%;border-radius:50%;opacity:0;transition:opacity 0.2s"
+        onload="this.style.opacity='1'"
+        onerror="this.closest('.av-opt').style.display='none'">
     </div>`;
   }).join('');
 
@@ -1683,10 +1697,10 @@ async function renderPerfil() {
         <div style="position:relative;flex-shrink:0">
           <img id="perfilAvatar" src="${currentUser.avatar||getAvatarUrl(currentUser.usuario)}"
             style="width:80px;height:80px;border-radius:50%;border:3px solid var(--primary);box-shadow:0 0 20px rgba(0,200,255,0.3);cursor:pointer"
-            onclick="document.getElementById('avatarPickerWrap').style.display=document.getElementById('avatarPickerWrap').style.display==='none'?'block':'none'"
+            onclick="toggleAvatarPicker()"
             title="Toca para cambiar avatar">
           <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4)"
-            onclick="document.getElementById('avatarPickerWrap').style.display=document.getElementById('avatarPickerWrap').style.display==='none'?'block':'none'">✏️</div>
+            onclick="toggleAvatarPicker()">✏️</div>
         </div>
         <div>
           <div style="font-size:1.2rem;font-weight:800">${currentUser.nombres} ${currentUser.apellidos||''}</div>
@@ -1694,17 +1708,6 @@ async function renderPerfil() {
           <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--primary)">${currentUser.metodo}</span>
         </div>
       </div>
-
-      <!-- Avatar picker (oculto por defecto) -->
-      <div id="avatarPickerWrap" style="display:none;margin-bottom:16px;background:rgba(0,0,0,0.25);border-radius:14px;padding:14px;border:1px solid var(--glass-border)">
-        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;text-align:center">Elige tu avatar</div>
-        <div class="avatar-grid-user" id="avatarGrid">${avatarGridHtml}</div>
-        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('avatarPickerWrap').style.display='none'">Cancelar</button>
-          <button class="btn btn-primary btn-sm" onclick="saveAvatar()">💾 Guardar avatar</button>
-        </div>
-      </div>
-
       <div style="display:flex;gap:8px;font-size:0.82rem">
         <div style="flex:1;background:rgba(0,229,160,0.08);border-radius:10px;padding:10px;border:1px solid rgba(0,229,160,0.15)">
           <div style="color:var(--success)">✅ Válido hasta</div>
@@ -1714,6 +1717,16 @@ async function renderPerfil() {
           <div style="color:var(--primary)">📊 Método</div>
           <div style="font-weight:700">${currentUser.metodo}</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Avatar picker FUERA del glass-card para tener ancho completo -->
+    <div id="avatarPickerWrap" style="display:none;background:rgba(0,0,0,0.35);border-radius:16px;padding:16px;border:1px solid var(--glass-border);margin-bottom:16px">
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;text-align:center;font-weight:600;letter-spacing:0.5px;text-transform:uppercase">Elige tu avatar</div>
+      <div class="avatar-grid-user" id="avatarGrid">${avatarGridHtml}</div>
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+        <button class="btn btn-secondary btn-sm" onclick="toggleAvatarPicker(false)">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveAvatar()">💾 Guardar avatar</button>
       </div>
     </div>
     
@@ -1736,6 +1749,15 @@ async function renderPerfil() {
   `;
 
   // Funciones del picker — en scope de renderPerfil para capturar selectedAvatarUser
+  window.toggleAvatarPicker = (forceState) => {
+    const wrap = document.getElementById('avatarPickerWrap');
+    if(!wrap) return;
+    const isOpen = wrap.style.display !== 'none';
+    const opening = forceState !== false ? !isOpen : false;
+    wrap.style.display = opening ? 'block' : 'none';
+    if(opening) wrap.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  };
+
   window.pickAvatar = (url, el) => {
     selectedAvatarUser = url;
     document.querySelectorAll('.av-opt').forEach(a => a.classList.remove('selected'));
