@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAYKYO CLUB - Entrenamiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --primary: #00c8ff;
+  --primary-dark: #0088cc;
+  --accent: #7b2fff;
+  --success: #00e5a0;
+  --warning: #ffd60a;
+  --error: #ff4d6d;
+  --glass-bg: rgba(10,20,45,0.7);
+  --glass-border: rgba(255,255,255,0.1);
+  --text: #e8f4ff;
+  --text-muted: rgba(232,244,255,0.5);
+  --bg-dark: #060c18;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--text); min-height:100vh; }
+
+.bg-scene { position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse at 20% 30%,rgba(0,100,200,0.2) 0%,transparent 50%),
+             radial-gradient(ellipse at 80% 70%,rgba(123,47,255,0.15) 0%,transparent 50%), #060c18;
+}
+.grid-overlay { position:fixed;inset:0;z-index:0;opacity:0.02;
+  background-image:linear-gradient(rgba(0,200,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,1) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+
+/* HEADER */
+.header {
+  position:sticky;top:0;z-index:100;
+  background:rgba(6,12,28,0.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--glass-border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;
+}
+.header-logo { font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;letter-spacing:4px;
+  background:linear-gradient(135deg,#fff,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.header-user { display:flex;align-items:center;gap:10px; }
+.header-avatar { width:36px;height:36px;border-radius:50%;border:2px solid var(--primary);object-fit:cover; }
+.header-name { font-size:0.85rem;font-weight:600; }
+.header-method { font-size:0.7rem;color:var(--primary);letter-spacing:1px; }
+
+/* MAIN */
+.page { position:relative;z-index:1;max-width:600px;margin:0 auto;padding:20px 16px 40px; }
+
+/* GLASS CARD */
+.glass-card {
+  background:var(--glass-bg);backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border);border-radius:20px;padding:22px;
+  margin-bottom:16px;
+}
+.card-title { font-size:1.1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px; }
+
+/* PROGRESS WIDGET */
+.progress-widget {
+  background:linear-gradient(135deg,rgba(0,100,200,0.15),rgba(123,47,255,0.1));
+  border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:20px;margin-bottom:16px;
+  position:relative;overflow:hidden;
+}
+.progress-widget::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--primary),var(--accent));
+}
+.progress-crumbs { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px; }
+.crumb {
+  background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);
+  border-radius:20px;padding:4px 12px;font-size:0.78rem;color:var(--primary);font-weight:600;
+}
+.progress-bar-wrap { margin-top:12px; }
+.progress-label { display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-bottom:6px; }
+.progress-bar { height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden; }
+.progress-fill { height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;transition:width 1s ease; }
+
+/* BUTTONS */
+.btn { padding:12px 20px;border-radius:14px;font-family:'Exo 2',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s ease;letter-spacing:0.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px; }
+.btn-primary { background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;box-shadow:0 4px 20px rgba(0,200,255,0.3); }
+.btn-primary:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,200,255,0.5); }
+.btn-secondary { background:rgba(255,255,255,0.08);border:1px solid var(--glass-border);color:var(--text); }
+.btn-success { background:linear-gradient(135deg,#00a86b,var(--success));color:#000;font-weight:800; }
+.btn-full { width:100%; }
+.btn-sm { padding:8px 14px;font-size:0.82rem;border-radius:10px; }
+
+/* EXERCISE CARD - Training Mode */
+.training-card {
+  background:rgba(10,20,45,0.8);backdrop-filter:blur(30px);
+  border:1px solid rgba(0,200,255,0.2);border-radius:22px;overflow:hidden;
+  margin-bottom:16px;
+}
+.training-video { position:relative;padding-bottom:56.25%;background:#000;border-radius:0; }
+.training-video iframe { position:absolute;inset:0;width:100%;height:100%; }
+.training-video .no-video { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text-muted); }
+.training-info { padding:20px; }
+.training-title { font-size:1.3rem;font-weight:900;margin-bottom:6px; }
+.training-meta { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px; }
+.meta-pill { background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:4px 12px;font-size:0.78rem;color:var(--primary); }
+
+/* SERIES TRACKER */
+.series-list { display:flex;flex-direction:column;gap:10px;margin-bottom:16px; }
+.serie-row {
+  background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);
+  border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;
+}
+.serie-num { width:28px;height:28px;border-radius:50%;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--primary);flex-shrink:0; }
+.serie-inputs { display:flex;gap:8px;flex:1;flex-wrap:wrap; }
+.serie-field { display:flex;flex-direction:column;gap:3px;min-width:70px;flex:1; }
+.serie-field label { font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px; }
+.serie-field input { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.88rem;outline:none;width:100%; }
+.serie-field input:focus { border-color:var(--primary);box-shadow:0 0 0 2px rgba(0,200,255,0.1); }
+.serie-done { width:36px;height:36px;border-radius:50%;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);cursor:pointer;font-size:1rem;transition:all 0.2s ease;flex-shrink:0; }
+.serie-done.checked { background:var(--success);border-color:var(--success);color:#000; }
+
+/* EFFORT SCALE */
+.effort-scale { display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:16px 0; }
+.effort-option {
+  aspect-ratio:1;border-radius:14px;background:rgba(255,255,255,0.05);
+  border:2px solid transparent;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transition:all 0.2s ease;
+}
+.effort-option .effort-emoji { font-size:1.6rem; }
+.effort-option .effort-label { font-size:0.6rem;color:var(--text-muted);text-align:center;line-height:1.1; }
+.effort-option:hover { background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3); }
+.effort-option.selected { border-color:var(--primary);background:rgba(0,200,255,0.15);box-shadow:0 0 20px rgba(0,200,255,0.2); }
+.effort-option.selected .effort-label { color:var(--primary); }
+
+/* FATIGUE SCALE */
+.fatigue-scale { display:flex;gap:6px;justify-content:space-between;margin:12px 0; }
+.fatigue-dot {
+  flex:1;height:40px;border-radius:10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;font-weight:700;transition:all 0.2s ease;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+}
+.fatigue-dot:hover { transform:scaleY(1.1); }
+.fatigue-dot.active { box-shadow:0 0 12px rgba(0,200,255,0.3); }
+
+/* FORMS */
+.glass-input { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none;width:100%;transition:all 0.3s ease; }
+.glass-input:focus { border-color:var(--primary);background:rgba(0,200,255,0.08);box-shadow:0 0 0 3px rgba(0,200,255,0.1); }
+.glass-input::placeholder { color:rgba(232,244,255,0.25); }
+select.glass-input option { background:#0d1a35; }
+.form-group { margin-bottom:14px; }
+.form-label { display:block;font-size:0.75rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px; }
+
+/* TABS BOTTOM NAV */
+.bottom-nav {
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(6,12,28,0.95);backdrop-filter:blur(20px);
+  border-top:1px solid var(--glass-border);
+  display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));
+}
+.nav-tab { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:6px;transition:all 0.2s ease; }
+.nav-tab .tab-icon { font-size:1.3rem; }
+.nav-tab .tab-label { font-size:0.65rem;color:var(--text-muted);letter-spacing:0.5px; }
+.nav-tab.active .tab-label { color:var(--primary); }
+.nav-tab.active .tab-icon { transform:translateY(-2px); }
+
+/* ANAMNESIS */
+.question-step { animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+.q-number { font-size:0.75rem;color:var(--primary);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px; }
+.q-text { font-size:1.1rem;font-weight:700;margin-bottom:20px;line-height:1.4; }
+.step-progress { display:flex;gap:4px;margin-bottom:24px; }
+.step-dot { flex:1;height:3px;background:rgba(255,255,255,0.1);border-radius:2px; }
+.step-dot.done { background:var(--primary); }
+.step-dot.current { background:rgba(0,200,255,0.5); }
+
+.option-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:8px; }
+.option-btn {
+  padding:12px;background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);
+  border-radius:12px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.85rem;
+  cursor:pointer;transition:all 0.2s ease;text-align:center;
+}
+.option-btn:hover,.option-btn.selected { background:rgba(0,200,255,0.12);border-color:var(--primary);color:var(--primary); }
+
+/* OVERLAY */
+.overlay-backdrop { position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0; }
+.overlay-sheet { background:rgba(8,16,36,0.98);border:1px solid var(--glass-border);border-radius:28px 28px 0 0;padding:28px 20px max(28px,env(safe-area-inset-bottom));width:100%;max-width:600px;max-height:90vh;overflow-y:auto;animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+.sheet-handle { width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px; }
+
+/* SCROLL */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-thumb { background:rgba(0,200,255,0.2);border-radius:2px; }
+
+/* STAT MINI */
+.mini-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px; }
+.mini-stat { background:rgba(0,0,0,0.3);border-radius:14px;padding:14px;text-align:center;border:1px solid var(--glass-border); }
+.mini-stat .val { font-size:1.6rem;font-weight:900;color:var(--primary); }
+.mini-stat .lbl { font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px; }
+
+@keyframes slideUp { from{opacity:0;transform:translateY(50px)} to{opacity:1;transform:translateY(0)} }
+
+.page-wrap { padding-bottom: 80px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width:40px;height:40px;border:3px solid rgba(0,200,255,0.15);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto; }
+.spinner-sm { width:28px;height:28px;border:3px solid rgba(0,200,255,0.15);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite; }
+.loading-box { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px;color:var(--text-muted);font-size:0.9rem; }
+
+/* REVISION BLOCKS */
+.rev-block {
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:14px; padding:14px; margin-bottom:12px;
+}
+.rev-q {
+  font-size:0.9rem; font-weight:700; margin-bottom:8px;
+  line-height:1.4;
+}
+.mini-scale {
+  display:flex; gap:5px; flex-wrap:wrap;
+}
+.mini-dot {
+  flex:1; min-width:28px; height:36px;
+  border-radius:8px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:0.82rem; font-weight:600;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  transition:all 0.15s ease; color:var(--text);
+}
+.mini-dot:hover { background:rgba(0,200,255,0.12); border-color:rgba(0,200,255,0.3); }
+</style>
+</head>
+<body>
+<div class="bg-scene"></div>
+<div class="grid-overlay"></div>
+
+<div class="header">
+  <img src="logo_saykyo.png" alt="Saykyo Club" style="height:60px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,200,255,0.25))">
+  <div class="header-user">
+    <img class="header-avatar" id="userAvatar" src="" alt="">
+    <div>
+      <div class="header-name" id="userName">Usuario</div>
+      <div class="header-method" id="userMethod">RPE</div>
+    </div>
+    <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;font-size:1.1rem" onclick="logout()">🚪</button>
+  </div>
+</div>
+
+<div class="page page-wrap" id="mainPage">
+  <div class="page-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px">
+    <div class="spinner"></div>
+    <span>Cargando tu perfil...</span>
+  </div>
+</div>
+
+<nav class="bottom-nav" id="bottomNav" style="display:none">
+  <div class="nav-tab active" data-tab="entrenar" onclick="switchTab('entrenar')">
+    <span class="tab-icon">💪</span><span class="tab-label">Entrenar</span>
+  </div>
+  <div class="nav-tab" data-tab="progreso" onclick="switchTab('progreso')">
+    <span class="tab-icon">📈</span><span class="tab-label">Progreso</span>
+  </div>
+  <div class="nav-tab" data-tab="perfil" onclick="switchTab('perfil')">
+    <span class="tab-icon">👤</span><span class="tab-label">Perfil</span>
+  </div>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, get, set, push, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCDlQGoWTNtAna8unwVNgJZH8WNRsYF0MU",
+  authDomain: "entrenamiento-6b069.firebaseapp.com",
+  projectId: "entrenamiento-6b069",
+  storageBucket: "entrenamiento-6b069.firebasestorage.app",
+  messagingSenderId: "818051143570",
+  appId: "1:818051143570:web:c17fa58f4f98ce67b9534b",
+  databaseURL: "https://entrenamiento-6b069-default-rtdb.firebaseio.com"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+// Auth check: verificar sesión en sessionStorage Y en Firebase Auth
+const session = sessionStorage.getItem('saykyo_user');
+if(!session) { window.location.href='index.html'; }
+const currentUser = JSON.parse(session||'{}');
+// Asegurar que currentUser.id siempre esté disponible (uid y id apuntan al mismo UID de Auth)
+if(!currentUser.id && currentUser.uid) { currentUser.id = currentUser.uid; }
+if(currentUser.rol==='admin') { window.location.href='dashboard.html'; }
+
+// Verificar que la sesión de Firebase Auth siga activa
+onAuthStateChanged(auth, (user) => {
+  if(!user) {
+    // La sesión de Firebase expiró → limpiar y redirigir al login
+    sessionStorage.removeItem('saykyo_user');
+    window.location.href='index.html';
+  }
+});
+
+// Setup header
+document.getElementById('userName').textContent = currentUser.nombres;
+document.getElementById('userMethod').textContent = currentUser.metodo||'RPE';
+document.getElementById('userAvatar').src = currentUser.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`;
+
+window.logout = () => {
+  auth.signOut().catch(()=>{});
+  sessionStorage.removeItem('saykyo_user');
+  window.location.href='index.html';
+};
+
+// State
+let state = {
+  tab: 'entrenar',
+  sesionActiva: null,
+  ejercicioActual: 0,
+  seriesData: {},
+  rutinaData: null,
+  progreso: null,
+  ejercicios: {},
+  categorias: {}
+};
+
+// Init
+async function init() {
+  const [anaSnap, progresoSnap, ejSnap, catSnap] = await Promise.all([
+    get(ref(db,`anamnesis/${currentUser.id}`)),
+    get(ref(db,`sesiones/${currentUser.id}/progreso`)),
+    get(ref(db,'ejercicios')),
+    get(ref(db,'categorias'))
+  ]);
+  state.ejercicios = ejSnap.val()||{};
+  state.categorias = catSnap.val()||{};
+  
+  const ana = anaSnap.val();
+  if(!ana || !ana.completada) {
+    renderAnamnesis();
+    return;
+  }
+  
+  state.progreso = progresoSnap.val()||{mesActual:1,semanaActual:1,diaActual:1};
+  document.getElementById('bottomNav').style.display='flex';
+  renderTab('entrenar');
+}
+
+// ============ ANAMNESIS ============
+const PREGUNTAS = [
+  { q:'¿Cuántos años tienes?', tipo:'number', placeholder:'Ej: 28' },
+  { q:'¿Cuál es tu peso actual? (kg)', tipo:'number', placeholder:'Ej: 75' },
+  { q:'¿Cuál es tu talla? (cm)', tipo:'number', placeholder:'Ej: 175' },
+  { q:'¿Cuál es tu objetivo principal?', tipo:'opciones', opciones:['Ganar masa muscular','Perder grasa','Mejorar rendimiento','Mejorar salud general','Aumentar fuerza'] },
+  { q:'¿Tienes alguna lesión o condición médica relevante?', tipo:'text', placeholder:'Describe o escribe "Ninguna"' },
+  { q:'¿Cuál es tu nivel de actividad física actual?', tipo:'opciones', opciones:['Sedentario','Poco activo','Moderadamente activo','Muy activo','Atleta competitivo'] },
+  { q:'¿Cuántos días a la semana puedes entrenar?', tipo:'opciones', opciones:['2 días','3 días','4 días','5 días','6+ días'] },
+  { q:'¿Cuánto tiempo llevas entrenando?', tipo:'opciones', opciones:['Soy principiante','Menos de 1 año','1-2 años','2-4 años','4+ años'] },
+  { q:'¿Realizas algún deporte o actividad adicional?', tipo:'text', placeholder:'Ej: Fútbol los fines de semana, o "Ninguno"' },
+  { q:'¿Cuál es tu horario preferido de entrenamiento?', tipo:'opciones', opciones:['Mañana (6am-10am)','Mediodía (10am-2pm)','Tarde (2pm-6pm)','Noche (6pm-10pm)'] },
+  { q:'¿Tomas algún suplemento actualmente?', tipo:'text', placeholder:'Proteína, creatina, etc. o "Ninguno"' },
+  { q:'¿Cuántas horas duermes promedio por noche?', tipo:'opciones', opciones:['Menos de 5h','5-6h','6-7h','7-8h','Más de 8h'] },
+  { q:'¿Tienes alguna restricción alimentaria?', tipo:'text', placeholder:'Vegetariano, alergias, etc. o "Ninguna"' },
+  { q:'¿Cuál es tu nivel de estrés general? (1 = muy bajo, 10 = muy alto)', tipo:'slider', min:1, max:10 },
+  { q:'¿Qué esperas lograr en los próximos 3 meses?', tipo:'text', placeholder:'Describe tu meta concreta...' }
+];
+
+let anamnesisStep = 0;
+let anamnesisRespuestas = {};
+
+function renderAnamnesis() {
+  document.getElementById('bottomNav').style.display='none';
+  const p = document.getElementById('mainPage');
+  p.innerHTML = renderAnamnesisStep();
+}
+
+function renderAnamnesisStep() {
+  const q = PREGUNTAS[anamnesisStep];
+  const total = PREGUNTAS.length;
+  const dots = PREGUNTAS.map((_,i)=>`<div class="step-dot ${i<anamnesisStep?'done':i===anamnesisStep?'current':''}"></div>`).join('');
+  
+  let inputHtml = '';
+  if(q.tipo==='text'||q.tipo==='number') {
+    inputHtml = `<input class="glass-input" type="${q.tipo}" id="aInput" placeholder="${q.placeholder||''}" value="${anamnesisRespuestas[`p${anamnesisStep}`]||''}" style="margin-bottom:16px">`;
+  } else if(q.tipo==='opciones') {
+    inputHtml = `<div class="option-grid" style="margin-bottom:16px">${q.opciones.map(op=>`
+      <button class="option-btn ${anamnesisRespuestas[`p${anamnesisStep}`]===op?'selected':''}" onclick="selectOption('${op}')">${op}</button>
+    `).join('')}</div>`;
+  } else if(q.tipo==='slider') {
+    const val = anamnesisRespuestas[`p${anamnesisStep}`]||5;
+    inputHtml = `
+      <div style="margin-bottom:16px">
+        <div style="text-align:center;font-size:2rem;font-weight:900;color:var(--primary);margin-bottom:12px" id="sliderVal">${val}</div>
+        <input type="range" id="aInput" min="${q.min}" max="${q.max}" value="${val}" style="width:100%;accent-color:var(--primary)"
+          oninput="document.getElementById('sliderVal').textContent=this.value">
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin-top:4px">
+          <span>Muy bajo</span><span>Muy alto</span>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="glass-card question-step">
+      <div style="font-size:0.8rem;color:var(--primary);font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+        <span>ANAMNESIS INICIAL</span><span>${anamnesisStep+1}/${total}</span>
+      </div>
+      <div class="step-progress">${dots}</div>
+      <div class="q-number">PREGUNTA ${anamnesisStep+1}</div>
+      <div class="q-text">${q.q}</div>
+      ${inputHtml}
+      <div style="display:flex;gap:10px;justify-content:space-between">
+        ${anamnesisStep>0?`<button class="btn btn-secondary" onclick="anamnesisBack()">← Atrás</button>`:'<div></div>'}
+        <button class="btn btn-primary" onclick="anamnesisNext()">
+          ${anamnesisStep===total-1?'✅ Completar':'Siguiente →'}
+        </button>
+      </div>
+    </div>
+    <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8rem">
+      Este cuestionario nos ayuda a personalizar tu entrenamiento 💪
+    </div>
+  `;
+}
+
+window.selectOption = (val) => {
+  anamnesisRespuestas[`p${anamnesisStep}`] = val;
+  document.querySelectorAll('.option-btn').forEach(b=>b.classList.toggle('selected',b.textContent===val));
+};
+
+window.anamnesisBack = () => {
+  anamnesisStep--;
+  document.getElementById('mainPage').innerHTML = renderAnamnesisStep();
+};
+
+window.anamnesisNext = async () => {
+  const q = PREGUNTAS[anamnesisStep];
+  let val = anamnesisRespuestas[`p${anamnesisStep}`];
+  
+  if(q.tipo==='text'||q.tipo==='number'||q.tipo==='slider') {
+    const inp = document.getElementById('aInput');
+    if(inp) val = inp.value;
+  }
+  
+  if(!val && val!==0) {
+    return Swal.fire({icon:'warning',title:'Responde la pregunta',text:'Esta información es importante para tu plan personalizado',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  }
+  
+  anamnesisRespuestas[`p${anamnesisStep}`] = val;
+  
+  if(anamnesisStep===PREGUNTAS.length-1) {
+    // Save anamnesis
+    await set(ref(db,`anamnesis/${currentUser.id}`), {
+      completada:true, completadaEn:Date.now(), respuestas:anamnesisRespuestas
+    });
+    await Swal.fire({
+      icon:'success',title:'¡Anamnesis completada! 🎉',
+      text:'Tu perfil está listo. ¡A entrenar!',
+      background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff',
+      timer:2500,showConfirmButton:false
+    });
+    state.progreso = {mesActual:1,semanaActual:1,diaActual:1};
+    document.getElementById('bottomNav').style.display='flex';
+    renderTab('entrenar');
+  } else {
+    anamnesisStep++;
+    document.getElementById('mainPage').innerHTML = renderAnamnesisStep();
+  }
+};
+
+// ============ TABS ============
+window.switchTab = (tab) => {
+  state.tab = tab;
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  renderTab(tab);
+};
+
+async function renderTab(tab) {
+  if(tab==='entrenar') await renderEntrenar();
+  else if(tab==='progreso') await renderProgreso();
+  else await renderPerfil();
+}
+
+// ============ ENTRENAR ============
+
+// Helper: convert absolute day index (0-based) to {mes,semana,dia}
+function absToMSD(abs) {
+  const mes    = Math.floor(abs / 20) + 1;
+  const semana = Math.floor((abs % 20) / 5) + 1;
+  const dia    = (abs % 5) + 1;
+  return { mes, semana, dia };
+}
+function msdToAbs(mes, semana, dia) {
+  return (mes-1)*20 + (semana-1)*5 + (dia-1);
+}
+
+// Helper: check if a session was completed for a given day
+function sesionCompletada(historial, mes, semana, dia) {
+  return Object.values(historial||{}).some(s => s.mes===mes && s.semana===semana && s.dia===dia);
+}
+
+async function renderEntrenar() {
+  const p = document.getElementById('mainPage');
+
+  const rutSnap = await get(ref(db,'rutinas'));
+  const rutinas = rutSnap.val()||{};
+  const miRutina = Object.entries(rutinas).find(([,r])=>r.usuario===currentUser.id && r.activa);
+
+  if(!miRutina) {
+    p.innerHTML = `
+      <div class="glass-card" style="text-align:center;padding:40px 20px">
+        <div style="font-size:3rem;margin-bottom:16px">🏋️</div>
+        <h2 style="margin-bottom:10px">Sin rutina asignada</h2>
+        <p style="color:var(--text-muted);font-size:0.9rem">Tu entrenador aún no te ha asignado una rutina.</p>
+      </div>`;
+    return;
+  }
+
+  const [rutinaId, rutina] = miRutina;
+  state.rutinaData = rutina;
+  state.rutinaId   = rutinaId;
+
+  // Load session history to know what's done
+  const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
+  state.historial = histSnap.val()||{};
+
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+
+  // Build full day map for current semana
+  const maxMes = Math.max(...Object.keys(rutina.meses||{1:{}}).map(Number));
+  const currentAbs = msdToAbs(mesActual, semanaActual, diaActual);
+
+  // Progress = completed days WITH exercises / total days WITH exercises
+  let totalDiasConEj = 0;
+  let diasCompletados = 0;
+  for(let a=0; a<maxMes*20; a++) {
+    const {mes:m,semana:s,dia:d} = absToMSD(a);
+    if(m>maxMes) break;
+    const ejsCount = Object.keys(rutina.meses?.[m]?.semanas?.[s]?.dias?.[d]?.ejercicios||{}).length;
+    if(ejsCount>0) {
+      totalDiasConEj++;
+      if(sesionCompletada(state.historial, m, s, d)) diasCompletados++;
+    }
+  }
+  const pct = totalDiasConEj>0 ? Math.round((diasCompletados/totalDiasConEj)*100) : 0;
+
+  // Find all PENDING days (have exercises, not completed) BEFORE current position
+  const pendingBefore = [];
+  for(let a=0; a<currentAbs; a++) {
+    const {mes,semana,dia} = absToMSD(a);
+    if(mes>maxMes) break;
+    const ejsCount = Object.keys(rutina.meses?.[mes]?.semanas?.[semana]?.dias?.[dia]?.ejercicios||{}).length;
+    if(ejsCount>0 && !sesionCompletada(state.historial,mes,semana,dia)) {
+      pendingBefore.push({mes,semana,dia,abs:a});
+    }
+  }
+
+  const diaData = rutina.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejsDia  = Object.values(diaData?.ejercicios||{});
+  const yaCompletado = sesionCompletada(state.historial, mesActual, semanaActual, diaActual);
+
+  // Build semana day pills for navigation
+  const dayPills = [1,2,3,4,5].map(d => {
+    const dd   = rutina.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[d];
+    const hasEj = Object.keys(dd?.ejercicios||{}).length > 0;
+    const done  = sesionCompletada(state.historial, mesActual, semanaActual, d);
+    const isCur = d === diaActual;
+    let bg, border, icon;
+    if(done)       { bg='rgba(0,229,160,0.15)'; border='rgba(0,229,160,0.5)'; icon='✅'; }
+    else if(hasEj) { bg=isCur?'rgba(0,200,255,0.2)':'rgba(255,255,255,0.04)'; border=isCur?'var(--primary)':'rgba(255,255,255,0.1)'; icon='💪'; }
+    else           { bg='rgba(255,255,255,0.03)'; border='rgba(255,255,255,0.06)'; icon='😴'; }
+    return `<div onclick="irADia(${d})" style="flex:1;border-radius:12px;padding:8px 4px;cursor:pointer;background:${bg};border:2px solid ${border};text-align:center;transition:all 0.2s">
+      <div style="font-size:1rem">${icon}</div>
+      <div style="font-size:0.72rem;font-weight:${isCur?'800':'500'};color:${isCur?'var(--primary)':'var(--text-muted)'};margin-top:2px">D${d}</div>
+    </div>`;
+  }).join('');
+
+  // Semana selector
+  const semPills = [1,2,3,4].map(s => {
+    const isCur = s===semanaActual;
+    return `<div onclick="irASemana(${s})" style="flex:1;text-align:center;padding:6px;border-radius:10px;cursor:pointer;font-size:0.82rem;font-weight:${isCur?'700':'400'};background:${isCur?'rgba(0,200,255,0.15)':'rgba(255,255,255,0.04)'};border:1px solid ${isCur?'var(--primary)':'rgba(255,255,255,0.08)'};color:${isCur?'var(--primary)':'var(--text-muted)'}">S${s}</div>`;
+  }).join('');
+
+  // Pending alert banner
+  const pendingBanner = pendingBefore.length > 0 ? `
+    <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.35);border-radius:16px;padding:14px;margin-bottom:12px">
+      <div style="font-weight:700;font-size:0.9rem;color:#ff6b35;margin-bottom:8px">⚠️ Tienes ${pendingBefore.length} día${pendingBefore.length>1?'s':''} pendiente${pendingBefore.length>1?'s':''}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${pendingBefore.map(p=>`
+          <button onclick="irADiaAbs(${p.abs})" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);border-radius:8px;padding:5px 10px;color:#ff6b35;font-size:0.78rem;font-weight:700;cursor:pointer">
+            M${p.mes}·S${p.semana}·D${p.dia}
+          </button>
+        `).join('')}
+      </div>
+    </div>` : '';
+
+  p.innerHTML = `
+    <div class="progress-widget">
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:4px">📋 ${rutina.nombre}</div>
+      <div class="progress-crumbs">
+        <span class="crumb">Mes ${mesActual}</span>
+        <span class="crumb">Semana ${semanaActual}</span>
+        <span class="crumb">Día ${diaActual}</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-label"><span>Progreso (${diasCompletados}/${totalDiasConEj} días)</span><span>${pct}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>
+
+    ${pendingBanner}
+
+    <!-- DAY NAVIGATOR -->
+    <div class="glass-card" style="padding:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Semana actual</span>
+        <div style="display:flex;gap:5px">${semPills}</div>
+      </div>
+      <div style="display:flex;gap:6px">${dayPills}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="retrocederDia()" style="flex:1">← Anterior</button>
+        <button class="btn btn-secondary btn-sm" onclick="avanzarDia()" style="flex:1">Siguiente →</button>
+        <button class="btn btn-danger btn-sm" onclick="resetProgreso()" style="padding:7px 10px">🔄</button>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin:0">🗓️ ${diaData?.nombre||`Día ${diaActual}`}</div>
+        ${yaCompletado?'<span style="background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:20px;padding:3px 10px;font-size:0.75rem;color:var(--success)">✅ Completado</span>':''}
+      </div>
+      <div class="mini-stats">
+        <div class="mini-stat"><div class="val">${ejsDia.length}</div><div class="lbl">Ejercicios</div></div>
+        <div class="mini-stat"><div class="val">${ejsDia.reduce((a,e)=>a+(e.series||0),0)}</div><div class="lbl">Series</div></div>
+        <div class="mini-stat"><div class="val">${currentUser.metodo}</div><div class="lbl">Método</div></div>
+      </div>
+      ${ejsDia.length>0 ? `
+        ${yaCompletado ? `
+          <div style="text-align:center;padding:12px;background:rgba(0,229,160,0.06);border-radius:12px;margin-bottom:10px">
+            <div style="font-size:0.85rem;color:var(--success);font-weight:600">✅ Ya completaste este día</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Puedes repetirlo si lo deseas</div>
+          </div>
+          <button class="btn btn-secondary btn-full" onclick="iniciarSesion()">🔁 Repetir entrenamiento</button>
+        ` : `
+          <button class="btn btn-primary btn-full" onclick="iniciarSesion()">⚡ INICIAR ENTRENAMIENTO</button>
+          <div style="font-size:0.78rem;color:var(--text-muted);text-align:center;margin-top:8px">Tap para empezar tu sesión</div>
+        `}
+      ` : `
+        <div style="text-align:center;padding:20px;color:var(--text-muted)">
+          <div style="font-size:2rem;margin-bottom:8px">😴</div>
+          <div>Este día es descanso o no tiene ejercicios</div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:12px" onclick="avanzarDia()">Ir al siguiente día →</button>
+        </div>
+      `}
+    </div>
+
+    ${ejsDia.length>0 ? `
+    <div class="glass-card">
+      <div class="card-title">📋 Ejercicios del día</div>
+      ${ejsDia.map((ej,i)=>{
+        const ejInfo = state.ejercicios[ej.ejercicioId]||{};
+        return `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:var(--primary);flex-shrink:0">${i+1}</div>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:0.92rem">${ejInfo.nombre||'Ejercicio'}${ejInfo.biextremidad?'<span style="font-size:0.68rem;background:rgba(0,229,160,0.15);color:var(--success);border-radius:6px;padding:1px 6px;margin-left:6px">🦾 Biext</span>':''}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${ej.series} series · ${ej.repsMin}-${ej.repsMax} reps · ${ej.peso}kg · ${currentUser.metodo} ${ej.rirRpe}</div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
+// Navigate to a specific day within current semana
+window.irADia = async (dia) => {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  if(dia === diaActual) return;
+
+  // Check if skipping over pending days with exercises
+  const rutina = state.rutinaData;
+  if(dia > diaActual) {
+    const pendingInBetween = [];
+    for(let d=diaActual; d<dia; d++) {
+      const dd = rutina?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[d];
+      const hasEj = Object.keys(dd?.ejercicios||{}).length > 0;
+      const done = sesionCompletada(state.historial, mesActual, semanaActual, d);
+      if(hasEj && !done) pendingInBetween.push(d);
+    }
+    if(pendingInBetween.length > 0) {
+      const res = await Swal.fire({
+        icon:'warning',
+        title:'Días pendientes',
+        html:`<div style="color:#e8f4ff">Saltarás el Día ${pendingInBetween.join(', Día ')} que tiene${pendingInBetween.length>1?'n':''} ejercicios sin completar.<br><br>¿Deseas continuar igual?</div>`,
+        showCancelButton:true, confirmButtonText:'Sí, saltar',
+        cancelButtonText:'No, completar primero',
+        confirmButtonColor:'#ff6b35', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+      });
+      if(!res.isConfirmed) return;
+    }
+  }
+
+  const newProgreso = { rutinaActiva:state.rutinaId, mesActual, semanaActual, diaActual:dia };
+  state.progreso = newProgreso;
+  await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
+  renderTab('entrenar');
+};
+
+// Navigate to a specific semana (same mes)
+window.irASemana = async (semana) => {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  if(semana === semanaActual) return;
+
+  if(semana > semanaActual) {
+    // Check for pending days in current semana
+    const rutina = state.rutinaData;
+    const pending = [];
+    for(let d=diaActual; d<=5; d++) {
+      const dd = rutina?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[d];
+      const hasEj = Object.keys(dd?.ejercicios||{}).length > 0;
+      const done = sesionCompletada(state.historial, mesActual, semanaActual, d);
+      if(hasEj && !done) pending.push(`S${semanaActual}D${d}`);
+    }
+    if(pending.length > 0) {
+      const res = await Swal.fire({
+        icon:'warning', title:'Días pendientes en Semana ' + semanaActual,
+        html:`<div style="color:#e8f4ff">Quedan días con ejercicios sin completar: <strong>${pending.join(', ')}</strong><br><br>¿Avanzar a la Semana ${semana} de todas formas?</div>`,
+        showCancelButton:true, confirmButtonText:'Sí, avanzar',
+        cancelButtonText:'Completar primero',
+        confirmButtonColor:'#ff6b35', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+      });
+      if(!res.isConfirmed) return;
+    }
+  }
+
+  const newProgreso = { rutinaActiva:state.rutinaId, mesActual, semanaActual:semana, diaActual:1 };
+  state.progreso = newProgreso;
+  await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
+  renderTab('entrenar');
+};
+
+// Navigate directly to a pending day by absolute index
+window.irADiaAbs = async (abs) => {
+  const { mes, semana, dia } = absToMSD(abs);
+  const newProgreso = { rutinaActiva:state.rutinaId, mesActual:mes, semanaActual:semana, diaActual:dia };
+  state.progreso = newProgreso;
+  await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
+  renderTab('entrenar');
+};
+
+// Retroceder un día
+window.retrocederDia = async () => {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const currentAbs = msdToAbs(mesActual, semanaActual, diaActual);
+  if(currentAbs <= 0) return;
+  const { mes, semana, dia } = absToMSD(currentAbs - 1);
+  const newProgreso = { rutinaActiva:state.rutinaId, mesActual:mes, semanaActual:semana, diaActual:dia };
+  state.progreso = newProgreso;
+  await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
+  renderTab('entrenar');
+};
+
+window.iniciarSesion = async () => {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejsDia = Object.values(diaData?.ejercicios||{});
+  
+  if(ejsDia.length===0) return;
+
+  // Pre-session fatigue
+  const nivel = await showFatigueModal('¿Cómo llegaste a la sesión de hoy?', 'pre');
+  if(nivel===null) return;
+
+  state.sesionActiva = {
+    fechaInicio: Date.now(),
+    mes: mesActual, semana: semanaActual, dia: diaActual,
+    nivelCansancioInicio: nivel,
+    ejerciciosCompletados: {}
+  };
+  state.ejercicioActual = 0;
+  state.seriesData = {};
+
+  renderEjercicioActual();
+};
+
+// Helper: find last recorded data for a given exercise from historial
+function getUltimoRegistro(ejercicioId) {
+  const historial = state.historial || {};
+  let lastSesion = null;
+  let lastFecha = 0;
+
+  Object.values(historial).forEach(ses => {
+    if(ses.fecha > lastFecha) {
+      const match = Object.values(ses.ejerciciosCompletados || {}).find(ec => ec.ejercicioId === ejercicioId);
+      if(match && match.series && match.series.length > 0) {
+        lastFecha = ses.fecha;
+        lastSesion = { series: match.series, fecha: ses.fecha, mes: ses.mes, semana: ses.semana, dia: ses.dia };
+      }
+    }
+  });
+  return lastSesion;
+}
+
+function renderEjercicioActual() {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejsDia = Object.values(diaData?.ejercicios||{});
+  
+  if(state.ejercicioActual >= ejsDia.length) {
+    finalizarSesion();
+    return;
+  }
+
+  const ejConfig = ejsDia[state.ejercicioActual];
+  const ejInfo = state.ejercicios[ejConfig.ejercicioId]||{};
+  const total = ejsDia.length;
+  const current = state.ejercicioActual+1;
+  const pct = Math.round(((current-1)/total)*100);
+
+  // Last session data for this exercise
+  const ultimoReg = getUltimoRegistro(ejConfig.ejercicioId);
+  let ultimoBanner = '';
+  if(ultimoReg) {
+    const { series, fecha, mes, semana, dia } = ultimoReg;
+    const pesosSeries  = series.map(s => s.peso).filter(p => p > 0);
+    const rpesSeries   = series.map(s => s.rirRpeIzq != null ? `Izq ${s.rirRpeIzq} / Der ${s.rirRpeDer}` : s.rirRpe);
+    const pesoMax      = pesosSeries.length ? Math.max(...pesosSeries) : null;
+    const pesoMin      = pesosSeries.length ? Math.min(...pesosSeries) : null;
+    const pesoLabel    = pesoMax != null ? (pesoMax === pesoMin ? `${pesoMax} kg` : `${pesoMin}–${pesoMax} kg`) : '—';
+    const rpeLabel     = rpesSeries.length ? rpesSeries.join(' · ') : '—';
+    const fechaStr     = new Date(fecha).toLocaleDateString('es-CO', {day:'2-digit', month:'short'});
+    ultimoBanner = `
+      <div style="background:rgba(123,47,255,0.1);border:1px solid rgba(123,47,255,0.35);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:1.5rem">📖</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.72rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Última vez — M${mes}·S${semana}·D${dia} · ${fechaStr}</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div>
+              <span style="font-size:0.72rem;color:var(--text-muted)">⚖️ Peso</span>
+              <span style="font-size:1rem;font-weight:800;color:#e8f4ff;margin-left:6px">${pesoLabel}</span>
+            </div>
+            <div>
+              <span style="font-size:0.72rem;color:var(--text-muted)">${currentUser.metodo}</span>
+              <span style="font-size:1rem;font-weight:800;color:#a78bfa;margin-left:6px">${rpeLabel}</span>
+            </div>
+            <div>
+              <span style="font-size:0.72rem;color:var(--text-muted)">🔢 Reps</span>
+              <span style="font-size:1rem;font-weight:800;color:#e8f4ff;margin-left:6px">${series.map(s=>s.reps).join('·')}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const metodoLabel = currentUser.metodo === 'RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
+  const metodoMin  = currentUser.metodo === 'RPE' ? 1 : -1;
+  const metodoMax  = currentUser.metodo === 'RPE' ? 10 : 6;
+  const esBiext    = ejInfo.biextremidad === true;
+
+  const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
+    <div class="serie-row" style="flex-wrap:wrap;gap:8px">
+      <div class="serie-num">${i+1}</div>
+      <div class="serie-inputs" style="flex:1;min-width:0">
+        <div class="serie-field">
+          <label>Reps</label>
+          <input type="number" id="reps_${i}" placeholder="${ejConfig.repsMin}-${ejConfig.repsMax}" min="0" value="${ejConfig.repsMin||0}">
+        </div>
+        <div class="serie-field">
+          <label>Peso kg</label>
+          <input type="number" id="peso_${i}" placeholder="${ejConfig.peso||0}" min="0" step="0.5" value="${ejConfig.peso||0}">
+        </div>
+        ${esBiext ? `
+        <div class="serie-field" style="min-width:80px">
+          <label style="color:#00e5a0">🦾 Izq ${metodoLabel}</label>
+          <input type="number" id="rpe_izq_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
+            style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)">
+        </div>
+        <div class="serie-field" style="min-width:80px">
+          <label style="color:#ff6b35">🦾 Der ${metodoLabel}</label>
+          <input type="number" id="rpe_der_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
+            style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)">
+        </div>
+        ` : `
+        <div class="serie-field" style="min-width:90px">
+          <label style="color:var(--primary)">${metodoLabel}</label>
+          <input type="number" id="rpe_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
+            style="border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06)">
+        </div>
+        `}
+      </div>
+      <button class="serie-done" id="done_${i}" onclick="toggleSerie(${i})">✓</button>
+    </div>
+  `).join('');
+
+  const p = document.getElementById('mainPage');
+  p.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:0.8rem;color:var(--text-muted)">Ejercicio ${current} de ${total}</span>
+        <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${pct}% completado</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="training-card">
+      <div class="training-video">
+        ${ejInfo.urlVideo?`<iframe src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`:`<div class="no-video"><div style="font-size:3rem">🏋️</div><div>Sin video disponible</div></div>`}
+      </div>
+      <div class="training-info">
+        <div class="training-title">${ejInfo.nombre||'Ejercicio'}</div>
+        <div class="training-meta">
+          <span class="meta-pill">📦 ${ejConfig.series} series</span>
+          <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
+          <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
+          <span class="meta-pill">${currentUser.metodo} ${ejConfig.rirRpe}</span>
+          <span class="meta-pill">⏱️ ${ejConfig.descanso}s descanso</span>
+        </div>
+        ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
+        ${ejInfo.descripcion?`<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">${ejInfo.descripcion}</div>`:''}
+      </div>
+    </div>
+
+    ${ultimoBanner}
+    <div class="glass-card">
+      <div class="card-title">📊 Registrar series</div>
+      <div class="series-list">${seriesRows}</div>
+      <button class="btn btn-success btn-full" onclick="completarEjercicio()">
+        ✅ Completar ejercicio ${ejConfig.biextremidad?'(Cada lado)':''}
+      </button>
+      ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
+    </div>
+  `;
+}
+
+window.toggleSerie = (i) => {
+  const btn = document.getElementById(`done_${i}`);
+  btn.classList.toggle('checked');
+};
+
+window.completarEjercicio = async () => {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejConfig = Object.values(diaData?.ejercicios||{})[state.ejercicioActual];
+  const n = ejConfig?.series||3;
+
+  // Collect series data — RPE/RIR already filled per serie in the table
+  const ejInfo2 = state.ejercicios[ejConfig.ejercicioId]||{};
+  const esBiext2 = ejInfo2.biextremidad === true;
+  const series = Array.from({length:n},(_,i)=>{
+    const base = {
+      reps: +document.getElementById(`reps_${i}`)?.value||0,
+      peso: +document.getElementById(`peso_${i}`)?.value||0,
+      completada: document.getElementById(`done_${i}`)?.classList.contains('checked')
+    };
+    if(esBiext2) {
+      base.rirRpeIzq = +document.getElementById(`rpe_izq_${i}`)?.value||0;
+      base.rirRpeDer = +document.getElementById(`rpe_der_${i}`)?.value||0;
+      base.rirRpe = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
+    } else {
+      base.rirRpe = +document.getElementById(`rpe_${i}`)?.value||0;
+    }
+    return base;
+  });
+
+  // Validate at least one serie completed
+  const alguenCompleta = series.some(s=>s.completada);
+  if(!alguenCompleta) {
+    const res = await Swal.fire({
+      icon:'warning', title:'¿Sin series completadas?',
+      text:'No marcaste ninguna serie como hecha. ¿Continuar igual?',
+      showCancelButton:true, confirmButtonText:'Sí, continuar', cancelButtonText:'Volver',
+      background:'rgba(10,20,40,0.95)', color:'#e8f4ff', confirmButtonColor:'#00c8ff'
+    });
+    if(!res.isConfirmed) return;
+  }
+
+  state.sesionActiva.ejerciciosCompletados[state.ejercicioActual] = {
+    ejercicioId: ejConfig.ejercicioId,
+    series: series
+  };
+
+  state.ejercicioActual++;
+  renderEjercicioActual();
+};
+
+window.ejercicioAnterior = () => {
+  state.ejercicioActual = Math.max(0, state.ejercicioActual-1);
+  renderEjercicioActual();
+};
+
+async function finalizarSesion() {
+  // Post-session fatigue
+  const cansancio = await showFatigueModal('¿Qué tan cansado quedaste?', 'post');
+  if(cansancio===null) return;
+
+  state.sesionActiva.nivelCansancioFin = cansancio;
+  state.sesionActiva.fechaFin = Date.now();
+
+  // Save session
+  const sesId = `ses_${Date.now()}`;
+  await set(ref(db,`sesiones/${currentUser.id}/historial/${sesId}`), state.sesionActiva);
+
+  // Advance progress
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  let newMes = mesActual, newSem = semanaActual, newDia = diaActual+1;
+  const semanaTerminada = diaActual === 5; // last day of week
+  const mesTerminado    = diaActual === 5 && semanaActual === 4; // last day of last week
+
+  if(newDia>5) { newDia=1; newSem++; }
+  if(newSem>4) { newSem=1; newMes++; }
+
+  const maxMes = Math.max(...Object.keys(state.rutinaData?.meses||{1:{}}).map(Number));
+  if(newMes>maxMes) { newMes=maxMes; newSem=4; newDia=5; }
+
+  const newProgreso = { rutinaActiva:state.rutinaId, mesActual:newMes, semanaActual:newSem, diaActual:newDia };
+  await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
+  state.progreso = newProgreso;
+
+  await Swal.fire({
+    icon:'success',
+    title:'🎉 ¡Sesión completada!',
+    html:`<div style="color:#e8f4ff">
+      <div style="font-size:2rem;margin:10px 0">💪</div>
+      <div>Siguiente: Mes ${newMes} · Sem ${newSem} · Día ${newDia}</div>
+    </div>`,
+    background:'rgba(8,16,36,0.98)', confirmButtonColor:'#00c8ff',
+    confirmButtonText:'Continuar', timer:2000, showConfirmButton:true
+  });
+
+  // Check if monthly review is needed first (takes priority)
+  if(mesTerminado) {
+    const revSnap = await get(ref(db,`revisiones_mes/${currentUser.id}/m${mesActual}`));
+    if(!revSnap.exists()) {
+      await showRevisionMes(mesActual);
+      switchTab('progreso'); return;
+    }
+  }
+  // Check if weekly review is needed
+  if(semanaTerminada) {
+    const revSnap = await get(ref(db,`revisiones_semana/${currentUser.id}/m${mesActual}s${semanaActual}`));
+    if(!revSnap.exists()) {
+      await showRevisionSemana(mesActual, semanaActual);
+      switchTab('progreso'); return;
+    }
+  }
+
+  switchTab('progreso');
+}
+
+// ============================================================
+// REVISION SEMANAL
+// ============================================================
+async function showRevisionSemana(mes, semana) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay-backdrop';
+    overlay.style.alignItems = 'flex-start';
+    overlay.style.paddingTop = '0';
+    overlay.innerHTML = `
+      <div class="overlay-sheet" style="border-radius:28px 28px 0 0;max-height:95vh;overflow-y:auto">
+        <div class="sheet-handle"></div>
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:2rem;margin-bottom:6px">📋</div>
+          <div style="font-size:1.1rem;font-weight:800">Revisión Semanal</div>
+          <div style="font-size:0.82rem;color:var(--text-muted)">Mes ${mes} · Semana ${semana} — Tómate un momento para reflexionar</div>
+        </div>
+
+        <!-- DOMS escala -->
+        <div class="rev-block">
+          <div class="rev-q">💢 Nivel de DOMS (dolor muscular) durante la semana</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">1 = sin dolor · 10 = dolor muy intenso</div>
+          <div class="mini-scale" id="domsScale">
+            ${Array.from({length:10},(_,i)=>`<div class="mini-dot" data-field="doms" data-val="${i+1}" onclick="selectRevVal('doms',${i+1})">${i+1}</div>`).join('')}
+          </div>
+          <div id="domsLabel" style="font-size:0.8rem;color:var(--text-muted);margin-top:6px;text-align:center">Selecciona</div>
+        </div>
+
+        <!-- Músculo con más DOMS -->
+        <div class="rev-block">
+          <div class="rev-q">🏋️ ¿Qué músculo sintió más DOMS? (>6)</div>
+          <input class="glass-input" id="revMuscDoms" placeholder="Ej: Pecho, Cuádriceps...">
+        </div>
+
+        <!-- Ánimo -->
+        <div class="rev-block">
+          <div class="rev-q">😊 Estado de ánimo general de la semana</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">1 = muy bajo · 5 = excelente</div>
+          <div class="mini-scale" id="animoScale" style="max-width:280px">
+            ${[{v:1,e:'😞',l:'Muy bajo'},{v:2,e:'😔',l:'Bajo'},{v:3,e:'😐',l:'Regular'},{v:4,e:'🙂',l:'Bueno'},{v:5,e:'😄',l:'Excelente'}]
+              .map(o=>`<div class="mini-dot" data-field="animo" data-val="${o.v}" onclick="selectRevVal('animo',${o.v})" style="aspect-ratio:auto;padding:10px 8px;flex-direction:column;gap:4px;min-width:50px">
+                <span style="font-size:1.4rem">${o.e}</span><span style="font-size:0.68rem">${o.l}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Calidad de sueño -->
+        <div class="rev-block">
+          <div class="rev-q">😴 Calidad de sueño esta semana</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px">
+            ${['Excelente','Buena','Regular','Mala'].map(s=>`
+              <button class="option-btn" data-field="sueno" data-val="${s}" onclick="selectRevOpt('sueno','${s}',this)">${s}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Dolor articular -->
+        <div class="rev-block">
+          <div class="rev-q">🦴 ¿Presentaste dolor articular o muscular con algún ejercicio?</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;margin-bottom:10px">
+            <button class="option-btn" data-field="dolor" data-val="No" onclick="selectRevOpt('dolor','No',this);document.getElementById('dolorDetail').style.display='none'">No</button>
+            <button class="option-btn" data-field="dolor" data-val="Si" onclick="selectRevOpt('dolor','Si',this);document.getElementById('dolorDetail').style.display='block'">Sí</button>
+          </div>
+          <div id="dolorDetail" style="display:none">
+            <input class="glass-input" id="revDolorEj" placeholder="¿Cuál ejercicio? ¿En qué zona?">
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="guardarRevSemana(${mes},${semana})">
+          ✅ Guardar revisión semanal
+        </button>
+      </div>
+    `;
+    window._revSemanaResolve = resolve;
+    document.body.appendChild(overlay);
+    window._revSemanaOverlay = overlay;
+  });
+}
+
+window.selectRevVal = (field, val) => {
+  document.querySelectorAll(`[data-field="${field}"]`).forEach(d => {
+    const active = +d.dataset.val === val;
+    d.style.background = active ? 'var(--primary)' : 'rgba(255,255,255,0.05)';
+    d.style.color = active ? '#000' : 'var(--text)';
+    d.style.fontWeight = active ? '800' : '400';
+    d.style.border = active ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)';
+    d.style.transform = active ? 'scale(1.08)' : 'scale(1)';
+  });
+  const lbl = document.getElementById(`${field}Label`);
+  if(lbl) lbl.textContent = val + '/10';
+  window[`_rev_${field}`] = val;
+};
+
+window.selectRevOpt = (field, val, el) => {
+  el.closest('.rev-block').querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  window[`_rev_${field}`] = val;
+};
+
+window.guardarRevSemana = async (mes, semana) => {
+  const doms  = window._rev_doms;
+  const animo = window._rev_animo;
+  const sueno = window._rev_sueno;
+  const dolor = window._rev_dolor;
+  if(!doms || !animo || !sueno || !dolor) {
+    return Swal.fire({icon:'warning',title:'Completa todos los campos',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  }
+  const data = {
+    mes, semana,
+    doms,
+    musculoDoms: document.getElementById('revMuscDoms')?.value||'',
+    animo,
+    sueno,
+    dolor,
+    dolorDetalle: dolor==='Si' ? (document.getElementById('revDolorEj')?.value||'') : '',
+    fecha: Date.now()
+  };
+  await set(ref(db,`revisiones_semana/${currentUser.id}/m${mes}s${semana}`), data);
+  if(window._revSemanaOverlay) document.body.removeChild(window._revSemanaOverlay);
+  // reset temp vars
+  ['doms','animo','sueno','dolor'].forEach(k => delete window[`_rev_${k}`]);
+  Swal.fire({icon:'success',title:'✅ Revisión guardada',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  if(window._revSemanaResolve) window._revSemanaResolve();
+};
+
+// ============================================================
+// REVISION MENSUAL
+// ============================================================
+async function showRevisionMes(mes) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay-backdrop';
+    overlay.style.alignItems = 'flex-start';
+    overlay.style.paddingTop = '0';
+    overlay.innerHTML = `
+      <div class="overlay-sheet" style="border-radius:28px 28px 0 0;max-height:95vh;overflow-y:auto">
+        <div class="sheet-handle"></div>
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:2rem;margin-bottom:6px">🏆</div>
+          <div style="font-size:1.1rem;font-weight:800">Revisión Mensual — Mes ${mes}</div>
+          <div style="font-size:0.82rem;color:var(--text-muted)">¡Terminaste un mes! Cuéntanos cómo te fue</div>
+        </div>
+
+        <div class="rev-block">
+          <div class="rev-q">📈 ¿Sientes que mejoras en los entrenamientos?</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">Considera: ${currentUser.metodo}, kg, reps, recuperación...</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+            ${['Sí, claramente','Un poco','Regular','No lo siento'].map(s=>`
+              <button class="option-btn" data-field="mejora" onclick="selectRevOpt('mejora','${s}',this)">${s}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="rev-block">
+          <div class="rev-q">🎯 ¿Algún ejercicio donde sientas que no progresas?</div>
+          <input class="glass-input" id="revNoProgresa" placeholder="Ej: Sentadilla, Press banca... o 'Ninguno'">
+        </div>
+
+        <div class="rev-block">
+          <div class="rev-q">📅 De todos tus días de entrenamiento, ¿cuál te sientes con menos energía o mayor fatiga?</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">
+            ${[1,2,3,4,5].map(d=>`
+              <button class="option-btn" data-field="diaMasFatiga" onclick="selectRevOpt('diaMasFatiga','Día ${d}',this)" style="padding:10px 4px">Día ${d}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="rev-block">
+          <div class="rev-q">❓ ¿Por qué motivo te sientes así ese día?</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;margin-bottom:10px">
+            ${['Estrés laboral','Carga académica','Duermes menos','No me gusta esa sesión','Nutrición','Otro'].map(s=>`
+              <button class="option-btn" data-field="motivoFatiga" onclick="selectRevOpt('motivoFatiga','${s}',this)">${s}</button>
+            `).join('')}
+          </div>
+          <input class="glass-input" id="revMotivoDetalle" placeholder="Detalles adicionales (opcional)">
+        </div>
+
+        <div class="rev-block">
+          <div class="rev-q">🔄 ¿Algún ejercicio que quieras cambiar, quitar o agregar?</div>
+          <textarea class="glass-input" id="revCambioEj" rows="2" placeholder="Ej: Quitar curl de martillo, agregar face pull para hombro posterior..."></textarea>
+        </div>
+
+        <div class="rev-block">
+          <div class="rev-q">🛌 ¿Sientes que necesitas un día más de descanso?</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px">
+            <button class="option-btn" data-field="masDescanso" onclick="selectRevOpt('masDescanso','No',this)">No, estoy bien</button>
+            <button class="option-btn" data-field="masDescanso" onclick="selectRevOpt('masDescanso','Si',this)">Sí, lo necesito</button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="guardarRevMes(${mes})">
+          🏆 Guardar revisión mensual
+        </button>
+      </div>
+    `;
+    window._revMesResolve = resolve;
+    document.body.appendChild(overlay);
+    window._revMesOverlay = overlay;
+  });
+}
+
+window.guardarRevMes = async (mes) => {
+  const mejora      = window._rev_mejora;
+  const diaMasFatiga = window._rev_diaMasFatiga;
+  const motivoFatiga = window._rev_motivoFatiga;
+  const masDescanso  = window._rev_masDescanso;
+  if(!mejora || !diaMasFatiga || !motivoFatiga || !masDescanso) {
+    return Swal.fire({icon:'warning',title:'Completa todos los campos',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  }
+  const data = {
+    mes,
+    mejora,
+    noProgresa:    document.getElementById('revNoProgresa')?.value||'',
+    diaMasFatiga,
+    motivoFatiga,
+    motivoDetalle: document.getElementById('revMotivoDetalle')?.value||'',
+    cambioEjercicios: document.getElementById('revCambioEj')?.value||'',
+    masDescanso,
+    fecha: Date.now()
+  };
+  await set(ref(db,`revisiones_mes/${currentUser.id}/m${mes}`), data);
+  if(window._revMesOverlay) document.body.removeChild(window._revMesOverlay);
+  ['mejora','diaMasFatiga','motivoFatiga','masDescanso'].forEach(k => delete window[`_rev_${k}`]);
+  Swal.fire({icon:'success',title:'🏆 ¡Revisión mensual guardada!',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  if(window._revMesResolve) window._revMesResolve();
+};
+
+// ============ EFFORT MODAL ============
+async function showEffortModal() {
+  return new Promise(resolve => {
+    const isRPE = currentUser.metodo === 'RPE';
+    
+    let options;
+    if(isRPE) {
+      options = [
+        {v:1,e:'😴',l:'1 - Muy fácil'},{v:2,e:'😊',l:'2 - Fácil'},
+        {v:3,e:'🙂',l:'3 - Moderado'},{v:4,e:'😐',l:'4 - Algo difícil'},
+        {v:5,e:'😤',l:'5 - Difícil'},{v:6,e:'😰',l:'6 - Muy difícil'},
+        {v:7,e:'😓',l:'7 - Muy duro'},{v:8,e:'🥵',l:'8 - Extremo'},
+        {v:9,e:'😵',l:'9 - Casi máximo'},{v:10,e:'💀',l:'10 - Máximo'}
+      ];
+    } else {
+      options = [
+        {v:-1,e:'💀',l:'Fallo muscular'},{v:0,e:'😵',l:'0 - Max esfuerzo'},
+        {v:1,e:'🥵',l:'1 - Pude +1 rep'},{v:2,e:'😰',l:'2 - Pude +2 reps'},
+        {v:3,e:'😓',l:'3 - Pude +3 reps'},{v:4,e:'😤',l:'4 - Pude +4 reps'},
+        {v:5,e:'😐',l:'5 - Medio fácil'},{v:6,e:'🙂',l:'+6 - Fácil'}
+      ];
+    }
+    
+    let selected = null;
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay-backdrop';
+    overlay.innerHTML = `
+      <div class="overlay-sheet">
+        <div class="sheet-handle"></div>
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:4px;text-align:center">¿Cómo fue el esfuerzo?</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);text-align:center;margin-bottom:20px">Escala ${isRPE?'RPE (Percepción del esfuerzo)':'RIR (Repeticiones en reserva)'}</div>
+        <div class="effort-scale" id="effortGrid" style="grid-template-columns:repeat(${isRPE?5:4},1fr)">
+          ${options.map(o=>`
+            <div class="effort-option" data-val="${o.v}" onclick="selectEffort(${o.v})">
+              <span class="effort-emoji">${o.e}</span>
+              <span class="effort-label">${o.l}</span>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:16px" id="confirmEffort" onclick="confirmEffortFn()" disabled>Confirmar</button>
+      </div>
+    `;
+    
+    window._effortResolve = resolve;
+    window.selectEffort = (val) => {
+      selected = val;
+      document.querySelectorAll('.effort-option').forEach(o=>o.classList.toggle('selected',+o.dataset.val===val));
+      const btn = document.getElementById('confirmEffort');
+      if(btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    };
+    window.confirmEffortFn = () => {
+      if(selected!==null) { document.body.removeChild(overlay); resolve(selected); }
+    };
+    // Append FIRST, then style
+    document.body.appendChild(overlay);
+    const confirmBtn = document.getElementById('confirmEffort');
+    if(confirmBtn) confirmBtn.style.opacity='0.5';
+  });
+}
+
+async function showFatigueModal(title, mode) {
+  return new Promise(resolve => {
+    // mode 'pre':  1=muerto/sin energía → 10=súper descansado
+    // mode 'post': 1=nada cansado      → 10=totalmente agotado
+    const colorsPre  = ['#b91c1c','#dc2626','#ef4444','#f97316','#ff6b35','#ffd60a','#a3e635','#4ade80','#00e5a0','#00c8ff'];
+    const emojisPre  = ['💀','😵','🥵','😓','😰','😔','😑','😐','🙂','🔥'];
+    const labelsPre  = ['1 - Sin energía','2 - Agotado','3 - Muy cansado','4 - Bastante cansado','5 - Cansado','6 - Regular','7 - Bien','8 - Muy bien','9 - Excelente','10 - Súper descansado'];
+    const leftPre    = '💀 Sin energía';
+    const rightPre   = 'Súper descansado 🔥';
+
+    const colorsPost = ['#00c8ff','#00e5a0','#4ade80','#a3e635','#ffd60a','#ff6b35','#f97316','#ef4444','#dc2626','#b91c1c'];
+    const emojisPost = ['😊','🙂','😐','😑','😔','😰','😓','🥵','😵','💀'];
+    const labelsPost = ['1 - Nada cansado','2 - Muy poco cansado','3 - Poco cansado','4 - Algo cansado','5 - Moderadamente cansado','6 - Bastante cansado','7 - Muy cansado','8 - Agotado','9 - Muy agotado','10 - Totalmente destruido'];
+    const leftPost   = '😊 Nada cansado';
+    const rightPost  = 'Totalmente agotado 💀';
+
+    const colors = mode === 'pre' ? colorsPre : colorsPost;
+    const emojis = mode === 'pre' ? emojisPre : emojisPost;
+    const labels = mode === 'pre' ? labelsPre : labelsPost;
+    const leftLabel  = mode === 'pre' ? leftPre  : leftPost;
+    const rightLabel = mode === 'pre' ? rightPre : rightPost;
+
+    let selected = null;
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay-backdrop';
+
+    const dotsHtml = Array.from({length:10}, (_,i) => {
+      return '<div class="fatigue-dot" data-val="' + (i+1) + '" style="color:' + colors[i] + ';font-size:1.3rem" onclick="selectFatigue(' + (i+1) + ')" title="' + labels[i] + '">' + emojis[i] + '</div>';
+    }).join('');
+
+    overlay.innerHTML =
+      '<div class="overlay-sheet">' +
+        '<div class="sheet-handle"></div>' +
+        '<div style="font-weight:700;font-size:1rem;margin-bottom:4px;text-align:center">' + title + '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin:12px 0 6px">' +
+          '<span>' + leftLabel + '</span><span>' + rightLabel + '</span>' +
+        '</div>' +
+        '<div class="fatigue-scale" id="fatigueScale">' + dotsHtml + '</div>' +
+        '<div style="text-align:center;margin:10px 0;font-size:0.85rem;font-weight:600" id="fatigueLabel">Selecciona una opción</div>' +
+        '<button class="btn btn-primary btn-full" style="margin-top:12px;opacity:0.5" id="confirmFatigue" onclick="confirmFatigueFn()" disabled>Confirmar</button>' +
+      '</div>';
+
+    window.selectFatigue = (val) => {
+      selected = val;
+      document.querySelectorAll('.fatigue-dot').forEach((d,i) => {
+        const isSelected = (i+1) === val;
+        d.style.background = isSelected ? colors[i] : 'rgba(255,255,255,0.04)';
+        d.style.border = isSelected ? '2px solid ' + colors[i] : '1px solid rgba(255,255,255,0.08)';
+        d.style.transform = isSelected ? 'scaleY(1.2)' : 'scaleY(1)';
+        d.style.boxShadow = isSelected ? '0 0 14px ' + colors[i] + '88' : 'none';
+      });
+      const lbl = document.getElementById('fatigueLabel');
+      lbl.textContent = labels[val-1];
+      lbl.style.color = colors[val-1];
+      document.getElementById('confirmFatigue').disabled = false;
+      document.getElementById('confirmFatigue').style.opacity = '1';
+    };
+    window.confirmFatigueFn = () => {
+      if(selected !== null) { document.body.removeChild(overlay); resolve(selected); }
+    };
+    document.body.appendChild(overlay);
+  });
+}
+
+window.avanzarDia = async () => {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const currentAbs = msdToAbs(mesActual, semanaActual, diaActual);
+
+  // Check if current day has exercises and is not completed
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const hasEj = Object.keys(diaData?.ejercicios||{}).length > 0;
+  const done  = sesionCompletada(state.historial, mesActual, semanaActual, diaActual);
+
+  if(hasEj && !done) {
+    const res = await Swal.fire({
+      icon:'warning', title:'Día pendiente',
+      html:`<div style="color:#e8f4ff">El día actual tiene ejercicios sin completar.<br><br>¿Saltar al siguiente día de todas formas?</div>`,
+      showCancelButton:true, confirmButtonText:'Sí, saltar',
+      cancelButtonText:'Quedarse aquí',
+      confirmButtonColor:'#ff6b35', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+    });
+    if(!res.isConfirmed) return;
+  }
+
+  const maxMes = Math.max(...Object.keys(state.rutinaData?.meses||{1:{}}).map(Number));
+  const maxAbs = maxMes * 20 - 1;
+  const nextAbs = Math.min(currentAbs + 1, maxAbs);
+  const { mes, semana, dia } = absToMSD(nextAbs);
+  const newProgreso = { rutinaActiva:state.rutinaId, mesActual:mes, semanaActual:semana, diaActual:dia };
+  state.progreso = newProgreso;
+  await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
+  renderTab('entrenar');
+};
+
+window.resetProgreso = async () => {
+  const res = await Swal.fire({
+    icon:'warning', title:'¿Reiniciar progreso?',
+    text:'Volverás al Mes 1, Semana 1, Día 1. El historial de sesiones se conserva.',
+    showCancelButton:true, confirmButtonText:'Sí, reiniciar', cancelButtonText:'Cancelar',
+    confirmButtonColor:'#ff4d6d', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+  });
+  if(!res.isConfirmed) return;
+  const newProgreso = { rutinaActiva:state.rutinaId, mesActual:1, semanaActual:1, diaActual:1 };
+  state.progreso = newProgreso;
+  await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
+  Swal.fire({icon:'success',title:'Progreso reiniciado',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  renderTab('entrenar');
+};
+
+// ============ PROGRESO ============
+async function renderProgreso() {
+  const p = document.getElementById('mainPage');
+  p.innerHTML = '<div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
+  
+  const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
+  const hist = histSnap.val()||{};
+  const sesiones = Object.values(hist).sort((a,b)=>a.fecha-b.fecha);
+  
+  if(sesiones.length===0) {
+    p.innerHTML = `
+      <div class="glass-card" style="text-align:center;padding:40px 20px">
+        <div style="font-size:3rem;margin-bottom:16px">📈</div>
+        <h2 style="margin-bottom:10px">Sin historial aún</h2>
+        <p style="color:var(--text-muted)">Completa tu primera sesión para ver tu progreso aquí</p>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="switchTab('entrenar')">💪 Ir a entrenar</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Build chart data
+  const weekMap = {};
+  sesiones.forEach(s => {
+    const wk = `M${s.mes}S${s.semana}`;
+    if(!weekMap[wk]) weekMap[wk] = {cansancioFin:[],series:0,sesiones:0};
+    weekMap[wk].cansancioFin.push(s.nivelCansancioFin||0);
+    weekMap[wk].sesiones++;
+    Object.values(s.ejerciciosCompletados||{}).forEach(ec=>{
+      weekMap[wk].series += (ec.series||[]).length;
+    });
+  });
+  const wkLabels = Object.keys(weekMap);
+  const avgCansancio = wkLabels.map(w=>weekMap[w].cansancioFin.reduce((a,b)=>a+b,0)/weekMap[w].cansancioFin.length);
+  const totalSeries = wkLabels.map(w=>weekMap[w].series);
+
+  const chartOpts = {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#e8f4ff',font:{family:'Exo 2',size:11}}}},
+    scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.6)'}},
+            y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.6)'}}}
+  };
+
+  p.innerHTML = `
+    <div class="glass-card">
+      <div class="card-title">🏆 Tu resumen</div>
+      <div class="mini-stats">
+        <div class="mini-stat"><div class="val">${sesiones.length}</div><div class="lbl">Sesiones</div></div>
+        <div class="mini-stat"><div class="val">${Object.values(weekMap).reduce((a,w)=>a+w.series,0)}</div><div class="lbl">Series</div></div>
+        <div class="mini-stat"><div class="val">M${state.progreso?.mesActual||1}S${state.progreso?.semanaActual||1}</div><div class="lbl">Posición</div></div>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">😴 Cansancio al finalizar sesión</div>
+      <div style="height:200px"><canvas id="chartCansancio"></canvas></div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">📦 Volumen semanal (series)</div>
+      <div style="height:200px"><canvas id="chartVolumen"></canvas></div>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title">📅 Historial de sesiones</div>
+      ${sesiones.slice(-10).reverse().map(s=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+          <div>
+            <div style="font-weight:600;font-size:0.88rem">Mes ${s.mes} · Sem ${s.semana} · Día ${s.dia}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">${new Date(s.fecha).toLocaleDateString()}</div>
+          </div>
+          <div style="text-align:right;font-size:0.82rem">
+            <div style="color:var(--primary)">${Object.values(s.ejerciciosCompletados||{}).length} ej.</div>
+            <div style="color:var(--text-muted)">😓 ${s.nivelCansancioFin||'—'}/10</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  setTimeout(()=>{
+    if(wkLabels.length>0) {
+      new Chart(document.getElementById('chartCansancio'),{type:'line',data:{labels:wkLabels,datasets:[{label:'Cansancio promedio',data:avgCansancio,borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0.1)',tension:0.4,fill:true}]},options:chartOpts});
+      new Chart(document.getElementById('chartVolumen'),{type:'bar',data:{labels:wkLabels,datasets:[{label:'Series totales',data:totalSeries,backgroundColor:'rgba(0,200,255,0.3)',borderColor:'var(--primary)',borderWidth:2,borderRadius:6}]},options:chartOpts});
+    }
+  },100);
+}
+
+// ============ PERFIL ============
+async function renderPerfil() {
+  const anaSnap = await get(ref(db,`anamnesis/${currentUser.id}`));
+  const ana = anaSnap.val()||{};
+  const r = ana.respuestas||{};
+  
+  const QLABELS = ['Edad','Peso','Talla','Objetivo','Lesiones/condiciones','Nivel actividad','Días entrenamiento','Experiencia','Deporte adicional','Horario','Suplementos','Horas sueño','Restricciones alimentarias','Nivel estrés','Meta 3 meses'];
+
+  document.getElementById('mainPage').innerHTML = `
+    <div class="glass-card">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+        <img src="${currentUser.avatar||`https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`}" 
+          style="width:70px;height:70px;border-radius:50%;border:3px solid var(--primary);box-shadow:0 0 20px rgba(0,200,255,0.3)">
+        <div>
+          <div style="font-size:1.2rem;font-weight:800">${currentUser.nombres} ${currentUser.apellidos||''}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">@${currentUser.usuario}</div>
+          <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--primary)">${currentUser.metodo}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;font-size:0.82rem">
+        <div style="flex:1;background:rgba(0,229,160,0.08);border-radius:10px;padding:10px;border:1px solid rgba(0,229,160,0.15)">
+          <div style="color:var(--success)">✅ Válido hasta</div>
+          <div style="font-weight:700">${currentUser.validoHasta||'—'}</div>
+        </div>
+        <div style="flex:1;background:rgba(0,200,255,0.08);border-radius:10px;padding:10px;border:1px solid rgba(0,200,255,0.15)">
+          <div style="color:var(--primary)">📊 Método</div>
+          <div style="font-weight:700">${currentUser.metodo}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="glass-card">
+      <div class="card-title">📋 Mi Anamnesis</div>
+      ${ana.completada?`
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+          ${QLABELS.map((lbl,i)=>`
+            <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:10px;border:1px solid var(--glass-border)">
+              <div style="font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">${lbl}</div>
+              <div style="font-size:0.88rem;font-weight:600">${r[`p${i}`]||'—'}</div>
+            </div>
+          `).join('')}
+        </div>
+      `:`<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin anamnesis completada</div>`}
+    </div>
+    <div style="text-align:center;padding:10px">
+      <button class="btn btn-danger btn-sm" onclick="logout()">🚪 Cerrar Sesión</button>
+    </div>
+  `;
+}
+
+// Init
+init();
+</script>
+</body>
+</html>
