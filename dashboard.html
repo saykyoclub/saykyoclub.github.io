@@ -1471,6 +1471,7 @@ async function renderRutinaDetail(rutinaId) {
               <div><div style="font-size:0.7rem;color:var(--text-muted)">Tiempo</div><strong>${ej.tiempo}s</strong></div>
               <div><div style="font-size:0.7rem;color:var(--text-muted)">Descanso</div><strong>${ej.descanso}s</strong></div>
             </div>
+            ${ej.metodo?`<div style="margin-top:8px;display:flex;align-items:center;gap:6px"><span style="font-size:0.68rem;background:rgba(123,47,255,0.2);color:#a78bfa;border:1px solid rgba(123,47,255,0.4);border-radius:20px;padding:2px 10px;font-weight:700;letter-spacing:0.5px">⚡ ${ej.metodo}</span></div>`:''}
             ${ej.anotaciones?`<div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted);font-style:italic">📝 ${ej.anotaciones}</div>`:''}
           </div>
         `).join('')||'<div class="empty-state" style="padding:20px"><div class="empty-icon">💪</div><div class="empty-text">Sin ejercicios. Agrega el primero.</div></div>'}
@@ -1510,6 +1511,11 @@ window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
       <div class="form-group"><label>RIR / RPE</label><input class="glass-input" type="number" id="ejRirRpe" value="2" min="-1" max="10"></div>
       <div class="form-group"><label>Tiempo (seg)</label><input class="glass-input" type="number" id="ejTiempo" value="45" min="0"></div>
       <div class="form-group"><label>Descanso (seg)</label><input class="glass-input" type="number" id="ejDescanso" value="90" min="0"></div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Método de entrenamiento</label>
+        <input class="glass-input" id="ejMetodo" placeholder="Ej: Rest Pause, Drop Set, Cluster, Superset...">
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">Técnica especial o método de intensificación para este ejercicio</div>
+      </div>
       <div class="form-group" style="grid-column:1/-1"><label>Anotaciones</label><textarea class="glass-input" id="ejAnotaciones" placeholder="Instrucciones especiales..."></textarea></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end">
@@ -1535,6 +1541,7 @@ window.saveEjDia = async (rutinaId, mes, semana, dia) => {
     rirRpe: +document.getElementById('ejRirRpe').value,
     tiempo: +document.getElementById('ejTiempo').value,
     descanso: +document.getElementById('ejDescanso').value,
+    metodo: document.getElementById('ejMetodo').value.trim(),
     anotaciones: document.getElementById('ejAnotaciones').value.trim()
   });
   closeOverlay();
@@ -1693,11 +1700,12 @@ async function renderAtletas(container, action) {
             <td style="padding:5px 8px;text-align:center">${s.reps??'—'}</td>
             <td style="padding:5px 8px;text-align:center">${s.peso?s.peso+' kg':'—'}</td>
             ${rpeCell}
+            <td style="padding:5px 8px;font-size:0.72rem;color:var(--text-muted);font-style:italic">${s.comentario||''}</td>
           </tr>`;
         }).join('');
         const metodoH = esBiext ? 'Izq/Der' : (user.metodo||'RPE');
         return `<div style="margin-bottom:14px">
-          <div style="font-weight:700;font-size:0.9rem;margin-bottom:6px;color:#e8f4ff">${ejInfo.nombre||ec.ejercicioId}</div>
+          <div style="font-weight:700;font-size:0.9rem;margin-bottom:6px;color:#e8f4ff">${ejInfo.nombre||ec.ejercicioId}${ec.metodo?`<span style="margin-left:8px;font-size:0.68rem;background:rgba(123,47,255,0.2);color:#c084fc;border:1px solid rgba(123,47,255,0.4);border-radius:20px;padding:2px 8px;font-weight:700">⚡ ${ec.metodo}</span>`:''}</div>
           <div style="overflow-x:auto">
             <table style="width:100%;border-collapse:collapse;font-size:0.83rem">
               <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
@@ -1705,6 +1713,7 @@ async function renderAtletas(container, action) {
                 <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">REPS</th>
                 <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">PESO</th>
                 <th style="padding:4px 8px;color:#a78bfa;font-weight:600;font-size:0.7rem">${metodoH}</th>
+                <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">NOTA</th>
               </tr></thead>
               <tbody style="color:#e8f4ff">${serieRows}</tbody>
             </table>
@@ -1809,12 +1818,15 @@ window._registrarComoAdmin = async (targetUid) => {
   if(!diasDisponibles.length) return Swal.fire({icon:'info',title:'Sin días configurados',text:'La rutina no tiene días con ejercicios.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
 
   // Mostrar selector de día antes de abrir el formulario
-  _mostrarSelectorDia(targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles);
+  _mostrarSelectorDia(targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles, hist);
 };
 
 // ── Selector de día ──
-window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles) => {
+window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles, hist) => {
   const { mesActual, semanaActual, diaActual } = progreso;
+
+  // Guardar contexto ANTES de mostrar el overlay, para que _iniciarAdminSesionDia lo encuentre
+  window._adminSesionCtx = { targetUid, rutinaId, rutina, ejs, user, progreso, hist };
 
   const filas = [...diasDisponibles].reverse().map(({m,s,d,ejsCount,hecho,esSiguiente}) => {
     let badge = '';
@@ -1853,13 +1865,12 @@ window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, user, progreso, 
     </div>
   `);
 
-  // Guardar contexto para cuando se elija el día
-  window._adminSesionCtx = { targetUid, rutinaId, rutina, ejs, user, progreso };
+  // (contexto ya guardado al inicio de esta función)
 };
 
 window._iniciarAdminSesionDia = (targetUid, rutinaId, m, s, d) => {
   closeOverlay();
-  const { rutina, ejs, user, progreso } = window._adminSesionCtx;
+  const { rutina, ejs, user, progreso, hist } = window._adminSesionCtx;
   const diaData = rutina.meses?.[m]?.semanas?.[s]?.dias?.[d];
   const ejsDia  = Object.values(diaData?.ejercicios||{});
 
@@ -1868,15 +1879,15 @@ window._iniciarAdminSesionDia = (targetUid, rutinaId, m, s, d) => {
   window._adminSesion = {
     targetUid, rutinaId,
     mesActual: m, semanaActual: s, diaActual: d,
-    ejsDia, ejs, user, rutina, progreso,
+    ejsDia, ejs, user, rutina, progreso, hist,
     ejercicioActual: 0, ejerciciosCompletados: {}, fechaInicio: Date.now()
   };
   _renderAdminEjercicio();
 };
 
-function _renderAdminEjercicio() {
+window._renderAdminEjercicio = function _renderAdminEjercicio() {
   const s = window._adminSesion;
-  const { ejsDia, ejs, user, ejercicioActual, mesActual, semanaActual, diaActual } = s;
+  const { ejsDia, ejs, user, ejercicioActual, mesActual, semanaActual, diaActual, hist } = s;
   if(ejercicioActual >= ejsDia.length) { _finalizarAdminSesion(); return; }
 
   const ejConfig = ejsDia[ejercicioActual];
@@ -1888,6 +1899,65 @@ function _renderAdminEjercicio() {
   const metodoLabel = metodo==='RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
   const metodoMin   = metodo==='RPE' ? 1 : -1;
   const metodoMax   = metodo==='RPE' ? 10 : 6;
+
+  // ── Estilos compartidos para tablas ──
+  const thSt = 'padding:4px 6px;font-size:0.65rem;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:0.5px;color:rgba(167,139,250,0.6);';
+  const tdSt = 'padding:5px 6px;font-size:0.82rem;font-weight:700;color:#e8f4ff;';
+
+  // ── Banner "última vez" ──
+  let ultimoBanner = '';
+  if(hist) {
+    const sesiones = Object.values(hist).sort((a,b) => (b.fechaFin||b.fechaInicio||b.fecha||0) - (a.fechaFin||a.fechaInicio||a.fecha||0));
+    const ultimoReg = sesiones.reduce((found, ses) => {
+      if(found) return found;
+      const completados = Object.values(ses.ejerciciosCompletados||{});
+      const match = completados.find(ec => ec.ejercicioId === ejConfig.ejercicioId);
+      const sesDate = ses.fechaFin||ses.fechaInicio||ses.fecha||0;
+      return match ? { series: match.series||[], fecha: sesDate, mes: ses.mes, semana: ses.semana, dia: ses.dia } : null;
+    }, null);
+
+    if(ultimoReg) {
+      const { series, fecha, mes, semana, dia } = ultimoReg;
+      const esBiextUlt = series.some(s => s.rirRpeIzq != null);
+      const fechaStr   = new Date(fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
+      const thRpe = esBiextUlt
+        ? `<th style="${thSt}color:#00e5a0">Izq</th><th style="${thSt}color:#ff6b35">Der</th>`
+        : `<th style="${thSt}color:#a78bfa">${metodo}</th>`;
+
+      const filas = series.map((s,i) => {
+        const rpeCell = esBiextUlt
+          ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
+          : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
+        return `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+            <td style="${tdSt};color:#a78bfa">${i+1}</td>
+            <td style="${tdSt}">${s.reps??'—'}</td>
+            <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
+            ${rpeCell}
+            <td style="padding:5px 6px;font-size:0.7rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
+          </tr>`;
+      }).join('');
+
+      ultimoBanner = `
+        <div style="background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px">
+          <div style="font-size:0.65rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <span>📖</span> Última vez — M${mes}·S${semana}·D${dia} · ${fechaStr}
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="border-bottom:1px solid rgba(123,47,255,0.3)">
+                <th style="${thSt}">#</th>
+                <th style="${thSt}">Reps</th>
+                <th style="${thSt}">Peso</th>
+                ${thRpe}
+                <th style="${thSt}">Nota</th>
+              </tr></thead>
+              <tbody>${filas}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+  }
 
   const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
     <div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">
@@ -1920,6 +1990,12 @@ function _renderAdminEjercicio() {
             style="background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
         </div>`}
       </div>
+      <div style="width:100%;padding-left:32px;margin-top:4px">
+        <input type="text" id="adm_comentario_${i}" placeholder="Comentario serie ${i+1} (opcional)..."
+          style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:6px 10px;color:rgba(232,244,255,0.5);font-family:'Exo 2',sans-serif;font-size:0.78rem;outline:none;transition:all 0.2s"
+          onfocus="this.style.borderColor='rgba(123,47,255,0.4)';this.style.color='#e8f4ff';this.style.background='rgba(123,47,255,0.05)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(232,244,255,0.5)';this.style.background='rgba(255,255,255,0.03)'">
+      </div>
     </div>
   `).join('');
 
@@ -1941,12 +2017,8 @@ function _renderAdminEjercicio() {
     <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">
       ${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ${metodo} ${ejConfig.rirRpe} · ⏱ ${ejConfig.descanso}s
     </div>
+    ${ultimoBanner}
     <div>${seriesRows}</div>
-    <div style="margin-top:4px">
-      <label style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;margin-top:14px">Nivel de fatiga al terminar este ejercicio (0-10)</label>
-      <input type="number" id="adm_fatiga" value="5" min="0" max="10"
-        style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-    </div>
     <div style="display:flex;gap:10px;margin-top:18px">
       ${ejercicioActual>0?`<button class="btn btn-secondary" onclick="window._adminSesion.ejercicioActual--;_renderAdminEjercicio()">← Anterior</button>`:''}
       <button class="btn btn-primary" style="flex:1" onclick="_completarAdminEj()">
@@ -1966,7 +2038,8 @@ window._completarAdminEj = () => {
     const base = {
       reps: +document.getElementById(`adm_reps_${i}`)?.value||0,
       peso: +document.getElementById(`adm_peso_${i}`)?.value||0,
-      completada: true
+      completada: true,
+      comentario: document.getElementById(`adm_comentario_${i}`)?.value?.trim()||''
     };
     if(esBiext) {
       base.rirRpeIzq = +document.getElementById(`adm_rpe_izq_${i}`)?.value||0;
@@ -1978,22 +2051,65 @@ window._completarAdminEj = () => {
     return base;
   });
   s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series };
-  s.nivelCansancioFin = +document.getElementById('adm_fatiga')?.value||5;
   s.ejercicioActual++;
   _renderAdminEjercicio();
 };
 
 async function _finalizarAdminSesion() {
   const s = window._adminSesion;
+
+  // Pedir nivel de cansancio UNA sola vez al finalizar la sesión
+  const nivelCansancio = await new Promise(resolve => {
+    const colorsPost = ['#00c8ff','#00e5a0','#4ade80','#a3e635','#ffd60a','#ff6b35','#f97316','#ef4444','#dc2626','#b91c1c'];
+    const emojisPost = ['😊','🙂','😐','😑','😔','😰','😓','🥵','😵','💀'];
+    const labelsPost = ['1 - Nada cansado','2 - Muy poco cansado','3 - Poco cansado','4 - Algo cansado','5 - Moderadamente cansado','6 - Bastante cansado','7 - Muy cansado','8 - Agotado','9 - Muy agotado','10 - Totalmente destruido'];
+    let selected = null;
+
+    const dotsHtml = emojisPost.map((e,i) =>
+      `<div class="fatigue-dot-adm" data-val="${i+1}" style="flex:1;height:50px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.3rem;transition:all 0.15s ease;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)" onclick="admFatigaSelect(${i+1})">${e}</div>`
+    ).join('');
+
+    showOverlay(`
+      <div class="overlay-header">
+        <span class="overlay-title">😓 Cansancio al finalizar — ${s.user.nombres}</span>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;text-align:center">¿Qué tan cansado quedó el atleta al terminar la sesión?</div>
+      <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin-bottom:8px">
+        <span>😊 Nada cansado</span><span>Totalmente agotado 💀</span>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:10px" id="adm_fatigue_final">${dotsHtml}</div>
+      <div style="text-align:center;font-size:0.85rem;font-weight:600;color:var(--text-muted);margin-bottom:18px" id="adm_fatigue_final_label">Selecciona una opción</div>
+      <button class="btn btn-success btn-full" id="adm_fatigue_confirm" onclick="admFatigaConfirm()" disabled style="opacity:0.5">✅ Guardar sesión</button>
+    `);
+
+    window.admFatigaSelect = (val) => {
+      selected = val;
+      document.querySelectorAll('.fatigue-dot-adm').forEach((d,i) => {
+        const isSelected = (i+1) === val;
+        d.style.background  = isSelected ? colorsPost[i] : 'rgba(255,255,255,0.04)';
+        d.style.border      = isSelected ? `2px solid ${colorsPost[i]}` : '1px solid rgba(255,255,255,0.08)';
+        d.style.transform   = isSelected ? 'scaleY(1.15)' : 'scaleY(1)';
+        d.style.boxShadow   = isSelected ? `0 0 12px ${colorsPost[i]}88` : 'none';
+      });
+      const lbl = document.getElementById('adm_fatigue_final_label');
+      if(lbl) { lbl.textContent = labelsPost[val-1]; lbl.style.color = colorsPost[val-1]; }
+      const btn = document.getElementById('adm_fatigue_confirm');
+      if(btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    };
+    window.admFatigaConfirm = () => {
+      if(selected !== null) { closeOverlay(); resolve(selected); }
+    };
+  });
+
   closeOverlay();
-  const { targetUid, rutinaId, mesActual, semanaActual, diaActual, ejerciciosCompletados, fechaInicio, nivelCansancioFin } = s;
+  const { targetUid, rutinaId, mesActual, semanaActual, diaActual, ejerciciosCompletados, fechaInicio } = s;
   const now = Date.now();
   const sesId = `ses_${now}`;
   const sesData = {
     mes: mesActual, semana: semanaActual, dia: diaActual,
     rutinaActiva: rutinaId,
     fechaInicio, fechaFin: now, fecha: now,
-    nivelCansancioInicio: 0, nivelCansancioFin: nivelCansancioFin||5,
+    nivelCansancioInicio: 0, nivelCansancioFin: nivelCansancio,
     ejerciciosCompletados,
     registradoPorAdmin: true
   };
@@ -2266,6 +2382,8 @@ window.verAnamnesis = async (uid) => {
 
 // ============ OVERLAY ============
 window.showOverlay = (html) => {
+  // Eliminar TODOS los overlays existentes antes de crear uno nuevo
+  document.querySelectorAll('#overlayBackdrop').forEach(el => el.remove());
   const backdrop = document.createElement('div');
   backdrop.className = 'overlay-backdrop'; backdrop.id = 'overlayBackdrop';
   backdrop.innerHTML = `<div class="overlay-panel">${html}</div>`;
@@ -2273,8 +2391,8 @@ window.showOverlay = (html) => {
   document.body.appendChild(backdrop);
 };
 window.closeOverlay = () => {
-  const el = document.getElementById('overlayBackdrop');
-  if(el) el.remove();
+  // Eliminar TODOS los overlays (por si se apilaron)
+  document.querySelectorAll('#overlayBackdrop').forEach(el => el.remove());
 };
 
 // ============ REVISIONES ============
@@ -2360,6 +2478,24 @@ window.switchRevTab = (uid, tab) => {
   document.getElementById(`tab_mes_${uid}`).classList.toggle('active', tab==='mes');
   document.getElementById(`rev_sem_${uid}`).style.display = tab==='sem' ? '' : 'none';
   document.getElementById(`rev_mes_${uid}`).style.display = tab==='mes' ? '' : 'none';
+};
+
+// ── Selector visual de fatiga (admin) ──
+window.admSelectFatiga = (val) => {
+  const colors = ['#00c8ff','#00e5a0','#4ade80','#a3e635','#ffd60a','#ff6b35','#f97316','#ef4444','#dc2626','#b91c1c'];
+  const labels = ['1 - Nada cansado','2 - Muy poco cansado','3 - Poco cansado','4 - Algo cansado','5 - Moderadamente cansado','6 - Bastante cansado','7 - Muy cansado','8 - Agotado','9 - Muy agotado','10 - Totalmente destruido'];
+  document.querySelectorAll('#adm_fatigue_scale [data-fval]').forEach(d => {
+    const isSelected = +d.dataset.fval === val;
+    const c = colors[+d.dataset.fval - 1];
+    d.style.background  = isSelected ? c : 'rgba(255,255,255,0.04)';
+    d.style.border      = isSelected ? `2px solid ${c}` : '1px solid rgba(255,255,255,0.08)';
+    d.style.transform   = isSelected ? 'scaleY(1.2)' : 'scaleY(1)';
+    d.style.boxShadow   = isSelected ? `0 0 12px ${c}88` : 'none';
+  });
+  const lbl = document.getElementById('adm_fatigue_label');
+  if(lbl) { lbl.textContent = labels[val-1]; lbl.style.color = colors[val-1]; }
+  const inp = document.getElementById('adm_fatiga');
+  if(inp) inp.value = val;
 };
 
 // Init
