@@ -297,9 +297,12 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// Check if already logged in
+// Bandera para evitar que onAuthStateChanged redirija mientras el formulario maneja el login
+let loginEnProgreso = false;
+
+// Check if already logged in (sesión previa)
 auth.onAuthStateChanged(async (user) => {
-  if (user) {
+  if (user && !loginEnProgreso) {
     const snapshot = await get(ref(db, 'usuarios/' + user.uid));
     if (snapshot.exists()) {
       const userData = snapshot.val();
@@ -328,6 +331,7 @@ for (let i = 0; i < 20; i++) {
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  loginEnProgreso = true;
 
   const email = document.getElementById('usuario').value.trim();
   const password = document.getElementById('contrasena').value;
@@ -363,7 +367,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     sessionStorage.setItem('saykyo_user', JSON.stringify({
       ...userData,
       uid: user.uid,
-      id: user.uid   // ← garantiza compatibilidad con entrenamiento.html
+      id: user.uid
     }));
 
     await Swal.fire({
@@ -385,7 +389,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     }
 
   } catch (err) {
-
+    loginEnProgreso = false;
     document.getElementById('btnText').style.display = '';
     document.getElementById('btnLoading').style.display = 'none';
 
