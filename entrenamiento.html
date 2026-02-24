@@ -804,7 +804,7 @@ async function renderEntrenar() {
             <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:var(--primary);flex-shrink:0">${i+1}</div>
             <div style="flex:1">
               <div style="font-weight:600;font-size:0.92rem">${ejInfo.nombre||'Ejercicio'}${ejInfo.biextremidad?'<span style="font-size:0.68rem;background:rgba(0,229,160,0.15);color:var(--success);border-radius:6px;padding:1px 6px;margin-left:6px">🦾 Biext</span>':''}</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">${ej.series} series · ${ej.repsMin}-${ej.repsMax} reps · ${ej.peso}kg · ${currentUser.metodo} ${ej.rirRpe}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${ej.series} series · ${ej.repsMin}-${ej.repsMax} reps · ${ej.peso}kg · ${currentUser.metodo} ${ej.rirRpe}${ej.metodo?` · <span style="color:#c084fc">⚡ ${ej.metodo}</span>`:''}</div>
             </div>
           </div>`;
       }).join('')}
@@ -907,6 +907,10 @@ window.iniciarSesion = async () => {
   
   if(ejsDia.length===0) return;
 
+  // Refrescar historial para que el banner "última vez" tenga datos actualizados
+  const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
+  state.historial = histSnap.val()||{};
+
   // Pre-session fatigue
   const nivel = await showFatigueModal('¿Cómo llegaste a la sesión de hoy?', 'pre');
   if(nivel===null) return;
@@ -930,11 +934,12 @@ function getUltimoRegistro(ejercicioId) {
   let lastFecha = 0;
 
   Object.values(historial).forEach(ses => {
-    if(ses.fecha > lastFecha) {
+    const sesDate = ses.fechaFin || ses.fechaInicio || ses.fecha || 0;
+    if(sesDate > lastFecha) {
       const match = Object.values(ses.ejerciciosCompletados || {}).find(ec => ec.ejercicioId === ejercicioId);
       if(match && match.series && match.series.length > 0) {
-        lastFecha = ses.fecha;
-        lastSesion = { series: match.series, fecha: ses.fecha, mes: ses.mes, semana: ses.semana, dia: ses.dia };
+        lastFecha = sesDate;
+        lastSesion = { series: match.series, fecha: sesDate, mes: ses.mes, semana: ses.semana, dia: ses.dia };
       }
     }
   });
@@ -962,32 +967,45 @@ function renderEjercicioActual() {
   let ultimoBanner = '';
   if(ultimoReg) {
     const { series, fecha, mes, semana, dia } = ultimoReg;
-    const pesosSeries  = series.map(s => s.peso).filter(p => p > 0);
-    const rpesSeries   = series.map(s => s.rirRpeIzq != null ? `Izq ${s.rirRpeIzq} / Der ${s.rirRpeDer}` : s.rirRpe);
-    const pesoMax      = pesosSeries.length ? Math.max(...pesosSeries) : null;
-    const pesoMin      = pesosSeries.length ? Math.min(...pesosSeries) : null;
-    const pesoLabel    = pesoMax != null ? (pesoMax === pesoMin ? `${pesoMax} kg` : `${pesoMin}–${pesoMax} kg`) : '—';
-    const rpeLabel     = rpesSeries.length ? rpesSeries.join(' · ') : '—';
-    const fechaStr     = new Date(fecha).toLocaleDateString('es-CO', {day:'2-digit', month:'short'});
+    const esBiextUlt = series.some(s => s.rirRpeIzq != null);
+    const fechaStr   = new Date(fecha).toLocaleDateString('es-CO', {day:'2-digit', month:'short'});
+    const thSt = 'padding:4px 6px;font-size:0.68rem;color:rgba(167,139,250,0.6);font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:0.5px;';
+    const tdSt = 'padding:5px 6px;font-size:0.84rem;font-weight:700;color:#e8f4ff;';
+
+    const thRpe = esBiextUlt
+      ? `<th style="${thSt}color:#00e5a0">Izq</th><th style="${thSt}color:#ff6b35">Der</th>`
+      : `<th style="${thSt}color:#a78bfa">${currentUser.metodo}</th>`;
+
+    const filas = series.map((s, i) => {
+      const rpeCell = esBiextUlt
+        ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
+        : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
+      return `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+          <td style="${tdSt};color:#a78bfa;font-weight:700">${i+1}</td>
+          <td style="${tdSt}">${s.reps??'—'}</td>
+          <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
+          ${rpeCell}
+          <td style="padding:5px 6px;font-size:0.72rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
+        </tr>`;
+    }).join('');
+
     ultimoBanner = `
-      <div style="background:rgba(123,47,255,0.1);border:1px solid rgba(123,47,255,0.35);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <div style="font-size:1.5rem">📖</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:0.72rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Última vez — M${mes}·S${semana}·D${dia} · ${fechaStr}</div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap">
-            <div>
-              <span style="font-size:0.72rem;color:var(--text-muted)">⚖️ Peso</span>
-              <span style="font-size:1rem;font-weight:800;color:#e8f4ff;margin-left:6px">${pesoLabel}</span>
-            </div>
-            <div>
-              <span style="font-size:0.72rem;color:var(--text-muted)">${currentUser.metodo}</span>
-              <span style="font-size:1rem;font-weight:800;color:#a78bfa;margin-left:6px">${rpeLabel}</span>
-            </div>
-            <div>
-              <span style="font-size:0.72rem;color:var(--text-muted)">🔢 Reps</span>
-              <span style="font-size:1rem;font-weight:800;color:#e8f4ff;margin-left:6px">${series.map(s=>s.reps).join('·')}</span>
-            </div>
-          </div>
+      <div style="background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.3);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:0.68rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <span>📖</span> Última vez — M${mes}·S${semana}·D${dia} · ${fechaStr}
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;min-width:200px">
+            <thead><tr style="border-bottom:1px solid rgba(123,47,255,0.3)">
+              <th style="${thSt}">#</th>
+              <th style="${thSt}">Reps</th>
+              <th style="${thSt}">Peso</th>
+              ${thRpe}
+              <th style="${thSt}">Nota</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
         </div>
       </div>`;
   }
@@ -1029,6 +1047,12 @@ function renderEjercicioActual() {
         `}
       </div>
       <button class="serie-done" id="done_${i}" onclick="toggleSerie(${i})">✓</button>
+      <div style="width:100%;padding-left:38px">
+        <input type="text" id="comentario_${i}" placeholder="Comentario opcional (sensación, forma, ajuste...)"
+          style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 10px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.78rem;outline:none;transition:all 0.2s ease"
+          onfocus="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='var(--text)';this.style.background='rgba(0,200,255,0.04)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--text-muted)';this.style.background='rgba(255,255,255,0.04)'">
+      </div>
     </div>
   `).join('');
 
@@ -1054,6 +1078,7 @@ function renderEjercicioActual() {
           <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
           <span class="meta-pill">${currentUser.metodo} ${ejConfig.rirRpe}</span>
           <span class="meta-pill">⏱️ ${ejConfig.descanso}s descanso</span>
+          ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
         </div>
         ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
         ${ejInfo.descripcion?`<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">${ejInfo.descripcion}</div>`:''}
@@ -1090,7 +1115,8 @@ window.completarEjercicio = async () => {
     const base = {
       reps: +document.getElementById(`reps_${i}`)?.value||0,
       peso: +document.getElementById(`peso_${i}`)?.value||0,
-      completada: document.getElementById(`done_${i}`)?.classList.contains('checked')
+      completada: document.getElementById(`done_${i}`)?.classList.contains('checked'),
+      comentario: document.getElementById(`comentario_${i}`)?.value?.trim()||''
     };
     if(esBiext2) {
       base.rirRpeIzq = +document.getElementById(`rpe_izq_${i}`)?.value||0;
