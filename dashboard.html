@@ -2088,7 +2088,7 @@ async function _finalizarAdminSesion() {
         const isSelected = (i+1) === val;
         d.style.background  = isSelected ? colorsPost[i] : 'rgba(255,255,255,0.04)';
         d.style.border      = isSelected ? `2px solid ${colorsPost[i]}` : '1px solid rgba(255,255,255,0.08)';
-        d.style.transform   = isSelected ? 'scaleY(1.15)' : 'scaleY(1)';
+        d.style.transform   = isSelected ? 'scale(1.12)' : 'scale(1)';
         d.style.boxShadow   = isSelected ? `0 0 12px ${colorsPost[i]}88` : 'none';
       });
       const lbl = document.getElementById('adm_fatigue_final_label');
@@ -2314,7 +2314,7 @@ window.cargarEstadisticas = async () => {
   if(volDatasets.length) new Chart(document.getElementById('chartVol'), {type:'line',data:{labels,datasets:volDatasets},options:chartOptions});
   else document.getElementById('chartVol').parentElement.innerHTML += '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin datos</div></div>';
 
-  if(sesIntVals.length) new Chart(document.getElementById('chartSesInt'), {type:'line',data:{labels:sesIntLabels,datasets:[{label:'Intensidad',data:sesIntVals,borderColor:'var(--primary)',tension:0.4,fill:false}]},options:chartOptions});
+  if(sesIntVals.length) new Chart(document.getElementById('chartSesInt'), {type:'line',data:{labels:sesIntLabels,datasets:[{label:'Intensidad',data:sesIntVals,borderColor:'#00e5ff',backgroundColor:'#00e5ff',pointBackgroundColor:'#00e5ff',pointBorderColor:'#00e5ff',pointRadius:5,pointHoverRadius:7,tension:0.4,fill:false}]},options:chartOptions});
   else document.getElementById('chartSesInt').parentElement.innerHTML += '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin datos</div></div>';
 };
 
@@ -2489,7 +2489,7 @@ window.admSelectFatiga = (val) => {
     const c = colors[+d.dataset.fval - 1];
     d.style.background  = isSelected ? c : 'rgba(255,255,255,0.04)';
     d.style.border      = isSelected ? `2px solid ${c}` : '1px solid rgba(255,255,255,0.08)';
-    d.style.transform   = isSelected ? 'scaleY(1.2)' : 'scaleY(1)';
+    d.style.transform   = isSelected ? 'scale(1.12)' : 'scale(1)';
     d.style.boxShadow   = isSelected ? `0 0 12px ${c}88` : 'none';
   });
   const lbl = document.getElementById('adm_fatigue_label');
