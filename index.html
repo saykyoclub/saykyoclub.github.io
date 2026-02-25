@@ -365,7 +365,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const userData = snapshot.val();
 
     if (!userData.activo) {
-      throw new Error("Tu cuenta est谩 desactivada. Contacta a tu entrenador.");
+      throw new Error("Tu cuenta está desactivada. Contacta a tu entrenador.");
     }
 
     if (userData.validoHasta) {
@@ -412,7 +412,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     Swal.fire({
       icon: 'error',
       title: 'Error',
-      text: err.message,
+      text: 'Credenciales incorrectas',
       background: 'rgba(10,20,40,0.95)',
       color: '#e8f4ff',
       confirmButtonColor: '#ff4d6d',
