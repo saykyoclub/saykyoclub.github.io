@@ -51,11 +51,11 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 .header-method { font-size:0.7rem;color:var(--primary);letter-spacing:1px; }
 
 /* MAIN */
-.page { position:relative;z-index:1;max-width:600px;margin:0 auto;padding:20px 16px 40px; }
+.page { position:relative;z-index:1;max-width:620px;margin:0 auto;padding:20px 16px 40px; }
 
 /* GLASS CARD */
 .glass-card {
-  background:var(--glass-bg);backdrop-filter:blur(20px);
+  background:rgba(15,25,50,0.65);backdrop-filter:blur(20px);
   border:1px solid var(--glass-border);border-radius:20px;padding:22px;
   margin-bottom:16px;
 }
@@ -105,19 +105,58 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 .meta-pill { background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:4px 12px;font-size:0.78rem;color:var(--primary); }
 
 /* SERIES TRACKER */
-.series-list { display:flex;flex-direction:column;gap:10px;margin-bottom:16px; }
+.series-list { display:flex;flex-direction:column;gap:12px;margin-bottom:16px; }
 .serie-row {
-  background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);
-  border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;
 }
-.serie-num { width:28px;height:28px;border-radius:50%;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--primary);flex-shrink:0; }
-.serie-inputs { display:flex;gap:8px;flex:1;flex-wrap:wrap; }
-.serie-field { display:flex;flex-direction:column;gap:3px;min-width:70px;flex:1; }
-.serie-field label { font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px; }
-.serie-field input { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.88rem;outline:none;width:100%; }
-.serie-field input:focus { border-color:var(--primary);box-shadow:0 0 0 2px rgba(0,200,255,0.1); }
-.serie-done { width:36px;height:36px;border-radius:50%;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);cursor:pointer;font-size:1rem;transition:all 0.2s ease;flex-shrink:0; }
-.serie-done.checked { background:var(--success);border-color:var(--success);color:#000; }
+.serie-header {
+  display:flex;align-items:center;gap:10px;padding-bottom:10px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.serie-num { 
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;font-weight:700;color:var(--primary);flex-shrink:0;
+}
+.serie-inputs { 
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(85px,1fr));
+  gap:10px;
+}
+.serie-field { display:flex;flex-direction:column;gap:4px; }
+.serie-field label { 
+  font-size:0.68rem;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:0.8px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.serie-field input { 
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);
+  border-radius:10px;padding:9px 12px;color:var(--text);
+  font-family:'Exo 2',sans-serif;font-size:0.92rem;font-weight:600;
+  outline:none;width:100%;transition:all 0.2s ease;
+}
+.serie-field input:focus { 
+  border-color:var(--primary);
+  background:rgba(0,200,255,0.08);
+  box-shadow:0 0 0 2px rgba(0,200,255,0.12);
+}
+.serie-done { 
+  width:40px;height:40px;border-radius:50%;
+  background:rgba(0,229,160,0.08);border:2px solid rgba(0,229,160,0.25);
+  cursor:pointer;font-size:1.1rem;transition:all 0.2s ease;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  color:rgba(0,229,160,0.5);
+}
+.serie-done:hover { 
+  background:rgba(0,229,160,0.15);
+  border-color:rgba(0,229,160,0.4);
+  transform:scale(1.05);
+}
+.serie-done.checked { 
+  background:var(--success);border-color:var(--success);
+  color:#000;font-weight:900;
+}
 
 /* EFFORT SCALE */
 .effort-scale { display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:16px 0; }
@@ -127,10 +166,12 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   transition:all 0.2s ease;
 }
-.effort-option .effort-emoji { font-size:1.6rem; }
+.effort-option .effort-emoji { font-size:1.6rem;transition:transform 0.2s ease; }
 .effort-option .effort-label { font-size:0.6rem;color:var(--text-muted);text-align:center;line-height:1.1; }
 .effort-option:hover { background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3); }
+.effort-option:hover .effort-emoji { transform:scale(1.15); }
 .effort-option.selected { border-color:var(--primary);background:rgba(0,200,255,0.15);box-shadow:0 0 20px rgba(0,200,255,0.2); }
+.effort-option.selected .effort-emoji { transform:scale(1.2); }
 .effort-option.selected .effort-label { color:var(--primary); }
 
 /* FATIGUE SCALE */
@@ -141,7 +182,7 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
   font-size:0.8rem;font-weight:700;transition:all 0.2s ease;
   background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
 }
-.fatigue-dot:hover { transform:scaleY(1.1); }
+.fatigue-dot:hover { transform:scale(1.08); }
 .fatigue-dot.active { box-shadow:0 0 12px rgba(0,200,255,0.3); }
 
 /* AVATAR SELECTOR */
@@ -1016,43 +1057,44 @@ function renderEjercicioActual() {
   const esBiext    = ejInfo.biextremidad === true;
 
   const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
-    <div class="serie-row" style="flex-wrap:wrap;gap:8px">
-      <div class="serie-num">${i+1}</div>
-      <div class="serie-inputs" style="flex:1;min-width:0">
+    <div class="serie-row">
+      <div class="serie-header">
+        <div class="serie-num">${i+1}</div>
+        <div style="flex:1;font-size:0.8rem;color:var(--text-muted);font-weight:600">Serie ${i+1}</div>
+        <button class="serie-done" id="done_${i}" onclick="toggleSerie(${i})">✓</button>
+      </div>
+      <div class="serie-inputs">
         <div class="serie-field">
           <label>Reps</label>
           <input type="number" id="reps_${i}" placeholder="${ejConfig.repsMin}-${ejConfig.repsMax}" min="0" value="${ejConfig.repsMin||0}">
         </div>
         <div class="serie-field">
-          <label>Peso kg</label>
+          <label>Peso (kg)</label>
           <input type="number" id="peso_${i}" placeholder="${ejConfig.peso||0}" min="0" step="0.5" value="${ejConfig.peso||0}">
         </div>
         ${esBiext ? `
-        <div class="serie-field" style="min-width:80px">
+        <div class="serie-field">
           <label style="color:#00e5a0">🦾 Izq ${metodoLabel}</label>
           <input type="number" id="rpe_izq_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
             style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)">
         </div>
-        <div class="serie-field" style="min-width:80px">
+        <div class="serie-field">
           <label style="color:#ff6b35">🦾 Der ${metodoLabel}</label>
           <input type="number" id="rpe_der_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
             style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)">
         </div>
         ` : `
-        <div class="serie-field" style="min-width:90px">
+        <div class="serie-field">
           <label style="color:var(--primary)">${metodoLabel}</label>
           <input type="number" id="rpe_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
             style="border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06)">
         </div>
         `}
       </div>
-      <button class="serie-done" id="done_${i}" onclick="toggleSerie(${i})">✓</button>
-      <div style="width:100%;padding-left:38px">
-        <input type="text" id="comentario_${i}" placeholder="Comentario opcional (sensación, forma, ajuste...)"
-          style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 10px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.78rem;outline:none;transition:all 0.2s ease"
-          onfocus="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='var(--text)';this.style.background='rgba(0,200,255,0.04)'"
-          onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--text-muted)';this.style.background='rgba(255,255,255,0.04)'">
-      </div>
+      <input type="text" id="comentario_${i}" placeholder="💬 Comentario opcional (sensación, forma, ajuste...)"
+        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.82rem;outline:none;transition:all 0.2s ease"
+        onfocus="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='var(--text)';this.style.background='rgba(0,200,255,0.04)'"
+        onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--text-muted)';this.style.background='rgba(255,255,255,0.04)'">
     </div>
   `).join('');
 
