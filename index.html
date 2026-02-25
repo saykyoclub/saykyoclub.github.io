@@ -384,7 +384,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     await Swal.fire({
       icon: 'success',
-      title: `¡Bienvenid@, ${userData.nombres}!`,
+      title: `¡Bienvenido(a), ${userData.nombres}!`,
       text: userData.rol === 'admin' ? 'Acceso de administrador' : 'Listo para entrenar 💪',
       background: 'rgba(10,20,40,0.95)',
       color: '#e8f4ff',
