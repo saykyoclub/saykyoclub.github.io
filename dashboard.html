@@ -340,6 +340,79 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 .empty-state { text-align:center;padding:40px;color:var(--text-muted); }
 .empty-icon { font-size:3rem;margin-bottom:12px; }
 .empty-text { font-size:0.9rem; }
+
+/* NOTIFICATION BELL */
+.notif-btn {
+  position:relative; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; width:40px; height:40px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all 0.2s ease; font-size:1.1rem; flex-shrink:0;
+}
+.notif-btn:hover { background:rgba(0,200,255,0.12); border-color:rgba(0,200,255,0.3); }
+.notif-badge {
+  position:absolute; top:-6px; right:-6px;
+  min-width:18px; height:18px; padding:0 4px;
+  background:var(--error); color:#fff; font-size:0.65rem; font-weight:800;
+  border-radius:9px; display:none; align-items:center; justify-content:center;
+  box-shadow:0 0 10px rgba(255,77,109,0.8);
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+.notif-badge.visible { display:flex; }
+@keyframes pulse-badge {
+  0%,100% { box-shadow:0 0 10px rgba(255,77,109,0.8); transform:scale(1); }
+  50% { box-shadow:0 0 20px rgba(255,77,109,1); transform:scale(1.1); }
+}
+
+/* PUSH TOAST */
+.push-toast {
+  position:fixed; top:20px; right:20px; z-index:9999;
+  background:rgba(8,18,40,0.95); border:1px solid rgba(0,200,255,0.3);
+  border-radius:16px; padding:14px 18px; max-width:320px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,200,255,0.1);
+  animation:toastSlide 0.4s cubic-bezier(0.16,1,0.3,1);
+  cursor:pointer; display:flex; align-items:flex-start; gap:12px;
+}
+@keyframes toastSlide { from{opacity:0;transform:translateX(100%)} to{opacity:1;transform:translateX(0)} }
+.toast-icon { font-size:1.4rem; flex-shrink:0; }
+.toast-title { font-size:0.82rem; font-weight:700; color:var(--primary); margin-bottom:2px; }
+.toast-body { font-size:0.78rem; color:var(--text-muted); line-height:1.4; }
+.toast-close { position:absolute;top:8px;right:10px;font-size:0.8rem;color:var(--text-muted);cursor:pointer;background:none;border:none;color:var(--text-muted); }
+
+/* NOTIF PANEL */
+.notif-item {
+  padding:14px; border-radius:14px; background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08); margin-bottom:10px;
+  transition:all 0.2s ease; position:relative;
+}
+.notif-item.unread { background:rgba(0,200,255,0.06); border-color:rgba(0,200,255,0.2); }
+.notif-item.unread::before { content:''; position:absolute;top:14px;left:-4px;width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary); }
+.notif-item:hover { background:rgba(0,200,255,0.08); }
+.notif-from { font-size:0.75rem;color:var(--text-muted);margin-bottom:4px; }
+.notif-msg { font-size:0.9rem;font-weight:600;margin-bottom:6px; }
+.notif-time { font-size:0.72rem;color:var(--text-muted); }
+
+/* GROUP CARDS */
+.group-card {
+  background:var(--glass-bg); backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border); border-radius:20px;
+  padding:22px; transition:all 0.3s ease; position:relative; overflow:hidden;
+}
+.group-card::before { content:''; position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--primary)); }
+.group-card:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,0.3); }
+.group-header { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px; }
+.group-name { font-size:1.1rem;font-weight:800;margin-bottom:4px; }
+.group-desc { font-size:0.8rem;color:var(--text-muted); }
+.group-stats { display:flex;gap:12px;margin:12px 0; }
+.group-stat { text-align:center; }
+.group-stat-val { font-size:1.2rem;font-weight:800;color:var(--primary); }
+.group-stat-lbl { font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px; }
+.group-admins { display:flex;flex-wrap:wrap;gap:6px;margin-top:10px; }
+.group-admin-chip { display:flex;align-items:center;gap:6px;background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:4px 10px;font-size:0.75rem; }
+.group-admin-chip.owner { background:rgba(123,47,255,0.1);border-color:rgba(123,47,255,0.3);color:#c4b5fd; }
+.member-chip { display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 10px;font-size:0.75rem;margin:3px; }
+.member-chip img { width:20px;height:20px;border-radius:50%; }
+.color-picker { display:flex;gap:8px;flex-wrap:wrap;margin-top:8px; }
+.color-swatch { width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.2s;flex-shrink:0; }
+.color-swatch.selected,.color-swatch:hover { transform:scale(1.2);border-color:rgba(255,255,255,0.6); }
 </style>
 </head>
 <body>
@@ -380,6 +453,9 @@ textarea.glass-input { resize:vertical; min-height:80px; }
     <div class="nav-item" data-page="atletas">
       <span class="nav-icon">🏃</span> Seguimiento
     </div>
+    <div class="nav-item" data-page="grupos">
+      <span class="nav-icon">🫂</span> Grupos
+    </div>
     <div class="nav-divider"></div>
     <div class="nav-section">Reportes</div>
     <div class="nav-item" data-page="estadisticas">
@@ -390,6 +466,14 @@ textarea.glass-input { resize:vertical; min-height:80px; }
     </div>
     <div class="nav-item" data-page="revisiones">
       <span class="nav-icon">🔍</span> Revisiones
+    </div>
+    <div class="nav-item" data-page="valoraciones">
+      <span class="nav-icon">⚖️</span> Valoraciones
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">Inteligencia</div>
+    <div class="nav-item" data-page="alertas" id="navAlertas">
+      <span class="nav-icon">🚨</span> Alertas <span id="alertasBadge" style="margin-left:auto;background:var(--error);color:#fff;border-radius:20px;padding:1px 8px;font-size:0.7rem;font-weight:700;display:none">0</span>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -409,6 +493,10 @@ textarea.glass-input { resize:vertical; min-height:80px; }
       </div>
     </div>
     <div class="topbar-actions">
+      <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" title="Notificaciones">
+        🔔
+        <span class="notif-badge" id="notifBadge">0</span>
+      </button>
       <button class="btn btn-primary btn-sm" id="topbarAction" style="display:none"></button>
     </div>
   </div>
@@ -417,9 +505,27 @@ textarea.glass-input { resize:vertical; min-height:80px; }
   </div>
 </div>
 
+<!-- NOTIFICATION PANEL -->
+<div id="notifPanel" style="display:none;position:fixed;top:70px;right:16px;z-index:400;width:360px;max-width:calc(100vw - 32px)">
+  <div style="background:rgba(8,16,40,0.97);border:1px solid rgba(0,200,255,0.25);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.7);overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <div style="font-weight:700;font-size:1rem">🔔 Notificaciones</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="markAllRead()" style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);border-radius:8px;padding:4px 10px;color:var(--primary);font-size:0.72rem;cursor:pointer;font-family:'Exo 2',sans-serif">✓ Todo leído</button>
+        <button onclick="deleteAllNotifs()" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.3);border-radius:8px;padding:4px 10px;color:#ff4d6d;font-size:0.72rem;cursor:pointer;font-family:'Exo 2',sans-serif">🗑️ Borrar todo</button>
+        <button onclick="document.getElementById('notifPanel').style.display='none'" style="background:rgba(255,255,255,0.06);border:none;color:var(--text-muted);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:0.9rem">✕</button>
+      </div>
+    </div>
+    <div id="notifList" style="max-height:400px;overflow-y:auto;padding:12px"></div>
+    <div style="padding:12px 18px;border-top:1px solid rgba(255,255,255,0.06)">
+      <button onclick="showSendNotifModal()" class="btn btn-primary btn-sm btn-full">📣 Enviar notificación a usuario</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, get, set, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, get, set, push, update, remove, onValue, off, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, updateEmail, updatePassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -625,21 +731,26 @@ async function renderPage(page) {
     categorias: renderCategorias, ejercicios: renderEjercicios,
     rutinas: renderRutinas, estadisticas: renderEstadisticas,
     anamnesis: renderAnamnesis, revisiones: renderRevisiones,
-    atletas: renderAtletas
+    atletas: renderAtletas, grupos: renderGrupos,
+    alertas: renderAlertas, valoraciones: renderValoraciones
   };
   const titles = {
     home:'Dashboard', usuarios:'Gestionar Usuarios',
     categorias:'Categorías', ejercicios:'Ejercicios',
     rutinas:'Rutinas', estadisticas:'Estadísticas',
     anamnesis:'Anamnesis de Usuarios', revisiones:'Revisiones de Atletas',
-    atletas:'Seguimiento de Atletas'
+    atletas:'Seguimiento de Atletas', grupos:'Gestión de Grupos',
+    alertas:'🚨 Alertas Inteligentes', valoraciones:'📊 Valoraciones & Progreso'
   };
   const subtitles = {
     home:'Panel principal', usuarios:'Crea y administra los perfiles de tus atletas',
     categorias:'Organiza los grupos musculares', ejercicios:'Biblioteca de movimientos',
     rutinas:'Diseña programas de entrenamiento', estadisticas:'Análisis y reportes',
     anamnesis:'Historial de cuestionarios', revisiones:'Revisiones semanales y mensuales',
-    atletas:'Historial de sesiones y registro de entrenamientos en nombre del atleta'
+    atletas:'Historial de sesiones y registro de entrenamientos en nombre del atleta',
+    grupos:'Organiza atletas en grupos y gestiona co-entrenadores',
+    alertas:'Detección inteligente de situaciones que requieren atención',
+    valoraciones:'Valoraciones mensuales y tendencias de composición corporal'
   };
   title.textContent = titles[page]||page;
   subtitle.textContent = subtitles[page]||'';
@@ -727,22 +838,25 @@ function initPagedTable(panel, allRows, theadHtml, renderRow, opts={}) {
 
 // ============ HOME ============
 async function renderHome(container) {
-  const [usSnap, catSnap, ejSnap, rutSnap] = await Promise.all([
+  const [usSnap, catSnap, ejSnap, rutSnap, myUids] = await Promise.all([
     get(ref(db,'usuarios')), get(ref(db,'categorias')),
-    get(ref(db,'ejercicios')), get(ref(db,'rutinas'))
+    get(ref(db,'ejercicios')), get(ref(db,'rutinas')), getMyGroupUserUids()
   ]);
   const users = usSnap.val()||{};
   const cats = catSnap.val()||{};
   const ejs = ejSnap.val()||{};
   const ruts = rutSnap.val()||{};
-  const activeUsers = Object.values(users).filter(u=>u.activo&&u.rol!=='admin').length;
+  // Scope to group members
+  const myUsers = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
+  const activeUsers = myUsers.filter(([,u])=>u.activo).length;
+  const myRuts = Object.entries(ruts).filter(([,r])=>r.usuario && myUids.has(r.usuario));
 
   container.innerHTML = `
     <div class="dashboard-grid">
       <div class="stat-card" style="--card-accent:var(--primary)" onclick="navTo('usuarios')">
         <div class="stat-icon">👥</div>
-        <div class="stat-value">${Object.keys(users).length-1}</div>
-        <div class="stat-label">Usuarios totales</div>
+        <div class="stat-value">${myUsers.length}</div>
+        <div class="stat-label">Atletas en mis grupos</div>
       </div>
       <div class="stat-card" style="--card-accent:var(--success)" onclick="navTo('usuarios')">
         <div class="stat-icon">✅</div>
@@ -756,8 +870,8 @@ async function renderHome(container) {
       </div>
       <div class="stat-card" style="--card-accent:var(--accent2)" onclick="navTo('rutinas')">
         <div class="stat-icon">📋</div>
-        <div class="stat-value">${Object.keys(ruts).length}</div>
-        <div class="stat-label">Rutinas</div>
+        <div class="stat-value">${myRuts.length}</div>
+        <div class="stat-label">Rutinas de mis atletas</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
@@ -771,9 +885,9 @@ async function renderHome(container) {
         </div>
       </div>
       <div class="glass-panel">
-        <div class="panel-header"><span class="panel-title">👥 Usuarios recientes</span></div>
+        <div class="panel-header"><span class="panel-title">👥 Mis atletas recientes</span></div>
         <div class="panel-body">
-          ${Object.entries(users).filter(([,u])=>u.rol!=='admin').slice(0,5).map(([id,u])=>`
+          ${myUsers.slice(0,5).map(([id,u])=>`
             <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
               <img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:34px;height:34px;border-radius:50%;border:2px solid rgba(0,200,255,0.3)">
               <div style="flex:1">
@@ -782,11 +896,14 @@ async function renderHome(container) {
               </div>
               <span class="badge ${u.activo?'badge-active':'badge-inactive'}">${u.activo?'Activo':'Inactivo'}</span>
             </div>
-          `).join('')||'<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">No hay usuarios aún</div></div>'}
+          `).join('')||'<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">No hay atletas en tus grupos</div></div>'}
         </div>
       </div>
     </div>
+    <div id="homeAlertsPreview" style="margin-top:16px"></div>
   `;
+  // Load alerts preview async
+  renderHomeAlertsPreview(document.getElementById('homeAlertsPreview'), myUids, users, ruts);
 }
 window.navTo = (page) => {
   prevPage = currentPage;
@@ -1310,16 +1427,18 @@ async function renderRutinas(container, action) {
   action.style.display = 'flex';
   action.onclick = () => showRutinaModal();
 
-  const [rutSnap, usSnap] = await Promise.all([get(ref(db,'rutinas')),get(ref(db,'usuarios'))]);
+  const [rutSnap, usSnap, myUids] = await Promise.all([get(ref(db,'rutinas')),get(ref(db,'usuarios')), getMyGroupUserUids()]);
   const ruts = rutSnap.val()||{};
   const users = usSnap.val()||{};
+  // Filter to only show rutinas for athletes in admin's groups
+  const myRuts = Object.entries(ruts).filter(([,r]) => !r.usuario || myUids.has(r.usuario));
 
   container.innerHTML = `
     <div class="rutinas-layout">
       <div class="glass-panel" style="overflow:hidden;display:flex;flex-direction:column">
         <div class="panel-header"><span class="panel-title">📋 Rutinas</span><button class="btn btn-primary btn-sm" onclick="showRutinaModal()">+</button></div>
         <div style="overflow-y:auto;flex:1;padding:12px">
-          ${Object.entries(ruts).map(([id,r])=>`
+          ${myRuts.map(([id,r])=>`
             <div class="rb-item ${rutinaState.selectedRutina===id?'active':''}" onclick="selectRutina('${id}')">
               <div>
                 <div style="font-weight:600;font-size:0.88rem">${r.nombre}</div>
@@ -1558,9 +1677,9 @@ window.removeEjDia = async (rutinaId, mes, semana, dia, idx) => {
 };
 
 window.showRutinaModal = async () => {
-  const usSnap = await get(ref(db,'usuarios'));
+  const [usSnap, myUids] = await Promise.all([get(ref(db,'usuarios')), getMyGroupUserUids()]);
   const users = usSnap.val()||{};
-  const userOpts = Object.entries(users).filter(([,u])=>u.rol!=='admin').map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''} (@${u.usuario})</option>`).join('');
+  const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''} (@${u.usuario})</option>`).join('');
   showOverlay(`
     <div class="overlay-header">
       <span class="overlay-title">➕ Nueva Rutina</span>
@@ -1611,13 +1730,13 @@ window.deleteRutina = async (e, id) => {
 
 // ============ ATLETAS / SEGUIMIENTO ============
 async function renderAtletas(container, action) {
-  const [usSnap, rutSnap, ejSnap] = await Promise.all([
-    get(ref(db,'usuarios')), get(ref(db,'rutinas')), get(ref(db,'ejercicios'))
+  const [usSnap, rutSnap, ejSnap, myUids] = await Promise.all([
+    get(ref(db,'usuarios')), get(ref(db,'rutinas')), get(ref(db,'ejercicios')), getMyGroupUserUids()
   ]);
   const users = usSnap.val()||{};
   const ruts  = rutSnap.val()||{};
   const ejs   = ejSnap.val()||{};
-  const atletas = Object.entries(users).filter(([,u])=>u.rol!=='admin');
+  const atletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
 
   if(!atletas.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-text">No hay atletas registrados</div></div>`;
@@ -2144,11 +2263,11 @@ async function _finalizarAdminSesion() {
 
 // ============ ESTADÍSTICAS ============
 async function renderEstadisticas(container) {
-  const [usSnap, ejSnap, catSnap] = await Promise.all([get(ref(db,'usuarios')),get(ref(db,'ejercicios')),get(ref(db,'categorias'))]);
+  const [usSnap, ejSnap, catSnap, myUids] = await Promise.all([get(ref(db,'usuarios')),get(ref(db,'ejercicios')),get(ref(db,'categorias')),getMyGroupUserUids()]);
   const users = usSnap.val()||{};
   const ejs = ejSnap.val()||{};
   const cats = catSnap.val()||{};
-  const userOpts = Object.entries(users).filter(([,u])=>u.rol!=='admin').map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''}</option>`).join('');
+  const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''}</option>`).join('');
   const ejOpts = Object.entries(ejs).map(([id,e])=>`<option value="${id}">${e.nombre}</option>`).join('');
   const catOpts = Object.entries(cats).map(([id,c])=>`<option value="${id}">${c.nombre}</option>`).join('');
 
@@ -2320,13 +2439,13 @@ window.cargarEstadisticas = async () => {
 
 // ============ ANAMNESIS ============
 async function renderAnamnesis(container) {
-  const [anaSnap, usSnap] = await Promise.all([get(ref(db,'anamnesis')),get(ref(db,'usuarios'))]);
+  const [anaSnap, usSnap, myUids] = await Promise.all([get(ref(db,'anamnesis')),get(ref(db,'usuarios')), getMyGroupUserUids()]);
   const anamnesis = anaSnap.val()||{};
   const users = usSnap.val()||{};
 
   container.innerHTML = `
     <div class="dashboard-grid" style="margin-bottom:16px">
-      ${Object.entries(users).filter(([,u])=>u.rol!=='admin').map(([uid,u])=>{
+      ${Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id)).map(([uid,u])=>{
         const ana = anamnesis[uid];
         const completada = ana?.completada;
         return `
@@ -2380,6 +2499,486 @@ window.verAnamnesis = async (uid) => {
   `);
 };
 
+// ============ GRUPOS ============
+const GROUP_COLORS = ['#00c8ff','#7b2fff','#00e5a0','#ff6b35','#ffd60a','#ff4d6d','#a855f7','#10b981','#f59e0b','#e74c3c'];
+
+async function renderGrupos(container, action) {
+  action.textContent = '+ Nuevo Grupo';
+  action.style.display = 'flex';
+  action.onclick = () => showGroupModal();
+
+  const [gruposSnap, usSnap] = await Promise.all([
+    get(ref(db,'grupos')), get(ref(db,'usuarios'))
+  ]);
+  const grupos = gruposSnap.val()||{};
+  const users = usSnap.val()||{};
+
+  // Only show groups where current admin is owner or invited
+  const myGrupos = Object.entries(grupos).filter(([,g]) =>
+    g.adminDueno === currentUser.id ||
+    (g.adminsInvitados && g.adminsInvitados[currentUser.id])
+  );
+
+  if(myGrupos.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px">
+        <div style="font-size:4rem;margin-bottom:16px">🫂</div>
+        <div style="font-size:1.2rem;font-weight:700;margin-bottom:8px">No tienes grupos aún</div>
+        <div style="color:var(--text-muted);margin-bottom:24px">Crea tu primer grupo para organizar atletas</div>
+        <button class="btn btn-primary" onclick="showGroupModal()">+ Crear primer grupo</button>
+      </div>`;
+    return;
+  }
+
+  const html = myGrupos.map(([gid,g]) => {
+    const memberCount = g.miembros ? Object.keys(g.miembros).length : 0;
+    const adminCount = 1 + (g.adminsInvitados ? Object.keys(g.adminsInvitados).length : 0);
+    const isOwner = g.adminDueno === currentUser.id;
+    const ownerData = users[g.adminDueno]||{};
+    const invitedAdmins = Object.entries(g.adminsInvitados||{}).map(([aid]) => users[aid]).filter(Boolean);
+    const members = Object.entries(g.miembros||{}).map(([uid]) => users[uid]).filter(Boolean).slice(0,8);
+
+    return `
+    <div class="group-card" style="--card-color:${g.color||'var(--primary)'}">
+      <div class="group-header">
+        <div>
+          <div class="group-name">${g.nombre}</div>
+          <div class="group-desc">${g.descripcion||'Sin descripción'}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          ${isOwner?`<button class="btn btn-secondary btn-sm btn-icon" onclick="showGroupModal('${gid}')" title="Editar grupo">✏️</button>`:''}
+          ${isOwner?`<button class="btn btn-danger btn-sm btn-icon" onclick="deleteGroup('${gid}')" title="Eliminar grupo">🗑️</button>`:''}
+        </div>
+      </div>
+      <div class="group-stats">
+        <div class="group-stat"><div class="group-stat-val" style="color:${g.color||'var(--primary)'};">${memberCount}</div><div class="group-stat-lbl">Atletas</div></div>
+        <div class="group-stat"><div class="group-stat-val" style="color:${g.color||'var(--primary)'};">${adminCount}</div><div class="group-stat-lbl">Entrenadores</div></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Entrenadores</div>
+        <div class="group-admins">
+          <div class="group-admin-chip owner" title="Dueño del grupo">
+            <img src="${ownerData.avatar||getAvatarUrl(ownerData.usuario)}" style="width:18px;height:18px;border-radius:50%">
+            ${ownerData.nombres||'Dueño'} 👑
+          </div>
+          ${invitedAdmins.map(a=>`
+            <div class="group-admin-chip">
+              <img src="${a.avatar||getAvatarUrl(a.usuario)}" style="width:18px;height:18px;border-radius:50%">
+              ${a.nombres}
+              ${isOwner?`<span onclick="removeAdminFromGroup('${gid}','${Object.entries(g.adminsInvitados||{}).find(([,v])=>v.uid===a.uid)?.[0]||''}',event)" style="cursor:pointer;color:var(--error);margin-left:2px" title="Quitar entrenador">✕</span>`:''}
+            </div>
+          `).join('')}
+          ${isOwner?`<div class="group-admin-chip" style="cursor:pointer;border-style:dashed" onclick="showInviteAdminModal('${gid}')">+ Invitar</div>`:''}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Atletas ${memberCount>8?`(${memberCount} total, mostrando 8)`:''}</div>
+        <div style="display:flex;flex-wrap:wrap">
+          ${members.map(m=>`
+            <span class="member-chip">
+              <img src="${m.avatar||getAvatarUrl(m.usuario)}">
+              ${m.nombres}
+            </span>
+          `).join('')}
+          ${memberCount===0?'<span style="color:var(--text-muted);font-size:0.82rem">Sin atletas</span>':''}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="showManageMembersModal('${gid}')">👥 Gestionar Atletas</button>
+        <button class="btn btn-secondary btn-sm" onclick="showSendNotifModal('${gid}')">📣 Notificar</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">${html}</div>`;
+}
+
+window.showGroupModal = async (gid=null) => {
+  let g = {};
+  if(gid) { const s=await get(ref(db,`grupos/${gid}`)); g=s.val()||{}; }
+  let selColor = g.color||GROUP_COLORS[0];
+
+  const swatches = GROUP_COLORS.map(c=>`<div class="color-swatch ${selColor===c?'selected':''}" style="background:${c}" onclick="pickGroupColor('${c}',this)" data-color="${c}"></div>`).join('');
+
+  showOverlay(`
+    <div class="overlay-header">
+      <span class="overlay-title">${gid?'✏️ Editar':'➕ Crear'} Grupo</span>
+      <button class="btn-close" onclick="closeOverlay()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Nombre del grupo *</label>
+        <input type="text" id="gNombre" class="glass-input" value="${g.nombre||''}" placeholder="Ej: Equipo Alpha">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Descripción</label>
+        <textarea id="gDesc" class="glass-input" placeholder="Descripción del grupo...">${g.descripcion||''}</textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Color del grupo</label>
+        <div class="color-picker" id="colorPicker">${swatches}</div>
+        <input type="hidden" id="gColor" value="${selColor}">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGroup('${gid||''}')">💾 Guardar</button>
+    </div>
+  `);
+};
+
+window.pickGroupColor = (color, el) => {
+  document.getElementById('gColor').value = color;
+  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.toggle('selected', s.dataset.color===color));
+};
+
+window.saveGroup = async (gid='') => {
+  const nombre = document.getElementById('gNombre').value.trim();
+  if(!nombre) return Swal.fire({icon:'warning',title:'Nombre requerido',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  const data = { nombre, descripcion: document.getElementById('gDesc').value.trim(), color: document.getElementById('gColor').value };
+  if(!gid) { data.adminDueno = currentUser.id; data.creadoEn = Date.now(); }
+  const dbRef = gid ? ref(db,`grupos/${gid}`) : ref(db,'grupos');
+  if(gid) await update(ref(db,`grupos/${gid}`), data);
+  else await push(ref(db,'grupos'), data);
+  closeOverlay();
+  Swal.fire({icon:'success',title:'Grupo guardado',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  navTo('grupos');
+};
+
+window.deleteGroup = async (gid) => {
+  const res = await Swal.fire({icon:'warning',title:'¿Eliminar grupo?',text:'Esto no elimina a los usuarios, solo el grupo.',showCancelButton:true,confirmButtonColor:'#ff4d6d',cancelButtonColor:'rgba(255,255,255,0.1)',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonText:'Sí, eliminar',cancelButtonText:'Cancelar'});
+  if(!res.isConfirmed) return;
+  // Remove group from all members
+  const snap = await get(ref(db,`grupos/${gid}/miembros`));
+  const miembros = snap.val()||{};
+  for(const uid of Object.keys(miembros)) {
+    await remove(ref(db,`usuarios/${uid}/grupoId`));
+  }
+  await remove(ref(db,`grupos/${gid}`));
+  Swal.fire({icon:'success',title:'Grupo eliminado',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  navTo('grupos');
+};
+
+window.showInviteAdminModal = async (gid) => {
+  const [usSnap, gSnap] = await Promise.all([get(ref(db,'usuarios')), get(ref(db,`grupos/${gid}`))]);
+  const users = usSnap.val()||{};
+  const g = gSnap.val()||{};
+  const admins = Object.entries(users).filter(([uid,u]) =>
+    u.rol==='admin' && uid !== g.adminDueno && !(g.adminsInvitados && g.adminsInvitados[uid])
+  );
+  if(!admins.length) {
+    return Swal.fire({icon:'info',title:'No hay más admins disponibles',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  }
+  showOverlay(`
+    <div class="overlay-header"><span class="overlay-title">👤 Invitar entrenador</span><button class="btn-close" onclick="closeOverlay()">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${admins.map(([uid,u])=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid var(--glass-border);cursor:pointer;transition:all 0.2s" onclick="inviteAdmin('${gid}','${uid}')" onmouseover="this.style.background='rgba(0,200,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+          <img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:38px;height:38px;border-radius:50%;border:2px solid rgba(0,200,255,0.3)">
+          <div><div style="font-weight:600">${u.nombres} ${u.apellidos||''}</div><div style="font-size:0.75rem;color:var(--text-muted)">@${u.usuario}</div></div>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto">+ Invitar</button>
+        </div>
+      `).join('')}
+    </div>
+  `);
+};
+
+window.inviteAdmin = async (gid, uid) => {
+  await set(ref(db,`grupos/${gid}/adminsInvitados/${uid}`), {uid, addedAt:Date.now(), addedBy:currentUser.id});
+  closeOverlay();
+  Swal.fire({icon:'success',title:'Entrenador invitado',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  navTo('grupos');
+};
+
+window.removeAdminFromGroup = async (gid, uid, e) => {
+  e.stopPropagation();
+  if(!uid) return;
+  const res = await Swal.fire({icon:'warning',title:'¿Quitar entrenador?',showCancelButton:true,confirmButtonColor:'#ff4d6d',cancelButtonColor:'rgba(255,255,255,0.1)',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonText:'Sí, quitar'});
+  if(!res.isConfirmed) return;
+  await remove(ref(db,`grupos/${gid}/adminsInvitados/${uid}`));
+  Swal.fire({icon:'success',title:'Entrenador eliminado del grupo',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  navTo('grupos');
+};
+
+window.showManageMembersModal = async (gid) => {
+  const [gSnap, usSnap] = await Promise.all([get(ref(db,`grupos/${gid}`)), get(ref(db,'usuarios'))]);
+  const g = gSnap.val()||{};
+  const users = usSnap.val()||{};
+
+  const currentMembers = Object.keys(g.miembros||{});
+  const allAthletes = Object.entries(users).filter(([,u])=>u.rol!=='admin');
+
+  const membersHtml = allAthletes.map(([uid,u]) => {
+    const isMember = currentMembers.includes(uid);
+    const inOtherGroup = u.grupoId && u.grupoId !== gid;
+    const otherGroupName = inOtherGroup ? (users[u.grupoId]?.nombre || 'otro grupo') : '';
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.07);margin-bottom:8px;${isMember?'border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06);':''}">
+        <img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:34px;height:34px;border-radius:50%;border:2px solid ${isMember?'var(--primary)':'rgba(255,255,255,0.2)'}">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:0.88rem">${u.nombres} ${u.apellidos||''}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted)">@${u.usuario}${inOtherGroup?` · <span style="color:var(--warning)">En: ${otherGroupName}</span>`:''}</div>
+        </div>
+        ${isMember
+          ? `<button class="btn btn-danger btn-sm" onclick="removeMemberFromGroup('${gid}','${uid}')">Sacar</button>`
+          : `<button class="btn btn-primary btn-sm" ${inOtherGroup?`onclick="confirmMoveMember('${gid}','${uid}','${u.grupoId}')"`:`onclick="addMemberToGroup('${gid}','${uid}')"`}>${inOtherGroup?'Mover':'Añadir'}</button>`
+        }
+      </div>`;
+  }).join('');
+
+  showOverlay(`
+    <div class="overlay-header"><span class="overlay-title">👥 Gestionar Atletas — ${g.nombre}</span><button class="btn-close" onclick="closeOverlay()">✕</button></div>
+    <div style="margin-bottom:12px">
+      <input type="search" placeholder="🔍 Buscar atleta..." class="glass-input" oninput="filterMembers(this.value)" style="margin-bottom:0">
+    </div>
+    <div id="membersList" style="max-height:450px;overflow-y:auto">${membersHtml}</div>
+  `);
+  document.getElementById('membersList').dataset.gid = gid;
+};
+
+window.filterMembers = (q) => {
+  const items = document.querySelectorAll('#membersList > div');
+  items.forEach(el => {
+    const text = el.textContent.toLowerCase();
+    el.style.display = text.includes(q.toLowerCase()) ? '' : 'none';
+  });
+};
+
+window.addMemberToGroup = async (gid, uid) => {
+  await Promise.all([
+    set(ref(db,`grupos/${gid}/miembros/${uid}`), {uid, addedAt:Date.now(), addedBy:currentUser.id}),
+    update(ref(db,`usuarios/${uid}`), {grupoId: gid})
+  ]);
+  showManageMembersModal(gid);
+};
+
+window.removeMemberFromGroup = async (gid, uid) => {
+  await Promise.all([
+    remove(ref(db,`grupos/${gid}/miembros/${uid}`)),
+    remove(ref(db,`usuarios/${uid}/grupoId`))
+  ]);
+  showManageMembersModal(gid);
+};
+
+window.confirmMoveMember = async (newGid, uid, oldGid) => {
+  const res = await Swal.fire({
+    icon:'question', title:'¿Mover atleta?',
+    text:'Este atleta está en otro grupo. ¿Deseas moverlo a este grupo?',
+    showCancelButton:true, confirmButtonColor:'#00c8ff',
+    cancelButtonColor:'rgba(255,255,255,0.1)',
+    background:'rgba(10,20,40,0.95)',color:'#e8f4ff',
+    confirmButtonText:'Sí, mover', cancelButtonText:'Cancelar'
+  });
+  if(!res.isConfirmed) return;
+  await remove(ref(db,`grupos/${oldGid}/miembros/${uid}`));
+  await addMemberToGroup(newGid, uid);
+};
+
+// ============ NOTIFICATIONS ============
+let notifListener = null;
+
+function setupNotifListener() {
+  const notifRef = ref(db, `notificaciones/${currentUser.id}`);
+  if(notifListener) off(notifRef, 'value', notifListener);
+  notifListener = onValue(notifRef, (snap) => {
+    const notifs = snap.val()||{};
+    const unread = Object.values(notifs).filter(n=>!n.leida).length;
+    const badge = document.getElementById('notifBadge');
+    if(badge) {
+      badge.textContent = unread > 99 ? '99+' : unread;
+      badge.classList.toggle('visible', unread>0);
+    }
+    window._notifData = notifs;
+
+    // Show push for newly arrived notifications
+    const latest = Object.entries(notifs).filter(([,n])=>!n.leida&&!n._shown).sort((a,b)=>b[1].creadaEn-a[1].creadaEn)[0];
+    if(latest) {
+      const [nid, n] = latest;
+      showPushToast(n);
+      // Mark as shown locally
+      window._notifData[nid]._shown = true;
+    }
+  });
+}
+
+function showPushToast(n) {
+  const existing = document.getElementById('pushToast');
+  if(existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'pushToast';
+  toast.className = 'push-toast';
+  toast.innerHTML = `
+    <div class="toast-icon">${n.tipo==='alerta'?'🚨':'💬'}</div>
+    <div style="flex:1">
+      <div class="toast-title">${n.tipo==='alerta'?'⚡ Alerta de atleta':'📣 Notificación'}</div>
+      <div class="toast-body"><strong>${n.deNombre||'Atleta'}:</strong> ${n.mensaje}</div>
+    </div>
+    <button class="toast-close" onclick="this.closest('.push-toast').remove()">✕</button>
+  `;
+  toast.onclick = (e) => { if(e.target.closest('.toast-close')) return; toggleNotifPanel(); toast.remove(); };
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 6000);
+}
+
+window.toggleNotifPanel = () => {
+  const panel = document.getElementById('notifPanel');
+  if(panel.style.display==='none') {
+    panel.style.display='block';
+    renderNotifList();
+  } else {
+    panel.style.display='none';
+  }
+  document.addEventListener('click', closeNotifOnOutsideClick, {once:true});
+};
+
+function closeNotifOnOutsideClick(e) {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('notifBtn');
+  if(panel && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.style.display='none';
+  }
+}
+
+function renderNotifList() {
+  const list = document.getElementById('notifList');
+  const notifs = window._notifData||{};
+  const sorted = Object.entries(notifs).sort((a,b)=>b[1].creadaEn-a[1].creadaEn);
+
+  if(!sorted.length) {
+    list.innerHTML='<div class="empty-state" style="padding:24px"><div class="empty-icon">🔔</div><div class="empty-text">Sin notificaciones</div></div>';
+    return;
+  }
+
+  list.innerHTML = sorted.map(([nid,n])=>`
+    <div class="notif-item ${n.leida?'':'unread'}" id="notif_${nid}">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div style="flex:1;cursor:pointer" onclick="markNotifRead('${nid}')">
+          <div class="notif-from">${n.tipo==='alerta'?'🚨 Alerta de ':'💬 Mensaje de '}<strong>${n.deNombre||'Atleta'}</strong></div>
+          <div class="notif-msg">${n.mensaje}</div>
+          <div class="notif-time">${new Date(n.creadaEn).toLocaleString()}</div>
+        </div>
+        <button onclick="deleteNotif('${nid}')" title="Eliminar" style="flex-shrink:0;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.markNotifRead = async (nid) => {
+  await update(ref(db,`notificaciones/${currentUser.id}/${nid}`), {leida:true});
+  renderNotifList();
+};
+
+window.markAllRead = async () => {
+  const notifs = window._notifData||{};
+  const unread = Object.entries(notifs).filter(([,n])=>!n.leida);
+  await Promise.all(unread.map(([nid])=>update(ref(db,`notificaciones/${currentUser.id}/${nid}`), {leida:true})));
+  renderNotifList();
+};
+
+window.deleteNotif = async (nid) => {
+  await remove(ref(db,`notificaciones/${currentUser.id}/${nid}`));
+  const el = document.getElementById(`notif_${nid}`);
+  if(el) el.remove();
+  // Refresh badge count
+  const remaining = document.querySelectorAll('.notif-item.unread').length;
+  const badge = document.getElementById('notifBadge');
+  if(badge) { badge.textContent = remaining; badge.classList.toggle('visible', remaining>0); }
+  if(!document.querySelector('.notif-item')) {
+    document.getElementById('notifList').innerHTML='<div class="empty-state" style="padding:24px"><div class="empty-icon">🔔</div><div class="empty-text">Sin notificaciones</div></div>';
+  }
+};
+
+window.deleteAllNotifs = async () => {
+  const notifs = window._notifData||{};
+  if(!Object.keys(notifs).length) return;
+  const res = await Swal.fire({
+    icon:'warning', title:'¿Borrar todas las notificaciones?',
+    text:'Esta acción no se puede deshacer.',
+    showCancelButton:true, confirmButtonText:'Sí, borrar todo',
+    cancelButtonText:'Cancelar', confirmButtonColor:'#ff4d6d',
+    background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+  });
+  if(!res.isConfirmed) return;
+  await remove(ref(db,`notificaciones/${currentUser.id}`));
+  renderNotifList();
+};
+
+window.showSendNotifModal = async (gid=null) => {
+  // Get users belonging to the group, or all group users for this admin
+  const [gruposSnap, usSnap] = await Promise.all([get(ref(db,'grupos')), get(ref(db,'usuarios'))]);
+  const grupos = gruposSnap.val()||{};
+  const users = usSnap.val()||{};
+
+  // Get all users in groups managed by this admin
+  let targetUsers = [];
+  if(gid) {
+    const g = grupos[gid]||{};
+    targetUsers = Object.keys(g.miembros||{}).map(uid=>({uid,u:users[uid]})).filter(x=>x.u);
+  } else {
+    // All groups this admin manages
+    Object.entries(grupos).forEach(([,g])=>{
+      if(g.adminDueno===currentUser.id || (g.adminsInvitados&&g.adminsInvitados[currentUser.id])) {
+        Object.keys(g.miembros||{}).forEach(uid=>{ if(users[uid]&&!targetUsers.find(x=>x.uid===uid)) targetUsers.push({uid,u:users[uid]}); });
+      }
+    });
+  }
+
+  if(!targetUsers.length) {
+    return Swal.fire({icon:'info',title:'No hay atletas en tus grupos',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  }
+
+  showOverlay(`
+    <div class="overlay-header"><span class="overlay-title">📣 Enviar Notificación</span><button class="btn-close" onclick="closeOverlay()">✕</button></div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Destinatario *</label>
+      <select id="notifTarget" class="glass-input">
+        <option value="">— Seleccionar atleta —</option>
+        ${targetUsers.map(({uid,u})=>`<option value="${uid}">${u.nombres} ${u.apellidos||''} (@${u.usuario})</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Mensaje *</label>
+      <textarea id="notifMsg" class="glass-input" rows="4" placeholder="Escribe tu mensaje al atleta..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn btn-primary" onclick="sendNotifToUser()">📤 Enviar</button>
+    </div>
+  `);
+};
+
+window.sendNotifToUser = async () => {
+  const target = document.getElementById('notifTarget').value;
+  const msg = document.getElementById('notifMsg').value.trim();
+  if(!target) return Swal.fire({icon:'warning',title:'Selecciona un atleta',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  if(!msg) return Swal.fire({icon:'warning',title:'Escribe un mensaje',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  await push(ref(db,`notificaciones/${target}`), {
+    mensaje: msg,
+    deId: currentUser.id,
+    deNombre: `${currentUser.nombres} ${currentUser.apellidos||''} (Entrenador)`,
+    tipo: 'mensaje',
+    leida: false,
+    creadaEn: Date.now()
+  });
+  closeOverlay();
+  Swal.fire({icon:'success',title:'Notificación enviada',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+};
+
+// ============ GROUP SCOPING for existing pages ============
+// Helper: get UIDs that belong to groups this admin manages
+async function getMyGroupUserUids() {
+  const [gruposSnap] = await Promise.all([get(ref(db,'grupos'))]);
+  const grupos = gruposSnap.val()||{};
+  const uids = new Set();
+  Object.values(grupos).forEach(g => {
+    if(g.adminDueno===currentUser.id || (g.adminsInvitados&&g.adminsInvitados[currentUser.id])) {
+      Object.keys(g.miembros||{}).forEach(uid => uids.add(uid));
+    }
+  });
+  return uids;
+}
+
 // ============ OVERLAY ============
 window.showOverlay = (html) => {
   // Eliminar TODOS los overlays existentes antes de crear uno nuevo
@@ -2397,17 +2996,18 @@ window.closeOverlay = () => {
 
 // ============ REVISIONES ============
 async function renderRevisiones(container) {
-  const [usSnap, revSemSnap, revMesSnap] = await Promise.all([
+  const [usSnap, revSemSnap, revMesSnap, myUids] = await Promise.all([
     get(ref(db,'usuarios')),
     get(ref(db,'revisiones_semana')),
-    get(ref(db,'revisiones_mes'))
+    get(ref(db,'revisiones_mes')),
+    getMyGroupUserUids()
   ]);
   const users = usSnap.val()||{};
   const revSem = revSemSnap.val()||{};
   const revMes = revMesSnap.val()||{};
 
   const atletasHtml = Object.entries(users)
-    .filter(([,u])=>u.rol!=='admin')
+    .filter(([id,u])=>u.rol!=='admin' && myUids.has(id))
     .map(([uid,u]) => {
       const semanas = Object.values(revSem[uid]||{}).sort((a,b)=>a.fecha-b.fecha);
       const meses   = Object.values(revMes[uid]||{}).sort((a,b)=>a.fecha-b.fecha);
@@ -2480,6 +3080,575 @@ window.switchRevTab = (uid, tab) => {
   document.getElementById(`rev_mes_${uid}`).style.display = tab==='mes' ? '' : 'none';
 };
 
+// ============ HOME ALERTS PREVIEW ============
+async function renderHomeAlertsPreview(container, myUids, users, ruts) {
+  const [sesSnap, revSnap] = await Promise.all([
+    get(ref(db,'sesiones')), get(ref(db,'revisiones_semana'))
+  ]);
+  const alerts = await computeIntelligentAlerts(myUids, users, ruts, sesSnap.val()||{}, revSnap.val()||{});
+  if(!alerts.length) {
+    container.innerHTML = `<div class="glass-panel"><div class="panel-header"><span class="panel-title">🚨 Alertas Inteligentes</span></div><div class="panel-body"><div class="empty-state" style="padding:20px"><div class="empty-icon">✅</div><div class="empty-text">Todo en orden. Sin alertas activas.</div></div></div></div>`;
+    return;
+  }
+  const urgentes = alerts.filter(a=>a.nivel==='danger').length;
+  const warnings = alerts.filter(a=>a.nivel==='warning').length;
+  // Update badge
+  const badge = document.getElementById('alertasBadge');
+  if(badge && alerts.length>0) { badge.textContent = alerts.length; badge.style.display=''; }
+
+  container.innerHTML = `
+    <div class="glass-panel">
+      <div class="panel-header" style="flex-wrap:wrap;gap:8px">
+        <span class="panel-title">🚨 Alertas Inteligentes <span style="background:var(--error);color:#fff;border-radius:20px;padding:2px 10px;font-size:0.72rem;font-weight:700;margin-left:6px">${alerts.length}</span></span>
+        <button class="btn btn-secondary btn-sm" onclick="navTo('alertas')">Ver todas →</button>
+      </div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
+        ${alerts.slice(0,5).map(a=>renderAlertCard(a)).join('')}
+        ${alerts.length>5?`<div style="text-align:center;padding:8px 0"><button class="btn btn-secondary btn-sm" onclick="navTo('alertas')">Ver ${alerts.length-5} más →</button></div>`:''}
+      </div>
+    </div>`;
+}
+
+function renderAlertCard(a) {
+  const colors = {danger:'var(--error)',warning:'var(--warning)',info:'var(--primary)'};
+  const bgs = {danger:'rgba(255,77,109,0.08)',warning:'rgba(255,214,10,0.08)',info:'rgba(0,200,255,0.08)'};
+  const borders = {danger:'rgba(255,77,109,0.25)',warning:'rgba(255,214,10,0.2)',info:'rgba(0,200,255,0.2)'};
+  return `
+    <div style="background:${bgs[a.nivel]};border:1px solid ${borders[a.nivel]};border-radius:14px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px">
+      <div style="font-size:1.5rem;flex-shrink:0">${a.emoji}</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:0.9rem;color:${colors[a.nivel]}">${a.titulo}</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-top:2px">${a.descripcion}</div>
+      </div>
+      ${a.uid?`<button class="btn btn-secondary btn-sm" onclick="window._atletaState={uid:'${a.uid}',sesId:null};navTo('atletas')" style="flex-shrink:0;font-size:0.72rem">Ver →</button>`:''}
+    </div>`;
+}
+
+async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
+  // Si no nos pasaron sesiones/revisiones, cargarlas (compatibilidad)
+  if(sesiones === undefined || revSem === undefined) {
+    const [sesSnap, revSemSnap] = await Promise.all([
+      get(ref(db,'sesiones')), get(ref(db,'revisiones_semana'))
+    ]);
+    sesiones = sesSnap.val()||{};
+    revSem = revSemSnap.val()||{};
+  }
+
+  // Parsear fecha como LOCAL para evitar bug UTC vs Colombia (UTC-5)
+  // new Date('2026-02-10') => medianoche UTC => 19:00 del dia anterior en CO
+  function parseLocalDate(str) {
+    if(!str) return null;
+    return new Date(str.includes('T') ? str : str + 'T00:00:00');
+  }
+  // Comparar por inicio del dia local
+  const today = new Date(); today.setHours(0,0,0,0);
+  const now = today.getTime();
+
+  const alerts = [];
+
+  for(const [uid, u] of Object.entries(users)) {
+    if(u.rol==='admin' || !myUids.has(uid)) continue;
+
+    // 1 & 2. Membresia vencida o proxima a vencer
+    if(u.validoHasta) {
+      const exp = parseLocalDate(u.validoHasta);
+      if(exp) {
+        exp.setHours(0,0,0,0);
+        const diffDays = Math.round((exp.getTime() - now) / (1000*60*60*24));
+        if(diffDays < 0) {
+          alerts.push({
+            nivel: 'danger', emoji: '🔴',
+            titulo: `${u.nombres} — suscripcion vencida`,
+            descripcion: `Vencio el ${exp.toLocaleDateString('es-CO')}${u.activo ? ' pero la cuenta sigue activa' : ''}`,
+            uid
+          });
+        } else if(diffDays <= 7) {
+          alerts.push({
+            nivel: diffDays <= 3 ? 'danger' : 'warning', emoji: '⏳',
+            titulo: `${u.nombres} vence ${diffDays === 0 ? 'hoy' : 'en ' + diffDays + ' dia' + (diffDays===1?'':'s')}`,
+            descripcion: `Suscripcion expira el ${exp.toLocaleDateString('es-CO')}`,
+            uid
+          });
+        }
+      }
+    }
+
+    // 3. Sin entrenar hace muchos dias
+    if(u.activo) {
+      const rutina = Object.values(ruts).find(r=>r.usuario===uid && r.activa);
+      if(rutina) {
+        const historial = sesiones[uid]?.historial||{};
+        const sesses = Object.values(historial);
+        if(sesses.length === 0) {
+          alerts.push({
+            nivel: 'warning', emoji: '😴',
+            titulo: `${u.nombres} — nunca ha entrenado`,
+            descripcion: 'Tiene rutina activa pero no registra ninguna sesion',
+            uid
+          });
+        } else {
+          const lastSes = Math.max(...sesses.map(s=>s.fecha||s.fechaFin||0));
+          const diasSin = (now - lastSes) / (1000*60*60*24);
+          if(diasSin > 7) {
+            alerts.push({
+              nivel: diasSin > 14 ? 'danger' : 'warning', emoji: '🏃',
+              titulo: `${u.nombres} — ${Math.floor(diasSin)} dias sin entrenar`,
+              descripcion: `Ultima sesion: ${new Date(lastSes).toLocaleDateString('es-CO')}. Tiene rutina activa.`,
+              uid
+            });
+          }
+        }
+      }
+    }
+
+    // 4. Revisiones recientes: DOMS, dolor articular, animo
+    // Solo la revisión más reciente Y solo si es de los últimos 14 días
+    const revsSem = Object.values(revSem[uid]||{});
+    if(revsSem.length) {
+      const lastRev = revsSem.filter(r=>r && r.fecha).sort((a,b)=>b.fecha-a.fecha)[0];
+      const esReciente = lastRev && (now - lastRev.fecha) <= 14 * 24 * 60 * 60 * 1000;
+      if(lastRev && esReciente) {
+        // DOMS — solo si el campo existe y es numero valido (evitar undefined >= 6 = false pero seguro)
+        const doms = typeof lastRev.doms === 'number' ? lastRev.doms : parseFloat(lastRev.doms);
+        if(!isNaN(doms) && doms > 0) {
+          if(doms >= 8) {
+            alerts.push({
+              nivel: 'danger', emoji: '💢',
+              titulo: `${u.nombres} — DOMS critico (${doms}/10)`,
+              descripcion: `Dolor muscular severo en: ${lastRev.musculoDoms||'No especificado'}`,
+              uid
+            });
+          } else if(doms >= 6) {
+            alerts.push({
+              nivel: 'warning', emoji: '⚠️',
+              titulo: `${u.nombres} — DOMS elevado (${doms}/10)`,
+              descripcion: `Zona afectada: ${lastRev.musculoDoms||'No especificado'}`,
+              uid
+            });
+          }
+        }
+        // Dolor articular — verificar que el campo es exactamente 'Si'
+        if(lastRev.dolor === 'Si') {
+          alerts.push({
+            nivel: 'danger', emoji: '🦴',
+            titulo: `${u.nombres} — Dolor articular reportado`,
+            descripcion: lastRev.dolorDetalle || 'Sin detalle',
+            uid
+          });
+        }
+        // Animo bajo — solo si existe y es numero (undefined <= 2 seria true = bug)
+        const animo = typeof lastRev.animo === 'number' ? lastRev.animo : parseFloat(lastRev.animo);
+        if(!isNaN(animo) && animo <= 2) {
+          alerts.push({
+            nivel: 'warning', emoji: '😔',
+            titulo: `${u.nombres} — Animo muy bajo (${animo}/5)`,
+            descripcion: 'Requiere seguimiento emocional/motivacional',
+            uid
+          });
+        }
+      }
+    }
+
+    // 5. Sin revision — solo alertar si el atleta ya completó su primer mes
+    // (mesActual > 1 significa que avanzó al mes 2, o sea terminó el mes 1)
+    if(u.activo) {
+      const rutina = Object.values(ruts).find(r=>r.usuario===uid && r.activa);
+      if(rutina) {
+        const progreso = sesiones[uid]?.progreso || {};
+        const mesActual = progreso.mesActual || 1;
+        // Solo aplica si ya completó el mes 1 (avanzó al mes 2 o más)
+        if(mesActual > 1) {
+          const revsSemUser = Object.values(revSem[uid]||{});
+          if(revsSemUser.length === 0) {
+            alerts.push({
+              nivel: 'info', emoji: '📋',
+              titulo: `${u.nombres} — Sin revisiones registradas`,
+              descripcion: 'Ya completó el primer mes pero nunca ha enviado una revisión.',
+              uid
+            });
+          } else {
+            const lastRevDate = Math.max(...revsSemUser.map(r=>r.fecha||0));
+            const diasSinRev = (now - lastRevDate) / (1000*60*60*24);
+            if(diasSinRev > 30) {
+              alerts.push({
+                nivel: 'info', emoji: '📋',
+                titulo: `${u.nombres} — Sin revision en ${Math.floor(diasSinRev)} dias`,
+                descripcion: 'Ultima revision hace mas de 30 dias. Considera hacer un seguimiento.',
+                uid
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const order = {danger:0, warning:1, info:2};
+  alerts.sort((a,b)=>order[a.nivel]-order[b.nivel]);
+  return alerts;
+}
+
+
+// ============ ALERTAS PAGE ============
+async function renderAlertas(container) {
+  container.innerHTML = '<div class="page-loading"><div class="spinner-lg"></div><span>Analizando datos...</span></div>';
+  const [usSnap, rutSnap, sesSnap, revSnap, myUids] = await Promise.all([
+    get(ref(db,'usuarios')), get(ref(db,'rutinas')),
+    get(ref(db,'sesiones')), get(ref(db,'revisiones_semana')),
+    getMyGroupUserUids()
+  ]);
+  const users = usSnap.val()||{};
+  const ruts = rutSnap.val()||{};
+  const alerts = await computeIntelligentAlerts(myUids, users, ruts, sesSnap.val()||{}, revSnap.val()||{});
+
+  const danger = alerts.filter(a=>a.nivel==='danger');
+  const warning = alerts.filter(a=>a.nivel==='warning');
+  const info = alerts.filter(a=>a.nivel==='info');
+
+  container.innerHTML = `
+    <div style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap">
+      <div class="stat-card" style="--card-accent:var(--error);flex:1;min-width:140px">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-value" style="color:var(--error)">${danger.length}</div>
+        <div class="stat-label">Críticas</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--warning);flex:1;min-width:140px">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-value" style="color:var(--warning)">${warning.length}</div>
+        <div class="stat-label">Advertencias</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--primary);flex:1;min-width:140px">
+        <div class="stat-icon">ℹ️</div>
+        <div class="stat-value" style="color:var(--primary)">${info.length}</div>
+        <div class="stat-label">Informativas</div>
+      </div>
+    </div>
+    ${alerts.length===0?`
+      <div class="glass-panel"><div class="panel-body" style="text-align:center;padding:60px 20px">
+        <div style="font-size:4rem;margin-bottom:16px">✅</div>
+        <div style="font-size:1.2rem;font-weight:700;margin-bottom:8px">¡Todo en orden!</div>
+        <div style="color:var(--text-muted)">No hay alertas activas para tus atletas.</div>
+      </div></div>
+    `:`
+    ${danger.length?`
+      <div class="glass-panel" style="margin-bottom:16px;border-color:rgba(255,77,109,0.3)">
+        <div class="panel-header" style="border-bottom-color:rgba(255,77,109,0.2)">
+          <span class="panel-title" style="color:var(--error)">🔴 Alertas Críticas (${danger.length})</span>
+        </div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
+          ${danger.map(a=>renderAlertCard(a)).join('')}
+        </div>
+      </div>`:''}
+    ${warning.length?`
+      <div class="glass-panel" style="margin-bottom:16px;border-color:rgba(255,214,10,0.3)">
+        <div class="panel-header" style="border-bottom-color:rgba(255,214,10,0.15)">
+          <span class="panel-title" style="color:var(--warning)">⚠️ Advertencias (${warning.length})</span>
+        </div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
+          ${warning.map(a=>renderAlertCard(a)).join('')}
+        </div>
+      </div>`:''}
+    ${info.length?`
+      <div class="glass-panel" style="margin-bottom:16px">
+        <div class="panel-header">
+          <span class="panel-title" style="color:var(--primary)">ℹ️ Informativas (${info.length})</span>
+        </div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
+          ${info.map(a=>renderAlertCard(a)).join('')}
+        </div>
+      </div>`:''}
+    `}
+    <div class="glass-panel" style="margin-top:8px">
+      <div class="panel-header"><span class="panel-title">📖 ¿Cómo funcionan las alertas?</span></div>
+      <div class="panel-body" style="font-size:0.85rem;color:var(--text-muted);line-height:1.7">
+        Las alertas inteligentes analizan automáticamente los datos de tus atletas y detectan:
+        <ul style="margin-top:8px;padding-left:20px;display:flex;flex-direction:column;gap:4px">
+          <li>⏳ <strong>Vencimientos próximos</strong> — suscripciones que expiran en ≤7 días</li>
+          <li>🔴 <strong>Cuentas vencidas activas</strong> — membresía expirada pero acceso habilitado</li>
+          <li>😴 <strong>Inactividad prolongada</strong> — activos con rutina pero sin entrenar >7 días</li>
+          <li>💢 <strong>DOMS crítico</strong> — dolor muscular reportado ≥6/10 en revisiones recientes</li>
+          <li>🦴 <strong>Dolor articular</strong> — reporte de dolor articular en revisión semanal</li>
+          <li>😔 <strong>Ánimo bajo</strong> — ánimo ≤2/5 en revisión reciente</li>
+          <li>📋 <strong>Sin revisión</strong> — más de 30 días sin revisión semanal</li>
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+// ============ VALORACIONES ============
+async function renderValoraciones(container, action) {
+  action.textContent = '+ Nueva Valoración';
+  action.style.display = 'flex';
+  action.onclick = () => showValoracionModal();
+
+  const [usSnap, valSnap, myUids] = await Promise.all([
+    get(ref(db,'usuarios')), get(ref(db,'valoraciones')), getMyGroupUserUids()
+  ]);
+  const users = usSnap.val()||{};
+  const valoraciones = valSnap.val()||{};
+  const myAtletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
+
+  if(!myAtletas.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚖️</div><div class="empty-text">No tienes atletas en tus grupos</div></div>`;
+    return;
+  }
+
+  // Render athlete selector + charts
+  let selectedUid = window._valState?.uid || myAtletas[0][0];
+
+  const renderAtletaVal = async (uid) => {
+    window._valState = {uid};
+    const u = users[uid]||{};
+    const vals = Object.values(valoraciones[uid]||{}).sort((a,b)=>a.fecha-b.fecha);
+
+    const atletaOpts = myAtletas.map(([id,u])=>`<option value="${id}" ${id===uid?'selected':''}>${u.nombres} ${u.apellidos||''}</option>`).join('');
+
+    const lastVal = vals[vals.length-1];
+    const firstVal = vals[0];
+
+    // Trend calculations
+    const deltaGrasa = lastVal && firstVal && vals.length>1 ? (lastVal.grasa - firstVal.grasa).toFixed(1) : null;
+    const deltaMuscular = lastVal && firstVal && vals.length>1 ? (lastVal.muscular - firstVal.muscular).toFixed(1) : null;
+    const deltaPeso = lastVal && firstVal && vals.length>1 ? (lastVal.peso - firstVal.peso).toFixed(1) : null;
+
+    const trendIcon = (delta, invertido=false) => {
+      if(delta===null) return '—';
+      const neutro = Math.abs(delta) < 0.5;
+      if(neutro) return `<span style="color:var(--text-muted)">→ sin cambio</span>`;
+      const subio = delta > 0;
+      const esBueno = invertido ? !subio : subio;
+      const arrow = subio ? '▲' : '▼';
+      const sign = subio ? '+' : '';
+      const color = esBueno ? 'var(--success)' : 'var(--error)';
+      return `<span style="color:${color}">${arrow} ${sign}${Math.abs(delta)}</span>`;
+    };
+
+    const anyHasMes = vals.some(v => v.mes);
+    const labels = vals.map((v, i) => anyHasMes ? `Mes ${v.mes || (i+1)}` : new Date(v.fecha).toLocaleDateString('es-CO',{month:'short',year:'2-digit'}));
+
+    document.getElementById('valContent').innerHTML = `
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:48px;height:48px;border-radius:50%;border:3px solid rgba(0,200,255,0.4)">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:1.1rem">${u.nombres} ${u.apellidos||''}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">${vals.length} valoración(es) registrada(s)</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showValoracionModal('${uid}')">+ Agregar valoración</button>
+      </div>
+
+      ${lastVal ? `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px">
+        <div class="stat-card" style="--card-accent:#ff6b35;padding:16px">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">% Grasa actual</div>
+          <div style="font-size:1.8rem;font-weight:900;color:#ff6b35">${lastVal.grasa}%</div>
+          <div style="font-size:0.8rem;margin-top:2px">${trendIcon(deltaGrasa, true)}</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--success);padding:16px">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">% Masa muscular</div>
+          <div style="font-size:1.8rem;font-weight:900;color:var(--success)">${lastVal.muscular}%</div>
+          <div style="font-size:0.8rem;margin-top:2px">${trendIcon(deltaMuscular)}</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--primary);padding:16px">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Peso actual</div>
+          <div style="font-size:1.8rem;font-weight:900;color:var(--primary)">${lastVal.peso} kg</div>
+          <div style="font-size:0.8rem;margin-top:2px">${trendIcon(deltaPeso, false)}</div>
+        </div>
+        ${lastVal.imc?`<div class="stat-card" style="--card-accent:var(--accent);padding:16px">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">IMC</div>
+          <div style="font-size:1.8rem;font-weight:900;color:var(--accent)">${lastVal.imc}</div>
+          <div style="font-size:0.8rem;margin-top:2px;color:var(--text-muted)">${lastVal.imc<18.5?'Bajo peso':lastVal.imc<25?'Normal':lastVal.imc<30?'Sobrepeso':'Obesidad'}</div>
+        </div>`:''}
+      </div>` : `<div style="padding:16px;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:12px;margin-bottom:16px;font-size:0.85rem;color:#ff6b35">⚠️ Sin valoraciones registradas aún</div>`}
+
+      ${vals.length >= 2 ? `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:20px">
+        <div class="glass-panel">
+          <div class="panel-header"><span class="panel-title">🔥 % Grasa corporal</span></div>
+          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartGrasa"></canvas></div></div>
+        </div>
+        <div class="glass-panel">
+          <div class="panel-header"><span class="panel-title">💪 % Masa muscular</span></div>
+          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartMuscular"></canvas></div></div>
+        </div>
+        <div class="glass-panel">
+          <div class="panel-header"><span class="panel-title">⚖️ Peso corporal</span></div>
+          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartPesoVal"></canvas></div></div>
+        </div>
+        <div class="glass-panel">
+          <div class="panel-header"><span class="panel-title">📊 Composición integral</span></div>
+          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartComp"></canvas></div></div>
+        </div>
+      </div>` : vals.length===1 ? `<div style="padding:12px;background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.2);border-radius:12px;margin-bottom:16px;font-size:0.85rem;color:var(--primary)">📊 Agrega al menos 2 valoraciones para ver las gráficas de tendencia</div>` : ''}
+
+      <div class="glass-panel">
+        <div class="panel-header"><span class="panel-title">📅 Historial de valoraciones</span></div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
+          ${vals.length===0?'<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin valoraciones aún</div></div>':
+            [...vals].reverse().map((v,i)=>`
+              <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:14px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+                  <div style="font-weight:700;color:var(--primary)">
+                    ${v.mes?`Mes ${v.mes}`:''} 
+                    <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400">${new Date(v.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})}</span>
+                  </div>
+                  <button class="btn btn-danger btn-sm" onclick="deleteValoracion('${uid}','${Object.entries(valoraciones[uid]||{}).find(([,val])=>val.fecha===v.fecha)?.[0]}')">🗑️</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
+                  <div class="rev-info-card"><div class="ric-label">🔥 % Grasa</div><div class="ric-val" style="color:#ff6b35">${v.grasa}%</div></div>
+                  <div class="rev-info-card"><div class="ric-label">💪 % Muscular</div><div class="ric-val" style="color:var(--success)">${v.muscular}%</div></div>
+                  <div class="rev-info-card"><div class="ric-label">⚖️ Peso</div><div class="ric-val">${v.peso} kg</div></div>
+                  ${v.imc?`<div class="rev-info-card"><div class="ric-label">📏 IMC</div><div class="ric-val">${v.imc}</div></div>`:''}
+                  ${v.pesoGraso?`<div class="rev-info-card"><div class="ric-label">🏋️ Masa grasa</div><div class="ric-val">${v.pesoGraso} kg</div></div>`:''}
+                  ${v.pesoMagro?`<div class="rev-info-card"><div class="ric-label">🎯 Masa magra</div><div class="ric-val">${v.pesoMagro} kg</div></div>`:''}
+                  ${v.pesoOseo?`<div class="rev-info-card"><div class="ric-label">🦴 Peso óseo</div><div class="ric-val">${v.pesoOseo} kg</div></div>`:''}
+                </div>
+                ${v.notas?`<div style="margin-top:8px;font-size:0.82rem;color:var(--text-muted);padding:8px;background:rgba(255,255,255,0.03);border-radius:8px">💬 ${v.notas}</div>`:''}
+              </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Render charts if enough data
+    if(vals.length >= 2) {
+      const chartOpts = {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}},
+          y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}}
+        }
+      };
+      const makeGradient = (ctx, c1, c2) => { const g=ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,c1); g.addColorStop(1,c2); return g; };
+
+      // Chart Grasa
+      const cg = document.getElementById('chartGrasa');
+      if(cg) new Chart(cg, {type:'line',data:{labels,datasets:[{label:'% Grasa',data:vals.map(v=>v.grasa),borderColor:'#ff6b35',backgroundColor:(ctx)=>makeGradient(ctx.chart.ctx,'rgba(255,107,53,0.3)','rgba(255,107,53,0)'),tension:0.4,fill:true,pointBackgroundColor:'#ff6b35',pointRadius:5}]},options:chartOpts});
+
+      // Chart Muscular
+      const cm = document.getElementById('chartMuscular');
+      if(cm) new Chart(cm, {type:'line',data:{labels,datasets:[{label:'% Muscular',data:vals.map(v=>v.muscular),borderColor:'#00e5a0',backgroundColor:(ctx)=>makeGradient(ctx.chart.ctx,'rgba(0,229,160,0.3)','rgba(0,229,160,0)'),tension:0.4,fill:true,pointBackgroundColor:'#00e5a0',pointRadius:5}]},options:chartOpts});
+
+      // Chart Peso
+      const cp = document.getElementById('chartPesoVal');
+      if(cp) new Chart(cp, {type:'line',data:{labels,datasets:[{label:'Peso (kg)',data:vals.map(v=>v.peso),borderColor:'#00c8ff',backgroundColor:(ctx)=>makeGradient(ctx.chart.ctx,'rgba(0,200,255,0.3)','rgba(0,200,255,0)'),tension:0.4,fill:true,pointBackgroundColor:'#00c8ff',pointRadius:5}]},options:chartOpts});
+
+      // Chart Composición (multi-line)
+      const cc = document.getElementById('chartComp');
+      if(cc) new Chart(cc, {type:'line',data:{labels,datasets:[
+        {label:'% Grasa',data:vals.map(v=>v.grasa),borderColor:'#ff6b35',tension:0.4,fill:false,pointRadius:4},
+        {label:'% Muscular',data:vals.map(v=>v.muscular),borderColor:'#00e5a0',tension:0.4,fill:false,pointRadius:4},
+      ]},options:{...chartOpts,plugins:{legend:{display:true,labels:{color:'rgba(232,244,255,0.7)',font:{size:11}}}}}});
+    }
+  };
+
+  container.innerHTML = `
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <label style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0">Atleta:</label>
+      <select class="glass-input" style="max-width:300px" onchange="window._valState={uid:this.value};renderValAtleta(this.value)">
+        ${myAtletas.map(([id,u])=>`<option value="${id}" ${id===selectedUid?'selected':''}>${u.nombres} ${u.apellidos||''}</option>`).join('')}
+      </select>
+    </div>
+    <div id="valContent"></div>
+  `;
+
+  window.renderValAtleta = renderAtletaVal;
+  await renderAtletaVal(selectedUid);
+}
+
+window.showValoracionModal = async (uid=null) => {
+  const [usSnap, myUids] = await Promise.all([get(ref(db,'usuarios')), getMyGroupUserUids()]);
+  const users = usSnap.val()||{};
+  const myAtletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
+  const userOpts = myAtletas.map(([id,u])=>`<option value="${id}" ${id===uid?'selected':''}>${u.nombres} ${u.apellidos||''}</option>`).join('');
+
+  showOverlay(`
+    <div class="overlay-header">
+      <span class="overlay-title">⚖️ Nueva Valoración</span>
+      <button class="btn-close" onclick="closeOverlay()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1"><label>Atleta *</label>
+        <select class="glass-input" id="valUid"><option value="">Seleccionar...</option>${userOpts}</select>
+      </div>
+      <div class="form-group"><label>Mes (número)</label>
+        <input class="glass-input" type="number" id="valMes" placeholder="1" min="1">
+      </div>
+      <div class="form-group"><label>Fecha *</label>
+        <input class="glass-input" type="date" id="valFecha" value="${new Date().toISOString().split('T')[0]}">
+      </div>
+      <div class="form-group"><label>Peso (kg) *</label>
+        <input class="glass-input" type="number" id="valPeso" placeholder="70.5" step="0.1">
+      </div>
+      <div class="form-group"><label>% Grasa corporal *</label>
+        <input class="glass-input" type="number" id="valGrasa" placeholder="18.5" step="0.1" min="0" max="100">
+      </div>
+      <div class="form-group"><label>% Masa muscular *</label>
+        <input class="glass-input" type="number" id="valMuscular" placeholder="42.0" step="0.1" min="0" max="100">
+      </div>
+      <div class="form-group"><label>IMC</label>
+        <input class="glass-input" type="number" id="valIMC" placeholder="22.5" step="0.1">
+      </div>
+      <div class="form-group"><label>Masa grasa (kg)</label>
+        <input class="glass-input" type="number" id="valPesoGraso" placeholder="12.5" step="0.1">
+      </div>
+      <div class="form-group"><label>Masa magra (kg)</label>
+        <input class="glass-input" type="number" id="valPesoMagro" placeholder="55.0" step="0.1">
+      </div>
+      <div class="form-group"><label>Peso óseo (kg)</label>
+        <input class="glass-input" type="number" id="valPesoOseo" placeholder="3.2" step="0.1">
+      </div>
+      <div class="form-group" style="grid-column:1/-1"><label>Notas</label>
+        <textarea class="glass-input" id="valNotas" placeholder="Observaciones de la valoración..."></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveValoracion()">💾 Guardar</button>
+    </div>
+  `);
+};
+
+window.saveValoracion = async () => {
+  const uid = document.getElementById('valUid').value;
+  const fecha = document.getElementById('valFecha').value;
+  const peso = parseFloat(document.getElementById('valPeso').value);
+  const grasa = parseFloat(document.getElementById('valGrasa').value);
+  const muscular = parseFloat(document.getElementById('valMuscular').value);
+  if(!uid || !fecha || isNaN(peso) || isNaN(grasa) || isNaN(muscular)) {
+    return Swal.fire({icon:'warning',title:'Campos requeridos',text:'Completa atleta, fecha, peso, % grasa y % muscular',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  }
+  const data = {
+    fecha: new Date(fecha).getTime(),
+    peso, grasa, muscular,
+    mes: parseInt(document.getElementById('valMes').value)||null,
+    imc: parseFloat(document.getElementById('valIMC').value)||null,
+    pesoGraso: parseFloat(document.getElementById('valPesoGraso').value)||null,
+    pesoMagro: parseFloat(document.getElementById('valPesoMagro').value)||null,
+    pesoOseo: parseFloat(document.getElementById('valPesoOseo').value)||null,
+    notas: document.getElementById('valNotas').value.trim()||null,
+    creadaEn: Date.now()
+  };
+  // Clean nulls
+  Object.keys(data).forEach(k => data[k]===null && delete data[k]);
+  await push(ref(db,`valoraciones/${uid}`), data);
+  closeOverlay();
+  window._valState = {uid};
+  Swal.fire({icon:'success',title:'¡Valoración guardada!',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  document.querySelector('[data-page="valoraciones"]').click();
+};
+
+window.deleteValoracion = async (uid, vid) => {
+  if(!vid) return;
+  const r = await Swal.fire({icon:'warning',title:'¿Eliminar valoración?',showCancelButton:true,confirmButtonColor:'#ff4d6d',background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  if(r.isConfirmed) {
+    await remove(ref(db,`valoraciones/${uid}/${vid}`));
+    window._valState = {uid};
+    document.querySelector('[data-page="valoraciones"]').click();
+  }
+};
+
 // ── Selector visual de fatiga (admin) ──
 window.admSelectFatiga = (val) => {
   const colors = ['#00c8ff','#00e5a0','#4ade80','#a3e635','#ffd60a','#ff6b35','#f97316','#ef4444','#dc2626','#b91c1c'];
@@ -2499,10 +3668,54 @@ window.admSelectFatiga = (val) => {
 };
 
 // Init
+// ============ REAL-TIME ALERT BADGE ============
+// Cache en memoria actualizado por onValue — nunca usa get() que puede devolver caché viejo
+const _liveCache = { usuarios: null, rutinas: null, sesiones: null, revisiones_semana: null };
+let _alertDebounce = null;
+
+async function refreshAlertBadge() {
+  try {
+    if(!_liveCache.usuarios || !_liveCache.rutinas || !_liveCache.sesiones || !_liveCache.revisiones_semana) return;
+    const myUids = await getMyGroupUserUids();
+    const alerts = await computeIntelligentAlerts(
+      myUids,
+      _liveCache.usuarios,
+      _liveCache.rutinas,
+      _liveCache.sesiones,
+      _liveCache.revisiones_semana
+    );
+    const badge = document.getElementById('alertasBadge');
+    if(badge) {
+      badge.textContent = alerts.length;
+      badge.style.display = alerts.length > 0 ? '' : 'none';
+    }
+    // Si la seccion alertas esta abierta, refrescarla tambien
+    const active = document.querySelector('.nav-item.active');
+    if(active && active.dataset.page === 'alertas') {
+      const content = document.querySelector('.content');
+      if(content) renderAlertas(content);
+    }
+  } catch(e) { console.warn('refreshAlertBadge error:', e); }
+}
+
+function setupAlertBadgeListener() {
+  ['usuarios','rutinas','sesiones','revisiones_semana'].forEach(path => {
+    onValue(ref(db, path), (snap) => {
+      _liveCache[path] = snap.val() || {};
+      clearTimeout(_alertDebounce);
+      _alertDebounce = setTimeout(refreshAlertBadge, 600);
+    });
+  });
+}
+
 onAuthStateChanged(auth, (user) => {
   if (!user) { sessionStorage.removeItem('saykyo_user'); window.location.href='index.html'; return; }
   if (typeof window._appInited === 'undefined') {
     window._appInited = true;
+    // Setup notification listener
+    setupNotifListener();
+    // Alertas en tiempo real
+    setupAlertBadgeListener();
     // Restaurar página tras reload post-sesión admin
     const reloadPage = sessionStorage.getItem('saykyo_reload_page');
     const reloadUid  = sessionStorage.getItem('saykyo_reload_uid');
