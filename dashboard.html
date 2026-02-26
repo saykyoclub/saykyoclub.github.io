@@ -105,8 +105,9 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
   border-bottom:1px solid var(--glass-border);
   flex-shrink:0;
 }
-.page-title { font-size:1.3rem;font-weight:700; }
-.page-subtitle { font-size:0.8rem;color:var(--text-muted); }
+.page-title { font-size:1.3rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.page-subtitle { font-size:0.8rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+@media(max-width:600px){ .page-subtitle { display:none; } }
 .topbar-actions { display:flex;gap:10px;align-items:center; }
 .menu-toggle { display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;padding:6px;flex-shrink:0; }
 .btn-back { display:none;align-items:center;gap:6px;flex-shrink:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:7px 14px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s ease;white-space:nowrap; }
@@ -487,7 +488,7 @@ textarea.glass-input { resize:vertical; min-height:80px; }
     <div style="display:flex;align-items:center;gap:10px;min-width:0">
       <button class="menu-toggle" id="menuToggle">☰</button>
       <button class="btn-back" id="backBtn" onclick="goBack()">← Atrás</button>
-      <div style="min-width:0">
+      <div style="flex:1;min-width:0;overflow:hidden">
         <div class="page-title" id="pageTitle">Dashboard</div>
         <div class="page-subtitle" id="pageSubtitle">Bienvenido al panel de administración</div>
       </div>
@@ -848,12 +849,13 @@ async function renderHome(container) {
   const ruts = rutSnap.val()||{};
   // Scope to group members
   const myUsers = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
-  const activeUsers = myUsers.filter(([,u])=>u.activo).length;
+  // "Activos" muestra todos los usuarios activos del sistema (no solo mis grupos)
+  const activeUsers = Object.values(users).filter(u=>u.rol!=='admin' && u.activo).length;
   const myRuts = Object.entries(ruts).filter(([,r])=>r.usuario && myUids.has(r.usuario));
 
   container.innerHTML = `
     <div class="dashboard-grid">
-      <div class="stat-card" style="--card-accent:var(--primary)" onclick="navTo('usuarios')">
+      <div class="stat-card" style="--card-accent:var(--primary)" onclick="navTo('grupos')">
         <div class="stat-icon">👥</div>
         <div class="stat-value">${myUsers.length}</div>
         <div class="stat-label">Atletas en mis grupos</div>
