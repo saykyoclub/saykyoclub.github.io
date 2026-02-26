@@ -2851,18 +2851,32 @@ function renderNotifList() {
     return;
   }
 
-  list.innerHTML = sorted.map(([nid,n])=>`
+  list.innerHTML = sorted.map(([nid,n])=>{
+    // Tipos que llegan al admin desde usuarios:
+    //   'alerta'            → usuario envió alerta/pregunta → admin PUEDE responder una vez
+    //   'respuesta_usuario' → usuario respondió a algo del admin → hilo cerrado
+    // El admin NO ve mensajes tipo 'mensaje' ni 'respuesta_admin' (esos los envía él)
+    const isAlerta = n.tipo === 'alerta';
+    const isRespUsuario = n.tipo === 'respuesta_usuario';
+    const canReply = isAlerta && !n.respondida && n.deId;
+    const fromLabel = isAlerta ? '🚨 Alerta de ' : isRespUsuario ? '💬 Respuesta de ' : '📩 Mensaje de ';
+    return `
     <div class="notif-item ${n.leida?'':'unread'}" id="notif_${nid}">
       <div style="display:flex;align-items:flex-start;gap:8px">
-        <div style="flex:1;cursor:pointer" onclick="markNotifRead('${nid}')">
-          <div class="notif-from">${n.tipo==='alerta'?'🚨 Alerta de ':'💬 Mensaje de '}<strong>${n.deNombre||'Atleta'}</strong></div>
+        <div style="flex:1;cursor:pointer;min-width:0" onclick="markNotifRead('${nid}')">
+          <div class="notif-from">${fromLabel}<strong>${n.deNombre||'Atleta'}</strong></div>
           <div class="notif-msg">${n.mensaje}</div>
+          ${n.respondida ? '<div style="font-size:0.7rem;color:var(--success);margin-top:3px">✅ Respondida</div>' : ''}
+          ${isRespUsuario ? '<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;font-style:italic">🔒 Hilo cerrado</div>' : ''}
           <div class="notif-time">${new Date(n.creadaEn).toLocaleString()}</div>
         </div>
-        <button onclick="deleteNotif('${nid}')" title="Eliminar" style="flex-shrink:0;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
+          ${canReply ? `<button onclick="replyToNotif('${nid}','${n.deId}')" style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);border-radius:8px;padding:5px 8px;color:var(--primary);font-family:'Exo 2',sans-serif;font-size:0.7rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s" onmouseover="this.style.background='rgba(0,200,255,0.2)'" onmouseout="this.style.background='rgba(0,200,255,0.1)'">💬 Responder</button>` : ''}
+          <button onclick="deleteNotif('${nid}')" title="Eliminar" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
+        </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 window.markNotifRead = async (nid) => {
@@ -2903,6 +2917,59 @@ window.deleteAllNotifs = async () => {
   if(!res.isConfirmed) return;
   await remove(ref(db,`notificaciones/${currentUser.id}`));
   renderNotifList();
+};
+
+// Admin replies to an athlete notification (one-time reply)
+window.replyToNotif = async (nid, targetUid) => {
+  // Marcar como leída primero
+  await update(ref(db,`notificaciones/${currentUser.id}/${nid}`), {leida:true});
+  
+  showOverlay(`
+    <div class="overlay-header">
+      <span class="overlay-title">💬 Responder al Atleta</span>
+      <button class="btn-close" onclick="closeOverlay()">✕</button>
+    </div>
+    <div style="background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.2);border-radius:12px;padding:12px;margin-bottom:16px;font-size:0.82rem;color:var(--text-muted)">
+      ℹ️ Esta respuesta llegará como notificación al atleta. Solo puedes responder <strong>una vez</strong> a esta alerta.
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Tu respuesta</label>
+      <textarea id="adminReplyMsg" class="glass-input" rows="4" placeholder="Escribe tu respuesta al atleta..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn btn-primary" onclick="sendAdminReply('${nid}','${targetUid}')">📤 Enviar respuesta</button>
+    </div>
+  `);
+};
+
+window.sendAdminReply = async (nid, targetUid) => {
+  const msg = document.getElementById('adminReplyMsg')?.value?.trim();
+  if(!msg) return Swal.fire({icon:'warning',title:'Escribe una respuesta',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  // Send notification to the athlete as 'respuesta_alerta' type
+  const notif = {
+    mensaje: msg,
+    deId: currentUser.id,
+    deNombre: `${currentUser.nombres||'Entrenador'} ${currentUser.apellidos||''} (Entrenador)`.trim(),
+    tipo: 'respuesta_admin',
+    leida: false,
+    creadaEn: Date.now()
+  };
+  await push(ref(db, `notificaciones/${targetUid}`), notif);
+
+  // Mark original notif as responded so button disappears
+  await update(ref(db, `notificaciones/${currentUser.id}/${nid}`), {respondida: true, leida: true});
+  
+  // Update local cache so UI reflects change immediately
+  if(window._notifData && window._notifData[nid]) {
+    window._notifData[nid].respondida = true;
+    window._notifData[nid].leida = true;
+  }
+
+  closeOverlay();
+  renderNotifList();
+  Swal.fire({icon:'success',title:'Respuesta enviada',text:'El atleta recibirá tu respuesta en sus notificaciones',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
 };
 
 window.showSendNotifModal = async (gid=null) => {
@@ -3087,13 +3154,13 @@ async function renderHomeAlertsPreview(container, myUids, users, ruts) {
   const [sesSnap, revSnap] = await Promise.all([
     get(ref(db,'sesiones')), get(ref(db,'revisiones_semana'))
   ]);
-  const alerts = await computeIntelligentAlerts(myUids, users, ruts, sesSnap.val()||{}, revSnap.val()||{});
+  let alerts = await computeIntelligentAlerts(myUids, users, ruts, sesSnap.val()||{}, revSnap.val()||{});
+  alerts = alerts.filter(a => !isAlertDismissed(a));
+  window._currentAlerts = (window._currentAlerts||[]).concat(alerts.filter(a=>!window._currentAlerts?.find(x=>x.alertKey===a.alertKey)));
   if(!alerts.length) {
     container.innerHTML = `<div class="glass-panel"><div class="panel-header"><span class="panel-title">🚨 Alertas Inteligentes</span></div><div class="panel-body"><div class="empty-state" style="padding:20px"><div class="empty-icon">✅</div><div class="empty-text">Todo en orden. Sin alertas activas.</div></div></div></div>`;
     return;
   }
-  const urgentes = alerts.filter(a=>a.nivel==='danger').length;
-  const warnings = alerts.filter(a=>a.nivel==='warning').length;
   // Update badge
   const badge = document.getElementById('alertasBadge');
   if(badge && alerts.length>0) { badge.textContent = alerts.length; badge.style.display=''; }
@@ -3111,20 +3178,101 @@ async function renderHomeAlertsPreview(container, myUids, users, ruts) {
     </div>`;
 }
 
-function renderAlertCard(a) {
+// Generate a stable ID for an alert
+// ═══════════════════════════════════════════════════════════════════
+// SISTEMA DE DESCARTE DE ALERTAS — persistido en Firebase
+// ═══════════════════════════════════════════════════════════════════
+//
+// Cada alerta lleva dos campos clave:
+//   alertKey      : ID estable del TIPO de alerta. No cambia con los datos.
+//                   Formato: "<tipo>|<uid>"  ej: "memb_vence|abc123"
+//   conditionValue: Huella del ESTADO ACTUAL de la condición.
+//                   Cambia cuando los datos cambian (fecha, timestamp, valor).
+//                   Ej: la fecha de expiración "2026-03-15", o el timestamp de
+//                   la última revisión, o el valor de DOMS.
+//
+// Al descartar se guarda en Firebase:
+//   alertas_descartadas/{adminId}/{alertKey} = { cv: conditionValue, ts: now }
+//
+// Al mostrar alertas:
+//   - Si no hay entrada para alertKey → mostrar (nueva alerta)
+//   - Si hay entrada Y cv === conditionValue → está descartada, ocultar
+//   - Si hay entrada Y cv !== conditionValue → condición cambió, mostrar de nuevo
+//
+// Esto garantiza:
+//   • Persiste entre recargas y dispositivos (Firebase)
+//   • Reaparece si cambia la fecha de vencimiento, la última sesión, etc.
+//   • No requiere tocar reglas de seguridad de otros nodos
+
+window._dismissedAlerts = {};  // mirror en memoria: { alertKey: { cv, ts } }
+
+async function loadDismissedAlerts() {
+  try {
+    const snap = await get(ref(db, `alertas_descartadas/${currentUser.id}`));
+    window._dismissedAlerts = snap.val() || {};
+  } catch(e) {
+    console.warn('No se pudieron cargar alertas descartadas:', e);
+    window._dismissedAlerts = {};
+  }
+}
+
+function isAlertDismissed(a) {
+  const entry = window._dismissedAlerts?.[a.alertKey];
+  if(!entry) return false;
+  // Si el conditionValue actual difiere del guardado → la condición cambió → mostrar
+  return String(entry.cv) === String(a.conditionValue);
+}
+
+function renderAlertCard(a, inAlertsPage=false) {
   const colors = {danger:'var(--error)',warning:'var(--warning)',info:'var(--primary)'};
   const bgs = {danger:'rgba(255,77,109,0.08)',warning:'rgba(255,214,10,0.08)',info:'rgba(0,200,255,0.08)'};
   const borders = {danger:'rgba(255,77,109,0.25)',warning:'rgba(255,214,10,0.2)',info:'rgba(0,200,255,0.2)'};
+  const aId = a.alertKey;
+  const actionsHtml = inAlertsPage ? `
+    <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+      <button class="btn btn-danger btn-sm" onclick="dismissAlert('${aId}')" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap">🗑️ Descartar</button>
+    </div>` : '';
   return `
-    <div style="background:${bgs[a.nivel]};border:1px solid ${borders[a.nivel]};border-radius:14px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px">
+    <div id="alertcard_${aId}" style="background:${bgs[a.nivel]};border:1px solid ${borders[a.nivel]};border-radius:14px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px">
       <div style="font-size:1.5rem;flex-shrink:0">${a.emoji}</div>
-      <div style="flex:1">
+      <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:0.9rem;color:${colors[a.nivel]}">${a.titulo}</div>
         <div style="font-size:0.82rem;color:var(--text-muted);margin-top:2px">${a.descripcion}</div>
       </div>
-      ${a.uid?`<button class="btn btn-secondary btn-sm" onclick="window._atletaState={uid:'${a.uid}',sesId:null};navTo('atletas')" style="flex-shrink:0;font-size:0.72rem">Ver →</button>`:''}
+      ${actionsHtml}
     </div>`;
 }
+
+window.dismissAlert = async (aId) => {
+  // Buscar la alerta activa por su alertKey para obtener conditionValue
+  const alertData = window._currentAlerts?.find(a => a.alertKey === aId);
+  const cv = alertData ? alertData.conditionValue : '__dismissed__';
+
+  // Actualizar mirror en memoria
+  if(!window._dismissedAlerts) window._dismissedAlerts = {};
+  window._dismissedAlerts[aId] = { cv, ts: Date.now() };
+
+  // Persistir en Firebase (requiere la regla alertas_descartadas en Firebase)
+  try {
+    await set(ref(db, `alertas_descartadas/${currentUser.id}/${aId}`), { cv, ts: Date.now() });
+  } catch(e) {
+    console.warn('No se pudo persistir descarte en Firebase:', e);
+  }
+
+  // Animar y quitar SOLO este card — NO re-renderizar toda la página
+  const el = document.getElementById(`alertcard_${aId}`);
+  if(el) {
+    el.style.transition = 'all 0.3s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(40px)';
+    setTimeout(() => {
+      el.remove();
+      refreshAlertBadge(true); // solo actualiza badge, no re-renderiza página
+    }, 300);
+  }
+};
+
+
 
 async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
   // Si no nos pasaron sesiones/revisiones, cargarlas (compatibilidad)
@@ -3137,21 +3285,24 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
   }
 
   // Parsear fecha como LOCAL para evitar bug UTC vs Colombia (UTC-5)
-  // new Date('2026-02-10') => medianoche UTC => 19:00 del dia anterior en CO
   function parseLocalDate(str) {
     if(!str) return null;
     return new Date(str.includes('T') ? str : str + 'T00:00:00');
   }
-  // Comparar por inicio del dia local
   const today = new Date(); today.setHours(0,0,0,0);
   const now = today.getTime();
+
+  // Helper: sanitizar string para usar como clave de Firebase (sin /, ., #, $, [, ])
+  function safeKey(s) { return String(s).replace(/[.#$[\]/]/g,'_'); }
 
   const alerts = [];
 
   for(const [uid, u] of Object.entries(users)) {
     if(u.rol==='admin' || !myUids.has(uid)) continue;
 
-    // 1 & 2. Membresia vencida o proxima a vencer
+    // ── 1. Membresía vencida ──────────────────────────────────────────────
+    // conditionValue = la fecha exacta de vencimiento.
+    // Si el admin cambia validoHasta → cv cambia → alerta reaparece.
     if(u.validoHasta) {
       const exp = parseLocalDate(u.validoHasta);
       if(exp) {
@@ -3162,40 +3313,53 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
             nivel: 'danger', emoji: '🔴',
             titulo: `${u.nombres} — suscripcion vencida`,
             descripcion: `Vencio el ${exp.toLocaleDateString('es-CO')}${u.activo ? ' pero la cuenta sigue activa' : ''}`,
+            alertKey: `memb_vencida__${safeKey(uid)}`,
+            conditionValue: u.validoHasta,   // cambia si se modifica la fecha
             uid
           });
         } else if(diffDays <= 7) {
+          // ── 2. Próxima a vencer ─────────────────────────────────────────
+          // conditionValue = fecha de vencimiento (misma razón: si la cambian → reaparece).
           alerts.push({
             nivel: diffDays <= 3 ? 'danger' : 'warning', emoji: '⏳',
             titulo: `${u.nombres} vence ${diffDays === 0 ? 'hoy' : 'en ' + diffDays + ' dia' + (diffDays===1?'':'s')}`,
             descripcion: `Suscripcion expira el ${exp.toLocaleDateString('es-CO')}`,
+            alertKey: `memb_vence__${safeKey(uid)}`,
+            conditionValue: u.validoHasta,   // si se extiende la fecha → cv cambia → reaparece
             uid
           });
         }
       }
     }
 
-    // 3. Sin entrenar hace muchos dias
+    // ── 3. Sin entrenar ───────────────────────────────────────────────────
     if(u.activo) {
       const rutina = Object.values(ruts).find(r=>r.usuario===uid && r.activa);
       if(rutina) {
         const historial = sesiones[uid]?.historial||{};
         const sesses = Object.values(historial);
         if(sesses.length === 0) {
+          // conditionValue fijo = 'nunca'. Solo desaparece definitivamente si entrena (sesión crea historial)
           alerts.push({
             nivel: 'warning', emoji: '😴',
             titulo: `${u.nombres} — nunca ha entrenado`,
             descripcion: 'Tiene rutina activa pero no registra ninguna sesion',
+            alertKey: `sin_entrenar_nunca__${safeKey(uid)}`,
+            conditionValue: 'nunca',
             uid
           });
         } else {
           const lastSes = Math.max(...sesses.map(s=>s.fecha||s.fechaFin||0));
           const diasSin = (now - lastSes) / (1000*60*60*24);
           if(diasSin > 7) {
+            // conditionValue = timestamp de la última sesión.
+            // Si el atleta entrena → lastSes cambia → cv cambia → alerta reaparece la próxima vez que supere 7 días.
             alerts.push({
               nivel: diasSin > 14 ? 'danger' : 'warning', emoji: '🏃',
               titulo: `${u.nombres} — ${Math.floor(diasSin)} dias sin entrenar`,
               descripcion: `Ultima sesion: ${new Date(lastSes).toLocaleDateString('es-CO')}. Tiene rutina activa.`,
+              alertKey: `sin_entrenar__${safeKey(uid)}`,
+              conditionValue: String(lastSes),  // cambia cuando entrena
               uid
             });
           }
@@ -3203,14 +3367,14 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
       }
     }
 
-    // 4. Revisiones recientes: DOMS, dolor articular, animo
-    // Solo la revisión más reciente Y solo si es de los últimos 14 días
+    // ── 4. Alertas de revisión reciente (DOMS, dolor, ánimo) ─────────────
+    // Todas usan como conditionValue el timestamp de la revisión más reciente.
+    // Si el atleta envía una nueva revisión → lastRev.fecha cambia → cv cambia → reaparece.
     const revsSem = Object.values(revSem[uid]||{});
     if(revsSem.length) {
       const lastRev = revsSem.filter(r=>r && r.fecha).sort((a,b)=>b.fecha-a.fecha)[0];
       const esReciente = lastRev && (now - lastRev.fecha) <= 14 * 24 * 60 * 60 * 1000;
       if(lastRev && esReciente) {
-        // DOMS — solo si el campo existe y es numero valido (evitar undefined >= 6 = false pero seguro)
         const doms = typeof lastRev.doms === 'number' ? lastRev.doms : parseFloat(lastRev.doms);
         if(!isNaN(doms) && doms > 0) {
           if(doms >= 8) {
@@ -3218,6 +3382,8 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
               nivel: 'danger', emoji: '💢',
               titulo: `${u.nombres} — DOMS critico (${doms}/10)`,
               descripcion: `Dolor muscular severo en: ${lastRev.musculoDoms||'No especificado'}`,
+              alertKey: `doms_critico__${safeKey(uid)}`,
+              conditionValue: String(lastRev.fecha),  // nueva revisión → cv nuevo
               uid
             });
           } else if(doms >= 6) {
@@ -3225,40 +3391,42 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
               nivel: 'warning', emoji: '⚠️',
               titulo: `${u.nombres} — DOMS elevado (${doms}/10)`,
               descripcion: `Zona afectada: ${lastRev.musculoDoms||'No especificado'}`,
+              alertKey: `doms_elevado__${safeKey(uid)}`,
+              conditionValue: String(lastRev.fecha),
               uid
             });
           }
         }
-        // Dolor articular — verificar que el campo es exactamente 'Si'
         if(lastRev.dolor === 'Si') {
           alerts.push({
             nivel: 'danger', emoji: '🦴',
             titulo: `${u.nombres} — Dolor articular reportado`,
             descripcion: lastRev.dolorDetalle || 'Sin detalle',
+            alertKey: `dolor_articular__${safeKey(uid)}`,
+            conditionValue: String(lastRev.fecha),
             uid
           });
         }
-        // Animo bajo — solo si existe y es numero (undefined <= 2 seria true = bug)
         const animo = typeof lastRev.animo === 'number' ? lastRev.animo : parseFloat(lastRev.animo);
         if(!isNaN(animo) && animo <= 2) {
           alerts.push({
             nivel: 'warning', emoji: '😔',
             titulo: `${u.nombres} — Animo muy bajo (${animo}/5)`,
             descripcion: 'Requiere seguimiento emocional/motivacional',
+            alertKey: `animo_bajo__${safeKey(uid)}`,
+            conditionValue: String(lastRev.fecha),
             uid
           });
         }
       }
     }
 
-    // 5. Sin revision — solo alertar si el atleta ya completó su primer mes
-    // (mesActual > 1 significa que avanzó al mes 2, o sea terminó el mes 1)
+    // ── 5. Sin revisión semanal ───────────────────────────────────────────
     if(u.activo) {
       const rutina = Object.values(ruts).find(r=>r.usuario===uid && r.activa);
       if(rutina) {
         const progreso = sesiones[uid]?.progreso || {};
         const mesActual = progreso.mesActual || 1;
-        // Solo aplica si ya completó el mes 1 (avanzó al mes 2 o más)
         if(mesActual > 1) {
           const revsSemUser = Object.values(revSem[uid]||{});
           if(revsSemUser.length === 0) {
@@ -3266,16 +3434,22 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
               nivel: 'info', emoji: '📋',
               titulo: `${u.nombres} — Sin revisiones registradas`,
               descripcion: 'Ya completó el primer mes pero nunca ha enviado una revisión.',
+              alertKey: `sin_rev_nunca__${safeKey(uid)}`,
+              conditionValue: 'nunca',
               uid
             });
           } else {
             const lastRevDate = Math.max(...revsSemUser.map(r=>r.fecha||0));
             const diasSinRev = (now - lastRevDate) / (1000*60*60*24);
             if(diasSinRev > 30) {
+              // conditionValue = timestamp de la última revisión.
+              // Si el atleta envía una nueva → cv cambia → alerta reaparece cuando vuelva a faltar >30 días.
               alerts.push({
                 nivel: 'info', emoji: '📋',
                 titulo: `${u.nombres} — Sin revision en ${Math.floor(diasSinRev)} dias`,
                 descripcion: 'Ultima revision hace mas de 30 dias. Considera hacer un seguimiento.',
+                alertKey: `sin_revision__${safeKey(uid)}`,
+                conditionValue: String(lastRevDate),
                 uid
               });
             }
@@ -3301,7 +3475,12 @@ async function renderAlertas(container) {
   ]);
   const users = usSnap.val()||{};
   const ruts = rutSnap.val()||{};
-  const alerts = await computeIntelligentAlerts(myUids, users, ruts, sesSnap.val()||{}, revSnap.val()||{});
+
+  let alerts = await computeIntelligentAlerts(myUids, users, ruts, sesSnap.val()||{}, revSnap.val()||{});
+  // Filtrar usando isAlertDismissed (respeta conditionValue — reaparece si cambian los datos)
+  alerts = alerts.filter(a => !isAlertDismissed(a));
+  // Guardar lista activa para que dismissAlert pueda leer conditionValue
+  window._currentAlerts = alerts;
 
   const danger = alerts.filter(a=>a.nivel==='danger');
   const warning = alerts.filter(a=>a.nivel==='warning');
@@ -3338,7 +3517,7 @@ async function renderAlertas(container) {
           <span class="panel-title" style="color:var(--error)">🔴 Alertas Críticas (${danger.length})</span>
         </div>
         <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
-          ${danger.map(a=>renderAlertCard(a)).join('')}
+          ${danger.map(a=>renderAlertCard(a,true)).join('')}
         </div>
       </div>`:''}
     ${warning.length?`
@@ -3347,7 +3526,7 @@ async function renderAlertas(container) {
           <span class="panel-title" style="color:var(--warning)">⚠️ Advertencias (${warning.length})</span>
         </div>
         <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
-          ${warning.map(a=>renderAlertCard(a)).join('')}
+          ${warning.map(a=>renderAlertCard(a,true)).join('')}
         </div>
       </div>`:''}
     ${info.length?`
@@ -3356,7 +3535,7 @@ async function renderAlertas(container) {
           <span class="panel-title" style="color:var(--primary)">ℹ️ Informativas (${info.length})</span>
         </div>
         <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
-          ${info.map(a=>renderAlertCard(a)).join('')}
+          ${info.map(a=>renderAlertCard(a,true)).join('')}
         </div>
       </div>`:''}
     `}
@@ -3373,6 +3552,9 @@ async function renderAlertas(container) {
           <li>😔 <strong>Ánimo bajo</strong> — ánimo ≤2/5 en revisión reciente</li>
           <li>📋 <strong>Sin revisión</strong> — más de 30 días sin revisión semanal</li>
         </ul>
+        <div style="margin-top:10px;font-size:0.8rem;background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.15);border-radius:10px;padding:10px">
+          💡 Usa <strong>🗑️ Descartar</strong> para ocultar alertas que ya gestionaste. Las alertas descartadas no vuelven a aparecer hasta que la condición se actualice.
+        </div>
       </div>
     </div>
   `;
@@ -3675,27 +3857,32 @@ window.admSelectFatiga = (val) => {
 const _liveCache = { usuarios: null, rutinas: null, sesiones: null, revisiones_semana: null };
 let _alertDebounce = null;
 
-async function refreshAlertBadge() {
+async function refreshAlertBadge(skipPageRender=false) {
   try {
     if(!_liveCache.usuarios || !_liveCache.rutinas || !_liveCache.sesiones || !_liveCache.revisiones_semana) return;
     const myUids = await getMyGroupUserUids();
-    const alerts = await computeIntelligentAlerts(
+    let alerts = await computeIntelligentAlerts(
       myUids,
       _liveCache.usuarios,
       _liveCache.rutinas,
       _liveCache.sesiones,
       _liveCache.revisiones_semana
     );
+    // Filtrar usando isAlertDismissed (compara conditionValue, no solo presencia)
+    alerts = alerts.filter(a => !isAlertDismissed(a));
     const badge = document.getElementById('alertasBadge');
     if(badge) {
       badge.textContent = alerts.length;
       badge.style.display = alerts.length > 0 ? '' : 'none';
     }
-    // Si la seccion alertas esta abierta, refrescarla tambien
-    const active = document.querySelector('.nav-item.active');
-    if(active && active.dataset.page === 'alertas') {
-      const content = document.querySelector('.content');
-      if(content) renderAlertas(content);
+    // Solo re-renderizar la página si fue disparado por cambio de datos en tiempo real,
+    // NO si viene de dismissAlert (para no volver a mostrar cards ya eliminados visualmente)
+    if(!skipPageRender) {
+      const active = document.querySelector('.nav-item.active');
+      if(active && active.dataset.page === 'alertas') {
+        const mainContent = document.querySelector('.content');
+        if(mainContent) renderAlertas(mainContent);
+      }
     }
   } catch(e) { console.warn('refreshAlertBadge error:', e); }
 }
@@ -3710,10 +3897,12 @@ function setupAlertBadgeListener() {
   });
 }
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) { sessionStorage.removeItem('saykyo_user'); window.location.href='index.html'; return; }
   if (typeof window._appInited === 'undefined') {
     window._appInited = true;
+    // Cargar alertas descartadas desde Firebase ANTES de setup del badge
+    await loadDismissedAlerts();
     // Setup notification listener
     setupNotifListener();
     // Alertas en tiempo real
