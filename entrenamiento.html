@@ -479,18 +479,34 @@ window.toggleUserNotifSheet = () => {
       </div>
       ${sorted.length===0
         ? '<div style="text-align:center;padding:32px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:10px">🔔</div>Sin notificaciones aún</div>'
-        : sorted.map(([nid,n])=>`
+        : sorted.map(([nid,n])=>{
+          // Tipos que llegan al usuario desde el entrenador:
+          //   'respuesta_admin' → entrenador respondió a su alerta → usuario PUEDE responder (una vez)
+          //   'mensaje'         → entrenador envió mensaje directo → usuario PUEDE responder (una vez)
+          //   'respuesta_alerta'→ legacy (igual a respuesta_admin) → PUEDE responder
+          // El usuario NO ve 'alerta' ni 'respuesta_usuario' (esos los envió él mismo)
+          const isRespAdmin = n.tipo === 'respuesta_admin' || n.tipo === 'respuesta_alerta';
+          const isMensaje = n.tipo === 'mensaje';
+          const canReply = (isRespAdmin || isMensaje) && !n.respondida && n.deId;
+          const iconLabel = isRespAdmin ? '💬 Respuesta del entrenador'
+            : isMensaje ? '📣 Mensaje de'
+            : '📩 Notificación de';
+          return `
           <div class="notif-item ${n.leida?'':'unread'}" id="unotif_${nid}">
             <div style="display:flex;align-items:flex-start;gap:8px">
-              <div style="flex:1;cursor:pointer" onclick="userMarkNotifRead('${nid}',document.getElementById('unotif_${nid}'))">
-                <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">💬 De: <strong>${n.deNombre||'Entrenador'}</strong></div>
+              <div style="flex:1;cursor:pointer;min-width:0" onclick="userMarkNotifRead('${nid}',document.getElementById('unotif_${nid}'))">
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">${iconLabel} — <strong>${n.deNombre||'Entrenador'}</strong></div>
                 <div style="font-size:0.9rem;font-weight:600;margin-bottom:6px">${n.mensaje}</div>
+                ${n.respondida ? '<div style="font-size:0.72rem;color:var(--success);font-style:italic;margin-bottom:4px">✅ Ya respondiste</div>' : ''}
                 <div style="font-size:0.7rem;color:var(--text-muted)">${new Date(n.creadaEn).toLocaleString()}${!n.leida?'  <span style="color:var(--primary);font-weight:700">● Sin leer</span>':''}</div>
               </div>
-              <button onclick="userDeleteNotif('${nid}')" title="Eliminar" style="flex-shrink:0;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
+              <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:flex-end">
+                ${canReply ? `<button onclick="userReplyNotif('${nid}','${n.deId||''}')" style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);border-radius:8px;color:var(--primary);padding:5px 8px;cursor:pointer;font-family:'Exo 2',sans-serif;font-size:0.7rem;font-weight:700;white-space:nowrap">💬 Responder</button>` : ''}
+                <button onclick="userDeleteNotif('${nid}')" title="Eliminar" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
+              </div>
             </div>
-          </div>
-        `).join('')
+          </div>`;
+        }).join('')
       }
     </div>
   `;
@@ -539,6 +555,70 @@ window.userDeleteAllNotifs = async () => {
   await remove(ref(db,`notificaciones/${currentUser.id}`));
   const sheet = document.getElementById('userNotifSheet');
   if(sheet) { sheet.remove(); setTimeout(()=>toggleUserNotifSheet(),50); }
+};
+
+// Reply to admin's alert response — one-time reply
+window.userReplyNotif = (nid, adminId) => {
+  // Close current sheet
+  document.getElementById('userNotifSheet')?.remove();
+
+  // Show reply overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay-backdrop';
+  overlay.innerHTML = `
+    <div style="background:rgba(8,16,36,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:28px;width:95%;max-width:480px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div style="font-size:1.1rem;font-weight:800">💬 Tu respuesta</div>
+        <button onclick="this.closest('.overlay-backdrop').remove()" style="background:rgba(255,255,255,0.06);border:none;color:var(--text-muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem">✕</button>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">Puedes enviar <strong>una sola respuesta</strong> a tu entrenador sobre este mensaje.</div>
+      <textarea id="userReplyText" class="glass-input" rows="4" placeholder="Escribe tu respuesta..." style="width:100%;margin-bottom:16px;resize:none"></textarea>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="this.closest('.overlay-backdrop').remove()" class="btn btn-secondary">Cancelar</button>
+        <button onclick="submitUserReply('${nid}','${adminId}',this.closest('.overlay-backdrop'))" class="btn btn-primary">📤 Enviar respuesta</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+};
+
+window.submitUserReply = async (nid, adminId, overlayEl) => {
+  const msg = document.getElementById('userReplyText')?.value?.trim();
+  if(!msg) return Swal.fire({icon:'warning',title:'Escribe tu respuesta',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  // Send notification to admin as 'respuesta_usuario' — hilo cerrado, admin no puede responder
+  const notif = {
+    mensaje: msg,
+    deId: currentUser.id,
+    deNombre: `${currentUser.nombres} ${currentUser.apellidos||''} (Atleta — respuesta)`,
+    tipo: 'respuesta_usuario',
+    leida: false,
+    creadaEn: Date.now()
+  };
+
+  const tasks = [];
+  if(adminId) tasks.push(push(ref(db,`notificaciones/${adminId}`), notif));
+
+  // Also find all group admins if adminId not set
+  if(!adminId) {
+    const userSnap = await get(ref(db,`usuarios/${currentUser.id}`));
+    const userData = userSnap.val()||{};
+    const gid = userData.grupoId;
+    if(gid) {
+      const gSnap = await get(ref(db,`grupos/${gid}`));
+      const g = gSnap.val()||{};
+      const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados||{})].filter(Boolean);
+      adminIds.forEach(aid => tasks.push(push(ref(db,`notificaciones/${aid}`), notif)));
+    }
+  }
+
+  // Mark original notification as responded
+  tasks.push(update(ref(db,`notificaciones/${currentUser.id}/${nid}`), {respondida: true, leida: true}));
+
+  await Promise.all(tasks);
+  if(overlayEl) overlayEl.remove();
+  Swal.fire({icon:'success',title:'¡Respuesta enviada!',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
 };
 
 window.sendAlertToAdmins = async () => {
@@ -1916,27 +1996,43 @@ window.resetProgreso = async () => {
 //   - The user had no exercise scheduled in their routine for that day.
 // A streak breaks when a weekday passes where the user had exercises in their routine
 // but did NOT train, AND that day was more than 1 day ago (we don't penalize "today").
+// Helper: convert timestamp to local 'YYYY-MM-DD' string (avoids UTC shift bugs)
+function tsToLocalDateKey(ts) {
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 function computeStreak(sesiones, rutinaData) {
   if(!sesiones.length) return { current: 0, max: 0, lastTrained: null, heatmap: {} };
 
-  // Build a set of real dates (YYYY-MM-DD) when the user trained
+  // Build a set of LOCAL dates (YYYY-MM-DD) when the user trained
   const trainedDates = new Set();
   sesiones.forEach(s => {
     const ts = s.fecha || s.fechaFin || s.fechaInicio || 0;
-    if(ts) trainedDates.add(new Date(ts).toISOString().split('T')[0]);
+    if(ts) trainedDates.add(tsToLocalDateKey(ts));
   });
 
-  // Find earliest training date and today
+  // Find earliest training date and today (local)
   const allDates = [...trainedDates].sort();
   if(!allDates.length) return { current: 0, max: 0, lastTrained: null, heatmap: {} };
-  const firstDate = new Date(allDates[0]);
+
   const today = new Date();
   today.setHours(0,0,0,0);
+  const todayKey = tsToLocalDateKey(today.getTime());
 
-  // Build heatmap for last 12 weeks
+  // firstDate: parse local key to local midnight
+  const [fy,fm,fd] = allDates[0].split('-').map(Number);
+  const firstDate = new Date(fy, fm-1, fd);
+
+  // Build heatmap for last 12 weeks (using local dates)
   const heatmap = {};
-  for(let d = new Date(today); ; d.setDate(d.getDate()-1)) {
-    const key = d.toISOString().split('T')[0];
+  for(let i=0; i<=84; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = tsToLocalDateKey(d.getTime());
     const dow = d.getDay(); // 0=Sun 6=Sat
     if(trainedDates.has(key)) {
       heatmap[key] = 'trained';
@@ -1945,52 +2041,57 @@ function computeStreak(sesiones, rutinaData) {
     } else {
       heatmap[key] = 'missed';
     }
-    const diff = (today - d) / (1000*60*60*24);
-    if(diff >= 84) break; // 12 weeks
   }
 
-  // Compute current streak (going backwards from yesterday/today)
-  let current = 0;
-  let max = 0;
+  // Compute current streak (going backwards from today)
+  // Rules:
+  //   - If trained today → count today, then look backwards
+  //   - If NOT trained today → start from yesterday (today doesn't break streak, it's still today)
+  //   - Weekend days (Sat/Sun): skip silently, don't break streak
+  //   - Weekday without training in the past → breaks streak
   let streak = 0;
   let lastTrained = null;
 
-  // Walk day by day backwards from today
-  const checkDay = new Date(today);
-  // If trained today, count it; otherwise start from yesterday  
-  // We never break streak for "today not yet trained" (it's still today)
-  const startOffset = trainedDates.has(today.toISOString().split('T')[0]) ? 0 : 1;
+  const trainedToday = trainedDates.has(todayKey);
+  const startOffset = trainedToday ? 0 : 1;
 
-  for(let offset = startOffset; ; offset++) {
+  for(let offset = startOffset; offset <= 730; offset++) {
     const d = new Date(today);
     d.setDate(today.getDate() - offset);
-    const key = d.toISOString().split('T')[0];
-    const dow = d.getDay();
-    
     if(d < firstDate) break;
+    const key = tsToLocalDateKey(d.getTime());
+    const dow = d.getDay();
 
     if(trainedDates.has(key)) {
       streak++;
       if(!lastTrained) lastTrained = d;
     } else if(dow === 0 || dow === 6) {
-      // Weekend: doesn't break streak, doesn't add to it
+      // Weekend: free pass, keep going
       continue;
     } else {
-      // Weekday with no training → break streak
-      if(offset > 0) break; // only break if it's a past day
+      // Missed weekday in the past → break
+      break;
     }
-    if(offset > 365) break;
   }
-  current = streak;
 
-  // Compute max streak ever (forward pass over all training dates)
-  if(allDates.length) {
+  // If didn't train today but trained previously, still count as "streak" if no
+  // weekday gap exists between last training and today
+  // The loop above handles this correctly: it starts at yesterday (offset=1) and
+  // breaks on the first missed weekday.
+
+  const current = streak;
+
+  // Compute max streak ever (forward pass over sorted allDates)
+  let max = current;
+  if(allDates.length >= 1) {
     let runStreak = 1, maxS = 1;
     for(let i=1; i<allDates.length; i++) {
-      const prev = new Date(allDates[i-1]);
-      const curr = new Date(allDates[i]);
+      const [py,pm,pd] = allDates[i-1].split('-').map(Number);
+      const [cy,cm,cd] = allDates[i].split('-').map(Number);
+      const prev = new Date(py, pm-1, pd);
+      const curr = new Date(cy, cm-1, cd);
       const diffDays = Math.round((curr - prev) / (1000*60*60*24));
-      // Count intervening weekends as "free"
+      // Count intervening weekends as free
       let weekendsBetween = 0;
       for(let j=1; j<diffDays; j++) {
         const wd = new Date(prev); wd.setDate(prev.getDate()+j);
@@ -2036,7 +2137,7 @@ function renderCalendar(heatmap, year, month, sessionDays, sessionCount) {
   _calMonth = month;
 
   const today = new Date(); today.setHours(0,0,0,0);
-  const todayKey = today.toISOString().split('T')[0];
+  const todayKey = tsToLocalDateKey(today.getTime());
 
   const monthName = new Date(year, month, 1).toLocaleDateString('es-CO', {month:'long', year:'numeric'});
 
