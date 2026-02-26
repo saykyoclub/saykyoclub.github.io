@@ -287,6 +287,53 @@ select.glass-input option { background:#0d1a35; }
   transition:all 0.15s ease; color:var(--text);
 }
 .mini-dot:hover { background:rgba(0,200,255,0.12); border-color:rgba(0,200,255,0.3); }
+
+/* NOTIFICATION BELL - USER */
+.user-notif-btn {
+  position:relative; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+  border-radius:10px; width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all 0.2s ease; font-size:1rem; flex-shrink:0;
+}
+.user-notif-btn:hover { background:rgba(0,200,255,0.12); border-color:rgba(0,200,255,0.3); }
+.user-notif-badge {
+  position:absolute; top:-5px; right:-5px;
+  min-width:17px; height:17px; padding:0 3px;
+  background:var(--error); color:#fff; font-size:0.6rem; font-weight:800;
+  border-radius:9px; display:none; align-items:center; justify-content:center;
+  box-shadow:0 0 10px rgba(255,77,109,0.8);
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+.user-notif-badge.visible { display:flex; }
+@keyframes pulse-badge {
+  0%,100% { box-shadow:0 0 10px rgba(255,77,109,0.8); transform:scale(1); }
+  50% { box-shadow:0 0 20px rgba(255,77,109,1); transform:scale(1.1); }
+}
+.push-toast {
+  position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:9999;
+  background:rgba(8,18,40,0.97); border:1px solid rgba(0,200,255,0.3);
+  border-radius:16px; padding:14px 18px; width:calc(100% - 32px); max-width:380px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+  animation:toastSlide 0.4s cubic-bezier(0.16,1,0.3,1);
+  cursor:pointer; display:flex; align-items:flex-start; gap:12px;
+}
+@keyframes toastSlide { from{opacity:0;transform:translateX(-50%) translateY(-20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+.notif-sheet {
+  position:fixed; inset:0; z-index:800;
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(10px);
+  display:flex; align-items:flex-end;
+  animation:fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.notif-sheet-inner {
+  width:100%; max-height:85vh; overflow-y:auto;
+  background:rgba(6,14,32,0.98); border-radius:24px 24px 0 0;
+  padding:24px 16px 40px;
+  animation:sheetUp 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.notif-item { padding:14px; border-radius:14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); margin-bottom:10px; position:relative; }
+.notif-item.unread { background:rgba(0,200,255,0.06); border-color:rgba(0,200,255,0.2); }
+.notif-item.unread::before { content:''; position:absolute;top:14px;left:-4px;width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary); }
 </style>
 </head>
 <body>
@@ -296,6 +343,10 @@ select.glass-input option { background:#0d1a35; }
 <div class="header">
   <img src="logo_saykyo.png" alt="Saykyo Club" style="height:60px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,200,255,0.25))">
   <div class="header-user">
+    <button class="user-notif-btn" id="userNotifBtn" onclick="toggleUserNotifSheet()" title="Notificaciones">
+      🔔
+      <span class="user-notif-badge" id="userNotifBadge">0</span>
+    </button>
     <img class="header-avatar" id="userAvatar" src="" alt="">
     <div>
       <div class="header-name" id="userName">Usuario</div>
@@ -326,7 +377,7 @@ select.glass-input option { background:#0d1a35; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, get, set, push, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, get, set, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -354,6 +405,174 @@ document.getElementById('userMethod').textContent = currentUser.metodo||'RPE';
 document.getElementById('userAvatar').src = currentUser.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`;
 
 window.logout = () => { sessionStorage.removeItem('saykyo_user'); signOut(auth).finally(() => { window.location.href='index.html'; }); };
+
+// ========== USER NOTIFICATIONS ==========
+let userNotifListener = null;
+
+function setupUserNotifListener() {
+  const notifRef = ref(db, `notificaciones/${currentUser.id}`);
+  if(userNotifListener) off(notifRef, 'value', userNotifListener);
+  userNotifListener = onValue(notifRef, (snap) => {
+    const notifs = snap.val()||{};
+    const unread = Object.values(notifs).filter(n=>!n.leida).length;
+    const badge = document.getElementById('userNotifBadge');
+    if(badge) {
+      badge.textContent = unread > 99 ? '99+' : unread;
+      badge.classList.toggle('visible', unread > 0);
+    }
+    window._userNotifData = notifs;
+
+    // Push toast for new notifications
+    const latest = Object.entries(notifs).filter(([,n])=>!n.leida&&!n._shown).sort((a,b)=>b[1].creadaEn-a[1].creadaEn)[0];
+    if(latest) {
+      const [nid, n] = latest;
+      showUserPushToast(n);
+      window._userNotifData[nid]._shown = true;
+    }
+  });
+}
+
+function showUserPushToast(n) {
+  const existing = document.getElementById('userPushToast');
+  if(existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'userPushToast';
+  toast.className = 'push-toast';
+  toast.innerHTML = `
+    <div style="font-size:1.3rem;flex-shrink:0">💬</div>
+    <div style="flex:1">
+      <div style="font-size:0.8rem;font-weight:700;color:var(--primary);margin-bottom:2px">Mensaje de tu entrenador</div>
+      <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.4"><strong>${n.deNombre||'Entrenador'}:</strong> ${n.mensaje}</div>
+    </div>
+    <button onclick="this.closest('#userPushToast').remove()" style="background:none;border:none;color:var(--text-muted);font-size:0.9rem;cursor:pointer;position:absolute;top:8px;right:10px">✕</button>
+  `;
+  toast.style.position='fixed';
+  toast.onclick = (e) => { if(e.target.tagName==='BUTTON') return; toggleUserNotifSheet(); toast.remove(); };
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove?.(), 6000);
+}
+
+window.toggleUserNotifSheet = () => {
+  const existing = document.getElementById('userNotifSheet');
+  if(existing) { existing.remove(); return; }
+
+  const notifs = window._userNotifData||{};
+  const sorted = Object.entries(notifs).sort((a,b)=>b[1].creadaEn-a[1].creadaEn);
+
+  const sheet = document.createElement('div');
+  sheet.id = 'userNotifSheet';
+  sheet.className = 'notif-sheet';
+  sheet.innerHTML = `
+    <div class="notif-sheet-inner">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="font-size:1.1rem;font-weight:800">🔔 Mis Notificaciones</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="userMarkAllRead()" style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);border-radius:8px;padding:4px 10px;color:var(--primary);font-size:0.72rem;cursor:pointer;font-family:'Exo 2',sans-serif">✓ Todo leído</button>
+          <button onclick="userDeleteAllNotifs()" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.3);border-radius:8px;padding:4px 10px;color:#ff4d6d;font-size:0.72rem;cursor:pointer;font-family:'Exo 2',sans-serif">🗑️ Borrar todo</button>
+          <button onclick="document.getElementById('userNotifSheet').remove()" style="background:rgba(255,255,255,0.06);border:none;color:var(--text-muted);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:0.9rem">✕</button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08)">
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">📣 Crear Alerta para tu entrenador</div>
+        <textarea id="userAlertMsg" placeholder="Ej: Llego tarde a la sesión, mucho tráfico..." style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;min-height:70px;resize:none;outline:none;margin-bottom:8px" onfocus="this.style.borderColor='var(--primary)'"></textarea>
+        <button onclick="sendAlertToAdmins()" class="btn btn-primary btn-sm btn-full" style="width:100%;justify-content:center">⚡ Enviar alerta al entrenador</button>
+      </div>
+      ${sorted.length===0
+        ? '<div style="text-align:center;padding:32px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:10px">🔔</div>Sin notificaciones aún</div>'
+        : sorted.map(([nid,n])=>`
+          <div class="notif-item ${n.leida?'':'unread'}" id="unotif_${nid}">
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <div style="flex:1;cursor:pointer" onclick="userMarkNotifRead('${nid}',document.getElementById('unotif_${nid}'))">
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">💬 De: <strong>${n.deNombre||'Entrenador'}</strong></div>
+                <div style="font-size:0.9rem;font-weight:600;margin-bottom:6px">${n.mensaje}</div>
+                <div style="font-size:0.7rem;color:var(--text-muted)">${new Date(n.creadaEn).toLocaleString()}${!n.leida?'  <span style="color:var(--primary);font-weight:700">● Sin leer</span>':''}</div>
+              </div>
+              <button onclick="userDeleteNotif('${nid}')" title="Eliminar" style="flex-shrink:0;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>
+  `;
+  sheet.addEventListener('click', e => { if(e.target===sheet) sheet.remove(); });
+  document.body.appendChild(sheet);
+};
+
+window.userMarkNotifRead = async (nid, el) => {
+  const notifRef = ref(db, `notificaciones/${currentUser.id}/${nid}`);
+  await update(notifRef, {leida: true});
+  el.classList.remove('unread');
+  el.querySelector('[style*="Sin leer"]')?.remove();
+};
+
+window.userMarkAllRead = async () => {
+  const notifs = window._userNotifData||{};
+  const unread = Object.entries(notifs).filter(([,n])=>!n.leida);
+  await Promise.all(unread.map(([nid])=>update(ref(db,`notificaciones/${currentUser.id}/${nid}`), {leida:true})));
+  const sheet = document.getElementById('userNotifSheet');
+  if(sheet) { sheet.remove(); setTimeout(()=>toggleUserNotifSheet(),50); }
+};
+
+window.userDeleteNotif = async (nid) => {
+  await remove(ref(db,`notificaciones/${currentUser.id}/${nid}`));
+  const el = document.getElementById(`unotif_${nid}`);
+  if(el) el.remove();
+  const notifs = window._userNotifData||{};
+  delete notifs[nid];
+  window._userNotifData = notifs;
+  const unread = Object.values(notifs).filter(n=>!n.leida).length;
+  const badge = document.getElementById('userNotifBadge');
+  if(badge) { badge.textContent = unread; badge.classList.toggle('visible', unread>0); }
+};
+
+window.userDeleteAllNotifs = async () => {
+  const notifs = window._userNotifData||{};
+  if(!Object.keys(notifs).length) return;
+  const res = await Swal.fire({
+    icon:'warning', title:'¿Borrar todas las notificaciones?',
+    text:'Esta acción no se puede deshacer.',
+    showCancelButton:true, confirmButtonText:'Sí, borrar todo',
+    cancelButtonText:'Cancelar', confirmButtonColor:'#ff4d6d',
+    background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+  });
+  if(!res.isConfirmed) return;
+  await remove(ref(db,`notificaciones/${currentUser.id}`));
+  const sheet = document.getElementById('userNotifSheet');
+  if(sheet) { sheet.remove(); setTimeout(()=>toggleUserNotifSheet(),50); }
+};
+
+window.sendAlertToAdmins = async () => {
+  const msg = document.getElementById('userAlertMsg')?.value?.trim();
+  if(!msg) {
+    Swal.fire({icon:'warning',title:'Escribe tu alerta',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    return;
+  }
+  // Find all admins in user's group
+  const userSnap = await get(ref(db,`usuarios/${currentUser.id}`));
+  const userData = userSnap.val()||{};
+  const gid = userData.grupoId;
+  if(!gid) {
+    Swal.fire({icon:'info',title:'No estás en ningún grupo',text:'Contacta a tu entrenador para que te asigne a un grupo.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    return;
+  }
+  const gSnap = await get(ref(db,`grupos/${gid}`));
+  const g = gSnap.val()||{};
+  const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados||{})].filter(Boolean);
+  
+  const notif = {
+    mensaje: msg,
+    deId: currentUser.id,
+    deNombre: `${currentUser.nombres} ${currentUser.apellidos||''} (Atleta)`,
+    tipo: 'alerta',
+    leida: false,
+    creadaEn: Date.now()
+  };
+
+  await Promise.all(adminIds.map(aid => push(ref(db,`notificaciones/${aid}`), notif)));
+
+  document.getElementById('userNotifSheet')?.remove();
+  Swal.fire({icon:'success',title:'¡Alerta enviada!',text:`Notificación enviada a ${adminIds.length} entrenador(es)`,timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+};
 
 // Biblioteca de avatares (131 combinaciones únicas)
 const AVATAR_LIST = [
@@ -508,14 +727,16 @@ let state = {
 
 // Init
 async function init() {
-  const [anaSnap, progresoSnap, ejSnap, catSnap] = await Promise.all([
+  const [anaSnap, progresoSnap, ejSnap, catSnap, histSnap] = await Promise.all([
     get(ref(db,`anamnesis/${currentUser.id}`)),
     get(ref(db,`sesiones/${currentUser.id}/progreso`)),
     get(ref(db,'ejercicios')),
-    get(ref(db,'categorias'))
+    get(ref(db,'categorias')),
+    get(ref(db,`sesiones/${currentUser.id}/historial`))
   ]);
   state.ejercicios = ejSnap.val()||{};
   state.categorias = catSnap.val()||{};
+  state.historial  = histSnap.val()||{};
   
   const ana = anaSnap.val();
   if(!ana || !ana.completada) {
@@ -656,8 +877,38 @@ window.switchTab = (tab) => {
   renderTab(tab);
 };
 
+async function checkRevisionesPendientes() {
+  const progreso = state.progreso || {};
+  const { mesActual=1, semanaActual=1 } = progreso;
+  if(mesActual === 1 && semanaActual === 1) return false;
+
+  // Revisión mensual pendiente (inicio de mes nuevo)
+  if(semanaActual === 1 && mesActual > 1) {
+    const revMes = await get(ref(db, `revisiones_mes/${currentUser.id}/m${mesActual-1}`));
+    if(!revMes.exists()) {
+      await showRevisionMes(mesActual - 1);
+      return true;
+    }
+  }
+
+  // Revisión semanal pendiente de la semana anterior
+  let mesPend = mesActual, semPend = semanaActual - 1;
+  if(semPend < 1) { mesPend = mesActual - 1; semPend = 4; }
+  if(mesPend >= 1) {
+    const revSem = await get(ref(db, `revisiones_semana/${currentUser.id}/m${mesPend}s${semPend}`));
+    if(!revSem.exists()) {
+      await showRevisionSemana(mesPend, semPend);
+      return true;
+    }
+  }
+  return false;
+}
+
 async function renderTab(tab) {
-  if(tab==='entrenar') await renderEntrenar();
+  if(tab==='entrenar') {
+    await checkRevisionesPendientes();
+    await renderEntrenar();
+  }
   else if(tab==='progreso') await renderProgreso();
   else await renderPerfil();
 }
@@ -1207,6 +1458,9 @@ async function finalizarSesion() {
   // Save session
   const sesId = `ses_${Date.now()}`;
   await set(ref(db,`sesiones/${currentUser.id}/historial/${sesId}`), state.sesionActiva);
+  // Actualizar en memoria para que el calendario se vea al instante sin caché de Firebase
+  if(!state.historial) state.historial = {};
+  state.historial[sesId] = { ...state.sesionActiva };
 
   // Advance progress
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
@@ -1652,27 +1906,308 @@ window.resetProgreso = async () => {
 };
 
 // ============ PROGRESO ============
+
+// ── Streak logic ──
+// "Training streak" based on routine days with exercises.
+// Weekend days (Sat/Sun) are NEVER counted as missed — they don't break a streak.
+// A streak is consecutive calendar days where:
+//   - The user trained (has a session recorded on that real date), OR
+//   - It was a Saturday or Sunday (rest day by default), OR
+//   - The user had no exercise scheduled in their routine for that day.
+// A streak breaks when a weekday passes where the user had exercises in their routine
+// but did NOT train, AND that day was more than 1 day ago (we don't penalize "today").
+function computeStreak(sesiones, rutinaData) {
+  if(!sesiones.length) return { current: 0, max: 0, lastTrained: null, heatmap: {} };
+
+  // Build a set of real dates (YYYY-MM-DD) when the user trained
+  const trainedDates = new Set();
+  sesiones.forEach(s => {
+    const ts = s.fecha || s.fechaFin || s.fechaInicio || 0;
+    if(ts) trainedDates.add(new Date(ts).toISOString().split('T')[0]);
+  });
+
+  // Find earliest training date and today
+  const allDates = [...trainedDates].sort();
+  if(!allDates.length) return { current: 0, max: 0, lastTrained: null, heatmap: {} };
+  const firstDate = new Date(allDates[0]);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Build heatmap for last 12 weeks
+  const heatmap = {};
+  for(let d = new Date(today); ; d.setDate(d.getDate()-1)) {
+    const key = d.toISOString().split('T')[0];
+    const dow = d.getDay(); // 0=Sun 6=Sat
+    if(trainedDates.has(key)) {
+      heatmap[key] = 'trained';
+    } else if(dow === 0 || dow === 6) {
+      heatmap[key] = 'weekend';
+    } else {
+      heatmap[key] = 'missed';
+    }
+    const diff = (today - d) / (1000*60*60*24);
+    if(diff >= 84) break; // 12 weeks
+  }
+
+  // Compute current streak (going backwards from yesterday/today)
+  let current = 0;
+  let max = 0;
+  let streak = 0;
+  let lastTrained = null;
+
+  // Walk day by day backwards from today
+  const checkDay = new Date(today);
+  // If trained today, count it; otherwise start from yesterday  
+  // We never break streak for "today not yet trained" (it's still today)
+  const startOffset = trainedDates.has(today.toISOString().split('T')[0]) ? 0 : 1;
+
+  for(let offset = startOffset; ; offset++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - offset);
+    const key = d.toISOString().split('T')[0];
+    const dow = d.getDay();
+    
+    if(d < firstDate) break;
+
+    if(trainedDates.has(key)) {
+      streak++;
+      if(!lastTrained) lastTrained = d;
+    } else if(dow === 0 || dow === 6) {
+      // Weekend: doesn't break streak, doesn't add to it
+      continue;
+    } else {
+      // Weekday with no training → break streak
+      if(offset > 0) break; // only break if it's a past day
+    }
+    if(offset > 365) break;
+  }
+  current = streak;
+
+  // Compute max streak ever (forward pass over all training dates)
+  if(allDates.length) {
+    let runStreak = 1, maxS = 1;
+    for(let i=1; i<allDates.length; i++) {
+      const prev = new Date(allDates[i-1]);
+      const curr = new Date(allDates[i]);
+      const diffDays = Math.round((curr - prev) / (1000*60*60*24));
+      // Count intervening weekends as "free"
+      let weekendsBetween = 0;
+      for(let j=1; j<diffDays; j++) {
+        const wd = new Date(prev); wd.setDate(prev.getDate()+j);
+        if(wd.getDay()===0||wd.getDay()===6) weekendsBetween++;
+      }
+      const effectiveGap = diffDays - weekendsBetween;
+      if(effectiveGap <= 1) { runStreak++; }
+      else { maxS = Math.max(maxS, runStreak); runStreak = 1; }
+    }
+    max = Math.max(maxS, runStreak, current);
+  }
+
+  return { current, max, lastTrained, heatmap };
+}
+
+// ── Monthly calendar renderer ──
+// Helper: obtener días del mes con sesión (como Set de 'YYYY-MM-DD') y conteo total
+function getSessionDaysForMonth(hist, year, month) {
+  const days = new Set();
+  let count = 0;
+  Object.values(hist||{}).forEach(s => {
+    const ts = s.fechaFin || s.fechaInicio || s.fecha || 0;
+    if(!ts) return;
+    const d = new Date(ts);
+    if(d.getFullYear() === year && d.getMonth() === month) {
+      const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      days.add(key);
+      count++;
+    }
+  });
+  return { days, count };
+}
+
+// calHeatmap: the heatmap object {YYYY-MM-DD: 'trained'|'missed'|'weekend'}
+// calYear/calMonth: currently displayed month (0-indexed)
+let _calHeatmap = {};
+let _calYear = new Date().getFullYear();
+let _calMonth = new Date().getMonth();
+
+function renderCalendar(heatmap, year, month, sessionDays, sessionCount) {
+  _calHeatmap = heatmap;
+  _calYear = year;
+  _calMonth = month;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayKey = today.toISOString().split('T')[0];
+
+  const monthName = new Date(year, month, 1).toLocaleDateString('es-CO', {month:'long', year:'numeric'});
+
+  // First day of month (0=Sun…6=Sat), shift to Mon-first
+  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const startOffset = firstDow === 0 ? 6 : firstDow - 1; // blanks before day 1
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  const DOW_LABELS = ['L','M','X','J','V','S','D'];
+
+  // Can go back up to 3 months, can't go forward past current month
+  const nowYear = today.getFullYear(), nowMonth = today.getMonth();
+  const canPrev = !(year === nowYear - 1 && month === 0); // limit ~12 months back
+  const canNext = !(year === nowYear && month === nowMonth);
+
+  // Build day cells
+  let cells = '';
+  // Empty cells before day 1
+  for(let i=0; i<startOffset; i++) {
+    cells += `<div></div>`;
+  }
+  for(let day=1; day<=daysInMonth; day++) {
+    const d = new Date(year, month, day);
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dow = d.getDay(); // 0=Sun 6=Sat
+    const isWeekend = dow === 0 || dow === 6;
+    const isFuture = d > today;
+    const isToday = key === todayKey;
+    const hasSessions = sessionDays && sessionDays.has(key);
+    const status = hasSessions ? 'trained' : (heatmap[key] || (isFuture ? 'future' : isWeekend ? 'weekend' : 'missed'));
+
+    let bg, border, emoji, textColor;
+    if(status === 'trained') {
+      bg = 'rgba(0,229,160,0.18)'; border = 'rgba(0,229,160,0.5)';
+      emoji = '💪'; textColor = 'var(--success)';
+    } else if(status === 'weekend') {
+      bg = 'rgba(123,47,255,0.12)'; border = 'rgba(123,47,255,0.2)';
+      emoji = ''; textColor = 'rgba(232,244,255,0.35)';
+    } else if(status === 'future') {
+      bg = 'rgba(255,255,255,0.03)'; border = 'rgba(255,255,255,0.06)';
+      emoji = ''; textColor = 'rgba(232,244,255,0.2)';
+    } else {
+      // missed weekday
+      bg = 'rgba(255,77,109,0.1)'; border = 'rgba(255,77,109,0.25)';
+      emoji = ''; textColor = 'rgba(255,77,109,0.7)';
+    }
+
+    const todayStyle = isToday
+      ? `box-shadow:0 0 0 2px var(--primary);`
+      : '';
+
+    cells += `
+      <div style="
+        background:${bg};border:1px solid ${border};${todayStyle}
+        border-radius:10px;padding:6px 4px;min-height:44px;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+        position:relative;
+      ">
+        <div style="font-size:0.78rem;font-weight:${isToday?'900':'600'};color:${textColor};line-height:1">${day}</div>
+        ${emoji ? `<div style="font-size:0.75rem;line-height:1">${emoji}</div>` : ''}
+        ${isToday ? `<div style="position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--primary);box-shadow:0 0 6px var(--primary)"></div>` : ''}
+      </div>`;
+  }
+
+  // Count trained days and missed days this month
+  let calTrainedDays = 0, missedCount = 0;
+  for(let day=1; day<=daysInMonth; day++) {
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const d = new Date(year, month, day);
+    const dow = d.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isFuture = d > today;
+    if(!isWeekend && !isFuture) {
+      const hasSess = sessionDays && sessionDays.has(key);
+      if(hasSess || heatmap[key] === 'trained') calTrainedDays++;
+      else missedCount++;
+    }
+  }
+  // sessionCount = sesiones reales del mes (puede haber varias en un mismo día)
+  const trainedCount = (sessionCount !== undefined) ? sessionCount : calTrainedDays;
+
+  return `
+    <div id="streakCalendar">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <button onclick="calNav(-1)" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;${!canPrev?'opacity:0.3;pointer-events:none':''}">‹</button>
+        <div style="font-size:0.9rem;font-weight:700;text-transform:capitalize;letter-spacing:0.5px">${monthName}</div>
+        <button onclick="calNav(1)" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;${!canNext?'opacity:0.3;pointer-events:none':''}">›</button>
+      </div>
+
+      <!-- Day labels -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">
+        ${DOW_LABELS.map((l,i) => `<div style="text-align:center;font-size:0.65rem;font-weight:700;color:${i>=5?'rgba(123,47,255,0.7)':'var(--text-muted)'};text-transform:uppercase;letter-spacing:0.5px;padding:4px 0">${l}</div>`).join('')}
+      </div>
+
+      <!-- Day cells -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+        ${cells}
+      </div>
+
+      <!-- Month summary -->
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:80px;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:1.3rem;font-weight:900;color:var(--success)">${trainedCount}</div>
+          <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Días entrenados</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.2);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:1.3rem;font-weight:900;color:var(--error)">${missedCount}</div>
+          <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Días perdidos</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.2);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:1.3rem;font-weight:900;color:var(--accent)">${trainedCount+missedCount>0?Math.round((trainedCount/(trainedCount+missedCount))*100):0}%</div>
+          <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Asistencia</div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(0,229,160,0.3);border:1px solid rgba(0,229,160,0.5)"></div>💪 Entrenado</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(255,77,109,0.2);border:1px solid rgba(255,77,109,0.3)"></div>Perdido</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.25)"></div>Fin de semana</div>
+      </div>
+    </div>`;
+}
+
+window.calNav = (dir) => {
+  let m = _calMonth + dir;
+  let y = _calYear;
+  if(m < 0) { m = 11; y--; }
+  if(m > 11) { m = 0; y++; }
+  const calEl = document.getElementById('streakCalendar');
+  if(calEl) {
+    const hist = state.historial || {};
+    const { days, count } = getSessionDaysForMonth(hist, y, m);
+    calEl.outerHTML = renderCalendar(_calHeatmap, y, m, days, count);
+  }
+};
+
 async function renderProgreso() {
   const p = document.getElementById('mainPage');
   p.innerHTML = '<div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
-  
-  const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
+
+  const [histSnap, valSnap, rutSnap] = await Promise.all([
+    get(ref(db,`sesiones/${currentUser.id}/historial`)),
+    get(ref(db,`valoraciones/${currentUser.id}`)),
+    get(ref(db,'rutinas'))
+  ]);
   const hist = histSnap.val()||{};
-  const sesiones = Object.values(hist).sort((a,b)=>a.fecha-b.fecha);
-  
-  if(sesiones.length===0) {
+  const sesiones = Object.values(hist).sort((a,b)=>(a.fecha||0)-(b.fecha||0));
+  const valoraciones = Object.values(valSnap.val()||{}).sort((a,b)=>a.fecha-b.fecha);
+
+  const rutinas = rutSnap.val()||{};
+  const miRutina = Object.values(rutinas).find(r=>r.usuario===currentUser.id && r.activa);
+
+  if(sesiones.length===0 && valoraciones.length===0) {
     p.innerHTML = `
       <div class="glass-card" style="text-align:center;padding:40px 20px">
         <div style="font-size:3rem;margin-bottom:16px">📈</div>
         <h2 style="margin-bottom:10px">Sin historial aún</h2>
         <p style="color:var(--text-muted)">Completa tu primera sesión para ver tu progreso aquí</p>
         <button class="btn btn-primary" style="margin-top:16px" onclick="switchTab('entrenar')">💪 Ir a entrenar</button>
-      </div>
-    `;
+      </div>`;
     return;
   }
 
-  // Build chart data
+  // ─── Streak ───
+  const { current: streakActual, max: streakMax, lastTrained, heatmap } = computeStreak(sesiones, miRutina);
+  const streakEmoji = streakActual >= 30 ? '🔥🔥🔥' : streakActual >= 14 ? '🔥🔥' : streakActual >= 7 ? '🔥' : streakActual >= 3 ? '⚡' : '💪';
+  const streakMessage = streakActual === 0 ? '¡Vuelve a entrenar hoy!' : streakActual === 1 ? '¡Bien! Sigue mañana' : streakActual < 7 ? '¡Vas bien! No pares' : streakActual < 14 ? '¡Semana completa!' : streakActual < 30 ? '¡Racha épica!' : '¡LEYENDA DEL GYM! 🏆';
+
+  // ─── Charts data ───
   const weekMap = {};
   sesiones.forEach(s => {
     const wk = `M${s.mes}S${s.semana}`;
@@ -1686,57 +2221,233 @@ async function renderProgreso() {
   const wkLabels = Object.keys(weekMap);
   const avgCansancio = wkLabels.map(w=>weekMap[w].cansancioFin.reduce((a,b)=>a+b,0)/weekMap[w].cansancioFin.length);
   const totalSeries = wkLabels.map(w=>weekMap[w].series);
+  const totalSeriesAll = Object.values(weekMap).reduce((a,w)=>a+w.series,0);
 
   const chartOpts = {
     responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:'#e8f4ff',font:{family:'Exo 2',size:11}}}},
-    scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.6)'}},
-            y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.6)'}}}
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}},
+      y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}}
+    }
   };
 
+  // ─── Valoraciones trend ───
+  const hasValoraciones = valoraciones.length >= 1;
+  const lastVal = valoraciones[valoraciones.length-1];
+  const firstVal = valoraciones[0];
+  const anyHasMes = valoraciones.some(v => v.mes);
+  const valLabels = valoraciones.map((v, i) => anyHasMes ? `Mes ${v.mes || (i+1)}` : new Date(v.fecha).toLocaleDateString('es-CO',{month:'short',year:'2-digit'}));
+
+  // delta: el valor numérico del cambio. invertido=true significa que bajar es bueno (ej: grasa)
+  const deltaFmt = (delta, invertido=false) => {
+    if(delta===undefined||delta===null) return '';
+    const n = parseFloat(delta).toFixed(1);
+    const neutro = Math.abs(n) < 0.1;
+    if(neutro) return `<span style="color:var(--text-muted)">→ sin cambio</span>`;
+    const subio = parseFloat(n) > 0;
+    const esBueno = invertido ? !subio : subio;
+    const arrow = subio ? '▲' : '▼';
+    const sign = subio ? '+' : '';
+    const color = esBueno ? 'var(--success)' : 'var(--error)';
+    return `<span style="color:${color}">${arrow}${sign}${Math.abs(n)}</span>`;
+  };
+
+  const deltaGrasa = valoraciones.length>1 ? lastVal.grasa-firstVal.grasa : null;
+  const deltaMuscular = valoraciones.length>1 ? lastVal.muscular-firstVal.muscular : null;
+  const deltaPeso = valoraciones.length>1 ? lastVal.peso-firstVal.peso : null;
+
   p.innerHTML = `
+    <!-- ═══ STREAK CARD ═══ -->
+    <div class="glass-card" style="position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(123,47,255,0.1),rgba(0,200,255,0.08));border-color:rgba(255,107,53,0.3)">
+      <div style="position:absolute;inset:0;pointer-events:none;opacity:0.03;background:radial-gradient(circle at 80% 50%,#ff6b35 0%,transparent 60%)"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div class="card-title" style="margin:0">🔥 Racha de entrenamiento</div>
+        <div style="font-size:0.75rem;color:var(--text-muted)">Fines de semana no cuentan</div>
+      </div>
+
+      <!-- Números principales -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="text-align:center;flex:1;min-width:100px">
+          <div style="font-size:4rem;font-weight:900;line-height:1;background:linear-gradient(135deg,#ff6b35,#ffd60a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${streakActual}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px">Días seguidos</div>
+        </div>
+        <div style="flex:0 0 1px;height:60px;background:rgba(255,255,255,0.1)"></div>
+        <div style="text-align:center;flex:1;min-width:100px">
+          <div style="font-size:3rem;font-weight:900;line-height:1;color:var(--accent)">${streakMax}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px">Récord personal</div>
+        </div>
+        <div style="flex:0 0 1px;height:60px;background:rgba(255,255,255,0.1)"></div>
+        <div style="text-align:center;flex:1;min-width:100px">
+          <div style="font-size:2.5rem;font-weight:900;line-height:1">${streakEmoji}</div>
+          <div style="font-size:0.75rem;color:rgba(255,107,53,0.9);font-weight:700;margin-top:4px">${streakMessage}</div>
+        </div>
+      </div>
+
+      <!-- Progress bar to next milestone -->
+      ${(() => {
+        const milestones = [3,7,14,21,30,60,90];
+        const next = milestones.find(m=>m>streakActual) || 100;
+        const prev = milestones[milestones.indexOf(next)-1] || 0;
+        const pct = Math.round(((streakActual-prev)/(next-prev))*100);
+        return `
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);margin-bottom:5px">
+              <span>Próximo hito: 🎯 ${next} días</span><span>${streakActual}/${next}</span>
+            </div>
+            <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+              <div style="height:100%;background:linear-gradient(90deg,#ff6b35,#ffd60a);border-radius:4px;width:${pct}%;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 8px rgba(255,107,53,0.5)"></div>
+            </div>
+          </div>`;
+      })()}
+
+      <!-- Calendario -->
+      <div>
+        <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Calendario de entrenamientos</div>
+        ${(() => {
+          const cy = new Date().getFullYear(), cm = new Date().getMonth();
+          const { days: sDays, count: sCount } = getSessionDaysForMonth(state.historial||{}, cy, cm);
+          return renderCalendar(heatmap, cy, cm, sDays, sCount);
+        })()}
+      </div>
+    </div>
+
+    <!-- ═══ RESUMEN ═══ -->
     <div class="glass-card">
       <div class="card-title">🏆 Tu resumen</div>
       <div class="mini-stats">
         <div class="mini-stat"><div class="val">${sesiones.length}</div><div class="lbl">Sesiones</div></div>
-        <div class="mini-stat"><div class="val">${Object.values(weekMap).reduce((a,w)=>a+w.series,0)}</div><div class="lbl">Series</div></div>
-        <div class="mini-stat"><div class="val">M${state.progreso?.mesActual||1}S${state.progreso?.semanaActual||1}</div><div class="lbl">Posición</div></div>
+        <div class="mini-stat"><div class="val">${totalSeriesAll}</div><div class="lbl">Series totales</div></div>
+        <div class="mini-stat"><div class="val">M${state.progreso?.mesActual||1}·S${state.progreso?.semanaActual||1}</div><div class="lbl">Posición</div></div>
       </div>
     </div>
 
+    <!-- ═══ VALORACIONES ═══ -->
+    ${hasValoraciones ? `
+    <div class="glass-card" style="background:linear-gradient(135deg,rgba(0,100,200,0.08),rgba(123,47,255,0.06));border-color:rgba(0,200,255,0.2)">
+      <div class="card-title">⚖️ Mi composición corporal</div>
+
+      <!-- Current snapshot -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:0.65rem;color:rgba(255,107,53,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">% Grasa</div>
+          <div style="font-size:1.7rem;font-weight:900;color:#ff6b35">${lastVal.grasa}%</div>
+          ${valoraciones.length>1?`<div style="font-size:0.72rem;margin-top:2px">${deltaFmt(deltaGrasa, true)}</div>`:''}
+        </div>
+        <div style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.25);border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:0.65rem;color:rgba(0,229,160,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">% Músculo</div>
+          <div style="font-size:1.7rem;font-weight:900;color:var(--success)">${lastVal.muscular}%</div>
+          ${valoraciones.length>1?`<div style="font-size:0.72rem;margin-top:2px">${deltaFmt(deltaMuscular, false)}</div>`:''}
+        </div>
+        <div style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);border-radius:14px;padding:12px;text-align:center">
+          <div style="font-size:0.65rem;color:rgba(0,200,255,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Peso</div>
+          <div style="font-size:1.7rem;font-weight:900;color:var(--primary)">${lastVal.peso}<span style="font-size:0.9rem">kg</span></div>
+          ${valoraciones.length>1?`<div style="font-size:0.72rem;margin-top:2px">${deltaFmt(deltaPeso)}</div>`:''}
+        </div>
+      </div>
+
+      ${valoraciones.length===1?`<div style="font-size:0.82rem;color:var(--text-muted);text-align:center;padding:8px;background:rgba(0,200,255,0.04);border-radius:10px;margin-bottom:10px">📊 Tu entrenador agregará más valoraciones para mostrar tu tendencia</div>`:''}
+
+      ${valoraciones.length >= 2 ? `
+      <!-- Trend charts -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px">Tendencia: % Grasa vs % Músculo</div>
+        <div style="height:160px"><canvas id="chartComposicion"></canvas></div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px">Tendencia: Peso corporal</div>
+        <div style="height:130px"><canvas id="chartPesoTrend"></canvas></div>
+      </div>
+      ` : ''}
+
+      ${valoraciones.length >= 2 ? `
+      <!-- Progress summary -->
+      <div style="margin-top:14px;padding:12px;background:rgba(0,0,0,0.2);border-radius:12px;border:1px solid rgba(255,255,255,0.05)">
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">📈 Cambio total desde inicio</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font-size:0.8rem;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:20px;padding:4px 10px">
+            Grasa: ${deltaFmt(deltaGrasa, true)} % ${deltaGrasa<0?'🎯 ¡Bajó!':deltaGrasa>0?'📈 Subió':' ='}
+          </span>
+          <span style="font-size:0.8rem;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 10px">
+            Músculo: ${deltaFmt(deltaMuscular, false)} % ${deltaMuscular>0?'💪 ¡Ganó!':deltaMuscular<0?'📉 Bajó':' ='}
+          </span>
+          <span style="font-size:0.8rem;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:4px 10px">
+            Peso: ${deltaFmt(deltaPeso, false)} kg
+          </span>
+        </div>
+      </div>` : ''}
+    </div>
+    ` : `
+    <div class="glass-card" style="text-align:center;padding:20px">
+      <div style="font-size:2rem;margin-bottom:8px">⚖️</div>
+      <div style="font-weight:700;margin-bottom:4px">Sin valoraciones aún</div>
+      <div style="font-size:0.82rem;color:var(--text-muted)">Tu entrenador agregará valoraciones de composición corporal para ver tu progreso</div>
+    </div>`}
+
+    <!-- ═══ FATIGA ═══ -->
+    ${wkLabels.length > 0 ? `
     <div class="glass-card">
       <div class="card-title">😴 Cansancio al finalizar sesión</div>
-      <div style="height:200px"><canvas id="chartCansancio"></canvas></div>
+      <div style="height:180px"><canvas id="chartCansancio"></canvas></div>
     </div>
 
     <div class="glass-card">
       <div class="card-title">📦 Volumen semanal (series)</div>
-      <div style="height:200px"><canvas id="chartVolumen"></canvas></div>
-    </div>
+      <div style="height:180px"><canvas id="chartVolumen"></canvas></div>
+    </div>` : ''}
 
+    <!-- ═══ HISTORIAL ═══ -->
     <div class="glass-card">
-      <div class="card-title">📅 Historial de sesiones</div>
-      ${sesiones.slice(-10).reverse().map(s=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-          <div>
-            <div style="font-weight:600;font-size:0.88rem">Mes ${s.mes} · Sem ${s.semana} · Día ${s.dia}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted)">${new Date(s.fecha).toLocaleDateString()}</div>
+      <div class="card-title">📅 Últimas sesiones</div>
+      ${sesiones.length===0?'<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin sesiones aún</div>':
+        sesiones.slice(-10).reverse().map(s=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+            <div>
+              <div style="font-weight:600;font-size:0.88rem">M${s.mes}·S${s.semana}·D${s.dia}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${new Date(s.fecha||s.fechaFin||0).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'2-digit'})}</div>
+            </div>
+            <div style="text-align:right;font-size:0.82rem">
+              <div style="color:var(--primary)">${Object.values(s.ejerciciosCompletados||{}).length} ej.</div>
+              <div style="color:var(--text-muted)">😓 ${s.nivelCansancioFin||'—'}/10</div>
+            </div>
           </div>
-          <div style="text-align:right;font-size:0.82rem">
-            <div style="color:var(--primary)">${Object.values(s.ejerciciosCompletados||{}).length} ej.</div>
-            <div style="color:var(--text-muted)">😓 ${s.nivelCansancioFin||'—'}/10</div>
-          </div>
-        </div>
-      `).join('')}
+        `).join('')}
     </div>
   `;
 
   setTimeout(()=>{
-    if(wkLabels.length>0) {
-      new Chart(document.getElementById('chartCansancio'),{type:'line',data:{labels:wkLabels,datasets:[{label:'Cansancio promedio',data:avgCansancio,borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0.1)',tension:0.4,fill:true}]},options:chartOpts});
-      new Chart(document.getElementById('chartVolumen'),{type:'bar',data:{labels:wkLabels,datasets:[{label:'Series totales',data:totalSeries,backgroundColor:'rgba(0,200,255,0.3)',borderColor:'var(--primary)',borderWidth:2,borderRadius:6}]},options:chartOpts});
+    const makeGrad = (ctx, c1, c2) => {
+      const g = ctx.createLinearGradient(0,0,0,180);
+      g.addColorStop(0,c1); g.addColorStop(1,c2); return g;
+    };
+
+    if(wkLabels.length > 0) {
+      const cc = document.getElementById('chartCansancio');
+      if(cc) new Chart(cc,{type:'line',data:{labels:wkLabels,datasets:[{label:'Cansancio',data:avgCansancio,borderColor:'#ff6b35',backgroundColor:(ctx)=>makeGrad(ctx.chart.ctx,'rgba(255,107,53,0.3)','rgba(255,107,53,0)'),tension:0.4,fill:true,pointBackgroundColor:'#ff6b35',pointRadius:4}]},options:chartOpts});
+      const cv = document.getElementById('chartVolumen');
+      if(cv) new Chart(cv,{type:'bar',data:{labels:wkLabels,datasets:[{label:'Series',data:totalSeries,backgroundColor:'rgba(0,200,255,0.25)',borderColor:'var(--primary)',borderWidth:2,borderRadius:6}]},options:chartOpts});
     }
-  },100);
+
+    if(valoraciones.length >= 2) {
+      const compOpts = {
+        ...chartOpts,
+        plugins:{legend:{display:true,labels:{color:'rgba(232,244,255,0.7)',font:{size:10},boxWidth:12}}}
+      };
+      const chartC = document.getElementById('chartComposicion');
+      if(chartC) new Chart(chartC,{type:'line',data:{labels:valLabels,datasets:[
+        {label:'% Grasa',data:valoraciones.map(v=>v.grasa),borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0)',tension:0.4,pointBackgroundColor:'#ff6b35',pointRadius:5},
+        {label:'% Músculo',data:valoraciones.map(v=>v.muscular),borderColor:'#00e5a0',backgroundColor:'rgba(0,229,160,0)',tension:0.4,pointBackgroundColor:'#00e5a0',pointRadius:5}
+      ]},options:compOpts});
+
+      const chartP = document.getElementById('chartPesoTrend');
+      if(chartP) new Chart(chartP,{type:'line',data:{labels:valLabels,datasets:[{
+        label:'Peso (kg)',data:valoraciones.map(v=>v.peso),
+        borderColor:'#00c8ff',
+        backgroundColor:(ctx)=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,130); g.addColorStop(0,'rgba(0,200,255,0.25)'); g.addColorStop(1,'rgba(0,200,255,0)'); return g; },
+        tension:0.4,fill:true,pointBackgroundColor:'#00c8ff',pointRadius:5
+      }]},options:chartOpts});
+    }
+  },120);
 }
 
 // ============ PERFIL ============
@@ -1859,6 +2570,7 @@ onAuthStateChanged(auth, (user) => {
   }
   if (!window._initDone) {
     window._initDone = true;
+    setupUserNotifListener();
     init();
   }
 });
