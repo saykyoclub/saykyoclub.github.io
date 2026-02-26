@@ -243,7 +243,7 @@
 <!-- LOADING SCREEN -->
 <div id="loadingScreen" style="display:flex;position:fixed;inset:0;z-index:200;background:var(--bg-dark);flex-direction:column;align-items:center;justify-content:center;gap:20px">
   <div style="width:80px;height:80px;border:4px solid rgba(0,200,255,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite"></div>
-  <div style="font-size:1.2rem;font-weight:700;letter-spacing:2px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Iniciando tu sesión...</div>
+  <div style="font-size:1.2rem;font-weight:700;letter-spacing:2px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Iniciando tu sesi贸n...</div>
   <div style="font-size:0.85rem;color:var(--text-muted)">Por favor espera</div>
 </div>
 
@@ -251,7 +251,7 @@
   <div class="glass-card">
     <div class="logo-area">
       <img src="logo_saykyo.png" alt="Saykyo Club" style="height:90px;object-fit:contain;filter:drop-shadow(0 0 16px rgba(0,200,255,0.3))">
-      <div class="logo-tagline">Entrena · Progresa · Supera tus límites</div>
+      <div class="logo-tagline">Entrena 路 Progresa 路 Supera tus l铆mites</div>
     </div>
 
     <div class="mascots">
@@ -261,14 +261,14 @@
     <form id="loginForm" autocomplete="off">
       <div class="form-group">
         <div class="icon-input">
-          <span class="input-icon">👤</span>
+          <span class="input-icon">馃懁</span>
           <input type="text" id="usuario" class="glass-input" placeholder="Email" autocomplete="off" required>
         </div>
       </div>
       <div class="form-group">
         <div class="icon-input">
-          <span class="input-icon">🔒</span>
-          <input type="password" id="contrasena" class="glass-input" placeholder="Contraseña" required>
+          <span class="input-icon">馃敀</span>
+          <input type="password" id="contrasena" class="glass-input" placeholder="Contrase帽a" required>
         </div>
       </div>
       <button type="submit" class="btn-primary" id="loginBtn">
@@ -280,7 +280,7 @@
     </form>
 
     <div class="credits">
-      By: <strong>Sebas Moreno</strong> y <strong>Caro Muñoz</strong>
+      By: <strong>Sebas Moreno</strong> y <strong>Caro Mu帽oz</strong>
     </div>
   </div>
 </div>
@@ -307,7 +307,7 @@ const auth = getAuth(app);
 // Bandera para evitar que onAuthStateChanged redirija mientras el formulario maneja el login
 let loginEnProgreso = false;
 
-// Check if already logged in (sesión previa)
+// Check if already logged in (sesi贸n previa)
 auth.onAuthStateChanged(async (user) => {
   if (user && !loginEnProgreso) {
     // Mantener pantalla de carga visible mientras se verifica
@@ -319,7 +319,7 @@ auth.onAuthStateChanged(async (user) => {
       else window.location.href = 'entrenamiento.html';
     }
   } else {
-    // No hay sesión activa, mostrar el login
+    // No hay sesi贸n activa, mostrar el login
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('loginWrapper').style.display = 'block';
   }
@@ -365,14 +365,14 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const userData = snapshot.val();
 
     if (!userData.activo) {
-      throw new Error("Tu cuenta está desactivada. Contacta a tu entrenador.");
+      throw new Error("Tu cuenta est谩 desactivada. Contacta a tu entrenador.");
     }
 
     if (userData.validoHasta) {
       const now = new Date();
       const valid = new Date(userData.validoHasta);
       if (now > valid) {
-        throw new Error("Tu suscripción ha vencido.");
+        throw new Error("Tu suscripci贸n ha vencido.");
       }
     }
 
@@ -384,8 +384,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     await Swal.fire({
       icon: 'success',
-      title: `¡Bienvenido(a), ${userData.nombres}!`,
-      text: userData.rol === 'admin' ? 'Acceso de administrador' : 'Listo para entrenar 💪',
+      title: `隆Bienvenido(a), ${userData.nombres}!`,
+      text: userData.rol === 'admin' ? 'Acceso de administrador' : 'Listo para entrenar 馃挭',
       background: 'rgba(10,20,40,0.95)',
       color: '#e8f4ff',
       confirmButtonColor: '#00c8ff',
@@ -405,7 +405,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     document.getElementById('btnText').style.display = '';
     document.getElementById('btnLoading').style.display = 'none';
     
-    // Asegurar que el login está visible si hay error
+    // Asegurar que el login est谩 visible si hay error
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('loginWrapper').style.display = 'block';
 
