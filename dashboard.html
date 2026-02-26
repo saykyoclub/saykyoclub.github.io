@@ -1582,18 +1582,46 @@ async function renderRutinaDetail(rutinaId) {
           <div class="exercise-slot">
             <div class="exercise-slot-header">
               <span class="exercise-slot-title">💪 ${ejs[ej.ejercicioId]?.nombre||'Ejercicio'}</span>
-              <button class="btn btn-danger btn-sm" onclick="removeEjDia('${rutinaId}',${mesActual},${semActual},${diaActual},${i})">🗑️</button>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-secondary btn-sm" onclick="editEjDia('${rutinaId}',${mesActual},${semActual},${diaActual},${i})">✏️ Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="removeEjDia('${rutinaId}',${mesActual},${semActual},${diaActual},${i})">🗑️</button>
+              </div>
             </div>
-            <div class="slot-mini-grid">
-              <div><div style="font-size:0.7rem;color:var(--text-muted)">Series</div><strong>${ej.series}</strong></div>
-              <div><div style="font-size:0.7rem;color:var(--text-muted)">Reps</div><strong>${ej.repsMin}-${ej.repsMax}</strong></div>
-              <div><div style="font-size:0.7rem;color:var(--text-muted)">Peso</div><strong>${ej.peso} kg</strong></div>
-              <div><div style="font-size:0.7rem;color:var(--text-muted)">RIR/RPE</div><strong>${ej.rirRpe}</strong></div>
-              <div><div style="font-size:0.7rem;color:var(--text-muted)">Tiempo</div><strong>${ej.tiempo}s</strong></div>
-              <div><div style="font-size:0.7rem;color:var(--text-muted)">Descanso</div><strong>${ej.descanso}s</strong></div>
+            <!-- Header pills -->
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+              <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:var(--primary)">📦 ${ej.series} series</span>
+              <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--text-muted)">⏱ ${ej.tiempo||0}s/rep</span>
+              ${ej.metodo?`<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#a78bfa">⚡ ${ej.metodo}</span>`:''}
             </div>
-            ${ej.metodo?`<div style="margin-top:8px;display:flex;align-items:center;gap:6px"><span style="font-size:0.68rem;background:rgba(123,47,255,0.2);color:#a78bfa;border:1px solid rgba(123,47,255,0.4);border-radius:20px;padding:2px 10px;font-weight:700;letter-spacing:0.5px">⚡ ${ej.metodo}</span></div>`:''}
-            ${ej.anotaciones?`<div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted);font-style:italic">📝 ${ej.anotaciones}</div>`:''}
+            <!-- Per-series table -->
+            ${(() => {
+              const cfg = ej.seriesConfig;
+              if(cfg && cfg.length) {
+                const thS = 'padding:5px 8px;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;text-align:center;';
+                const tdS = 'padding:5px 8px;font-size:0.8rem;font-weight:600;text-align:center;';
+                const rows = cfg.map((s,si) => `
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <td style="${tdS};color:rgba(0,200,255,0.7);font-weight:800">${si+1}</td>
+                    <td style="${tdS}">${s.repsMin}-${s.repsMax}</td>
+                    <td style="${tdS}">${s.peso} kg</td>
+                    <td style="${tdS};color:#a78bfa">${s.rirRpe}</td>
+                    <td style="${tdS};color:#00e5a0">${s.descanso}s</td>
+                  </tr>`).join('');
+                return `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:280px">
+                  <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+                    <th style="${thS}">#</th><th style="${thS}">Reps</th><th style="${thS}">Peso</th><th style="${thS}">RIR/RPE</th><th style="${thS}">Descanso</th>
+                  </tr></thead><tbody>${rows}</tbody></table></div>`;
+              } else {
+                // Legacy flat display
+                return `<div class="slot-mini-grid">
+                  <div><div style="font-size:0.7rem;color:var(--text-muted)">Reps</div><strong>${ej.repsMin}-${ej.repsMax}</strong></div>
+                  <div><div style="font-size:0.7rem;color:var(--text-muted)">Peso</div><strong>${ej.peso} kg</strong></div>
+                  <div><div style="font-size:0.7rem;color:var(--text-muted)">RIR/RPE</div><strong>${ej.rirRpe}</strong></div>
+                  <div><div style="font-size:0.7rem;color:var(--text-muted)">Descanso</div><strong>${ej.descanso}s</strong></div>
+                </div>`;
+              }
+            })()}
+            ${ej.anotaciones?`<div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);font-style:italic;background:rgba(255,210,0,0.06);border:1px solid rgba(255,210,0,0.12);border-radius:10px;padding:8px 12px">📝 ${ej.anotaciones}</div>`:''}
           </div>
         `).join('')||'<div class="empty-state" style="padding:20px"><div class="empty-icon">💪</div><div class="empty-text">Sin ejercicios. Agrega el primero.</div></div>'}
       `:'<div class="empty-state"><div class="empty-icon">👆</div><div class="empty-text">Selecciona Mes → Semana → Día para ver los ejercicios</div></div>'}
@@ -1623,48 +1651,200 @@ window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
       <span class="overlay-title">➕ Agregar Ejercicio — M${mes}·S${semana}·D${dia}</span>
       <button class="btn-close" onclick="closeOverlay()">✕</button>
     </div>
-    <div class="form-grid">
-      <div class="form-group" style="grid-column:1/-1"><label>Ejercicio *</label><select class="glass-input" id="ejSel"><option value="">Seleccionar...</option>${ejOptions}</select></div>
-      <div class="form-group"><label>Series</label><input class="glass-input" type="number" id="ejSeries" value="4" min="1"></div>
-      <div class="form-group"><label>Reps Mín</label><input class="glass-input" type="number" id="ejRepsMin" value="8" min="1"></div>
-      <div class="form-group"><label>Reps Máx</label><input class="glass-input" type="number" id="ejRepsMax" value="12" min="1"></div>
-      <div class="form-group"><label>Peso (kg)</label><input class="glass-input" type="number" id="ejPeso" value="0" min="0" step="0.5"></div>
-      <div class="form-group"><label>RIR / RPE</label><input class="glass-input" type="number" id="ejRirRpe" value="2" min="-1" max="10"></div>
-      <div class="form-group"><label>Tiempo (seg)</label><input class="glass-input" type="number" id="ejTiempo" value="45" min="0"></div>
-      <div class="form-group"><label>Descanso (seg)</label><input class="glass-input" type="number" id="ejDescanso" value="90" min="0"></div>
+
+    <!-- Datos generales -->
+    <div class="form-grid" style="margin-bottom:18px">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Ejercicio *</label>
+        <select class="glass-input" id="ejSel"><option value="">Seleccionar...</option>${ejOptions}</select>
+      </div>
+      <div class="form-group">
+        <label>N° de series</label>
+        <input class="glass-input" type="number" id="ejSeries" value="4" min="1" max="20"
+          oninput="rebuildSeriesTable()">
+      </div>
+      <div class="form-group">
+        <label>Tiempo por rep (seg)</label>
+        <input class="glass-input" type="number" id="ejTiempo" value="45" min="0">
+      </div>
       <div class="form-group" style="grid-column:1/-1">
         <label>Método de entrenamiento</label>
         <input class="glass-input" id="ejMetodo" placeholder="Ej: Rest Pause, Drop Set, Cluster, Superset...">
-        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px">Técnica especial o método de intensificación para este ejercicio</div>
       </div>
-      <div class="form-group" style="grid-column:1/-1"><label>Anotaciones</label><textarea class="glass-input" id="ejAnotaciones" placeholder="Instrucciones especiales..."></textarea></div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Anotaciones</label>
+        <textarea class="glass-input" id="ejAnotaciones" rows="2" placeholder="Instrucciones especiales..."></textarea>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end">
+
+    <!-- Valores por defecto para rellenar la tabla rápido -->
+    <div style="background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.15);border-radius:14px;padding:14px;margin-bottom:16px">
+      <div style="font-size:0.72rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">
+        ⚡ Rellenar todas las series con estos valores
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:10px">
+        <div class="form-group" style="margin:0">
+          <label>Reps Mín</label>
+          <input class="glass-input" type="number" id="ejDefRepsMin" value="8" min="0" oninput="fillSeriesDefaults()">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Reps Máx</label>
+          <input class="glass-input" type="number" id="ejDefRepsMax" value="12" min="0" oninput="fillSeriesDefaults()">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Peso (kg)</label>
+          <input class="glass-input" type="number" id="ejDefPeso" value="0" min="0" step="0.5" oninput="fillSeriesDefaults()">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>RIR / RPE</label>
+          <input class="glass-input" type="number" id="ejDefRirRpe" value="2" min="-1" max="10" oninput="fillSeriesDefaults()">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Descanso (seg)</label>
+          <input class="glass-input" type="number" id="ejDefDescanso" value="90" min="0" oninput="fillSeriesDefaults()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla por series (se genera dinámicamente) -->
+    <div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">
+      📋 Configuración por serie
+    </div>
+    <div id="seriesTableWrap" style="overflow-x:auto;margin-bottom:20px">
+      <!-- generado por rebuildSeriesTable() -->
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveEjDia('${rutinaId}',${mes},${semana},${dia})">💾 Agregar</button>
     </div>
   `);
+
+  // Build table right away
+  rebuildSeriesTable();
+};
+
+// Build / rebuild the per-series table when the series count changes.
+// Preserves any values already typed in existing rows.
+window.rebuildSeriesTable = () => {
+  const n = Math.max(1, Math.min(20, +document.getElementById('ejSeries')?.value || 4));
+
+  // Snapshot current values from rows that already exist (so changing count doesn't wipe them)
+  const saved = [];
+  let existingIdx = 0;
+  while(document.getElementById(`s_repsMin_${existingIdx}`) !== null) {
+    saved.push({
+      repsMin:  document.getElementById(`s_repsMin_${existingIdx}`)?.value,
+      repsMax:  document.getElementById(`s_repsMax_${existingIdx}`)?.value,
+      peso:     document.getElementById(`s_peso_${existingIdx}`)?.value,
+      rirRpe:   document.getElementById(`s_rirRpe_${existingIdx}`)?.value,
+      descanso: document.getElementById(`s_descanso_${existingIdx}`)?.value,
+    });
+    existingIdx++;
+  }
+
+  const defRepsMin  = document.getElementById('ejDefRepsMin')?.value  || '8';
+  const defRepsMax  = document.getElementById('ejDefRepsMax')?.value  || '12';
+  const defPeso     = document.getElementById('ejDefPeso')?.value     || '0';
+  const defRirRpe   = document.getElementById('ejDefRirRpe')?.value   || '2';
+  const defDescanso = document.getElementById('ejDefDescanso')?.value || '90';
+
+  const wrap = document.getElementById('seriesTableWrap');
+  if(!wrap) return;
+
+  const thStyle = 'padding:8px 10px;font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;white-space:nowrap;text-align:center;';
+  const rows = Array.from({length:n}, (_,i) => {
+    // Use saved value if row existed, else fall back to defaults
+    const sv = saved[i];
+    const repsMin  = sv ? sv.repsMin  : defRepsMin;
+    const repsMax  = sv ? sv.repsMax  : defRepsMax;
+    const peso     = sv ? sv.peso     : defPeso;
+    const rirRpe   = sv ? sv.rirRpe   : defRirRpe;
+    const descanso = sv ? sv.descanso : defDescanso;
+    return `
+      <tr>
+        <td style="padding:6px 8px;text-align:center">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:800;color:var(--primary);margin:0 auto">${i+1}</div>
+        </td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_repsMin_${i}" value="${repsMin}" min="0" style="padding:7px 8px;text-align:center;min-width:60px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_repsMax_${i}" value="${repsMax}" min="0" style="padding:7px 8px;text-align:center;min-width:60px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_peso_${i}"    value="${peso}"    min="0" step="0.5" style="padding:7px 8px;text-align:center;min-width:65px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_rirRpe_${i}" value="${rirRpe}"  min="-1" max="10" style="padding:7px 8px;text-align:center;min-width:60px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_descanso_${i}" value="${descanso}" min="0" style="padding:7px 8px;text-align:center;min-width:65px"></td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;min-width:420px">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+          <th style="${thStyle}">#</th>
+          <th style="${thStyle}">Rep Mín</th>
+          <th style="${thStyle}">Rep Máx</th>
+          <th style="${thStyle}">Peso kg</th>
+          <th style="${thStyle}">RIR/RPE</th>
+          <th style="${thStyle}">Descanso s</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+};
+
+// Fill all series rows with the current default values
+window.fillSeriesDefaults = () => {
+  const n = Math.max(1, +document.getElementById('ejSeries')?.value || 4);
+  const defRepsMin  = document.getElementById('ejDefRepsMin')?.value  || '8';
+  const defRepsMax  = document.getElementById('ejDefRepsMax')?.value  || '12';
+  const defPeso     = document.getElementById('ejDefPeso')?.value     || '0';
+  const defRirRpe   = document.getElementById('ejDefRirRpe')?.value   || '2';
+  const defDescanso = document.getElementById('ejDefDescanso')?.value || '90';
+
+  for(let i=0; i<n; i++) {
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+    set(`s_repsMin_${i}`,  defRepsMin);
+    set(`s_repsMax_${i}`,  defRepsMax);
+    set(`s_peso_${i}`,     defPeso);
+    set(`s_rirRpe_${i}`,   defRirRpe);
+    set(`s_descanso_${i}`, defDescanso);
+  }
 };
 
 window.saveEjDia = async (rutinaId, mes, semana, dia) => {
   const ejId = document.getElementById('ejSel').value;
   if(!ejId) return Swal.fire({icon:'warning',title:'Selecciona un ejercicio',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  const n = Math.max(1, +document.getElementById('ejSeries').value || 4);
+
+  // Read per-series config from the table
+  const seriesConfig = Array.from({length: n}, (_, i) => ({
+    repsMin:  +document.getElementById(`s_repsMin_${i}`)?.value  || 0,
+    repsMax:  +document.getElementById(`s_repsMax_${i}`)?.value  || 0,
+    peso:     +document.getElementById(`s_peso_${i}`)?.value     || 0,
+    rirRpe:   +document.getElementById(`s_rirRpe_${i}`)?.value   || 0,
+    descanso: +document.getElementById(`s_descanso_${i}`)?.value || 90,
+  }));
+
+  // Keep top-level defaults for backwards compatibility display
   const path = `rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios`;
-  const snap = await get(ref(db,path));
-  const current = snap.val()||{};
-  const idx = Object.keys(current).length;
-  await set(ref(db,`${path}/${idx}`), {
-    ejercicioId: ejId,
-    series: +document.getElementById('ejSeries').value,
-    repsMin: +document.getElementById('ejRepsMin').value,
-    repsMax: +document.getElementById('ejRepsMax').value,
-    peso: +document.getElementById('ejPeso').value,
-    rirRpe: +document.getElementById('ejRirRpe').value,
-    tiempo: +document.getElementById('ejTiempo').value,
-    descanso: +document.getElementById('ejDescanso').value,
-    metodo: document.getElementById('ejMetodo').value.trim(),
-    anotaciones: document.getElementById('ejAnotaciones').value.trim()
+  const snap = await get(ref(db, path));
+  const idx = Object.keys(snap.val()||{}).length;
+
+  await set(ref(db, `${path}/${idx}`), {
+    ejercicioId:  ejId,
+    series:       n,
+    seriesConfig, // ← new: per-series array
+    // top-level fallbacks (first series values, for legacy display)
+    repsMin:  seriesConfig[0].repsMin,
+    repsMax:  seriesConfig[0].repsMax,
+    peso:     seriesConfig[0].peso,
+    rirRpe:   seriesConfig[0].rirRpe,
+    descanso: seriesConfig[0].descanso,
+    tiempo:   +document.getElementById('ejTiempo').value || 0,
+    metodo:   document.getElementById('ejMetodo').value.trim(),
+    anotaciones: document.getElementById('ejAnotaciones').value.trim(),
   });
+
   closeOverlay();
   Swal.fire({icon:'success',title:'¡Ejercicio agregado!',timer:1200,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
   renderRutinaDetail(rutinaId);
@@ -1676,6 +1856,162 @@ window.removeEjDia = async (rutinaId, mes, semana, dia, idx) => {
     await remove(ref(db,`rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios/${idx}`));
     renderRutinaDetail(rutinaId);
   }
+};
+
+window.editEjDia = async (rutinaId, mes, semana, dia, idx) => {
+  // Load current data
+  const [ejSnap, slotSnap] = await Promise.all([
+    get(ref(db, 'ejercicios')),
+    get(ref(db, `rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios/${idx}`))
+  ]);
+  const ejs = ejSnap.val()||{};
+  const ej  = slotSnap.val()||{};
+  const ejOptions = Object.entries(ejs)
+    .filter(([,e]) => e.estado)
+    .map(([id,e]) => `<option value="${id}" ${id===ej.ejercicioId?'selected':''}>${e.nombre}</option>`)
+    .join('');
+
+  // Build per-series config from existing data (support legacy flat format)
+  const existingCfg = ej.seriesConfig || Array.from({length: ej.series||4}, () => ({
+    repsMin:  ej.repsMin  || 8,
+    repsMax:  ej.repsMax  || 12,
+    peso:     ej.peso     || 0,
+    rirRpe:   ej.rirRpe   || 2,
+    descanso: ej.descanso || 90,
+  }));
+
+  // Summary of first series for the defaults section
+  const firstCfg = existingCfg[0] || {};
+
+  showOverlay(`
+    <div class="overlay-header">
+      <span class="overlay-title">✏️ Editar Ejercicio — M${mes}·S${semana}·D${dia}</span>
+      <button class="btn-close" onclick="closeOverlay()">✕</button>
+    </div>
+
+    <div class="form-grid" style="margin-bottom:18px">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Ejercicio *</label>
+        <select class="glass-input" id="ejSel"><option value="">Seleccionar...</option>${ejOptions}</select>
+      </div>
+      <div class="form-group">
+        <label>N° de series</label>
+        <input class="glass-input" type="number" id="ejSeries" value="${ej.series||4}" min="1" max="20"
+          oninput="rebuildSeriesTable()">
+      </div>
+      <div class="form-group">
+        <label>Tiempo por rep (seg)</label>
+        <input class="glass-input" type="number" id="ejTiempo" value="${ej.tiempo||45}" min="0">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Método de entrenamiento</label>
+        <input class="glass-input" id="ejMetodo" value="${ej.metodo||''}" placeholder="Ej: Rest Pause, Drop Set...">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Anotaciones</label>
+        <textarea class="glass-input" id="ejAnotaciones" rows="2">${ej.anotaciones||''}</textarea>
+      </div>
+    </div>
+
+    <div style="background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.15);border-radius:14px;padding:14px;margin-bottom:16px">
+      <div style="font-size:0.72rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">
+        ⚡ Rellenar todas las series con estos valores
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px">
+        <div class="form-group" style="margin:0"><label>Reps Mín</label><input class="glass-input" type="number" id="ejDefRepsMin" value="${firstCfg.repsMin||8}" min="0" oninput="fillSeriesDefaults()"></div>
+        <div class="form-group" style="margin:0"><label>Reps Máx</label><input class="glass-input" type="number" id="ejDefRepsMax" value="${firstCfg.repsMax||12}" min="0" oninput="fillSeriesDefaults()"></div>
+        <div class="form-group" style="margin:0"><label>Peso (kg)</label><input class="glass-input" type="number" id="ejDefPeso" value="${firstCfg.peso||0}" min="0" step="0.5" oninput="fillSeriesDefaults()"></div>
+        <div class="form-group" style="margin:0"><label>RIR / RPE</label><input class="glass-input" type="number" id="ejDefRirRpe" value="${firstCfg.rirRpe||2}" min="-1" max="10" oninput="fillSeriesDefaults()"></div>
+        <div class="form-group" style="margin:0"><label>Descanso (seg)</label><input class="glass-input" type="number" id="ejDefDescanso" value="${firstCfg.descanso||90}" min="0" oninput="fillSeriesDefaults()"></div>
+      </div>
+    </div>
+
+    <div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">
+      📋 Configuración por serie
+    </div>
+    <div id="seriesTableWrap" style="overflow-x:auto;margin-bottom:20px"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn btn-primary" onclick="updateEjDia('${rutinaId}',${mes},${semana},${dia},${idx})">💾 Guardar cambios</button>
+    </div>
+  `);
+
+  // Build table pre-populated with existing per-series values
+  rebuildSeriesTableWithData(existingCfg);
+};
+
+// Rebuild table pre-filling rows with existing seriesConfig data
+window.rebuildSeriesTableWithData = (existingCfg) => {
+  const n = Math.max(1, Math.min(20, +document.getElementById('ejSeries')?.value || existingCfg.length));
+  const wrap = document.getElementById('seriesTableWrap');
+  if(!wrap) return;
+
+  const thStyle = 'padding:8px 10px;font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;white-space:nowrap;text-align:center;';
+  const rows = Array.from({length:n}, (_,i) => {
+    const s = existingCfg[i] || existingCfg[existingCfg.length-1] || {};
+    return `
+      <tr>
+        <td style="padding:6px 8px;text-align:center">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:800;color:var(--primary);margin:0 auto">${i+1}</div>
+        </td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_repsMin_${i}" value="${s.repsMin??8}" min="0" style="padding:7px 8px;text-align:center;min-width:60px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_repsMax_${i}" value="${s.repsMax??12}" min="0" style="padding:7px 8px;text-align:center;min-width:60px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_peso_${i}"    value="${s.peso??0}"   min="0" step="0.5" style="padding:7px 8px;text-align:center;min-width:65px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_rirRpe_${i}" value="${s.rirRpe??2}" min="-1" max="10" style="padding:7px 8px;text-align:center;min-width:60px"></td>
+        <td style="padding:6px 5px"><input class="glass-input" type="number" id="s_descanso_${i}" value="${s.descanso??90}" min="0" style="padding:7px 8px;text-align:center;min-width:65px"></td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;min-width:420px">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+          <th style="${thStyle}">#</th>
+          <th style="${thStyle}">Rep Mín</th>
+          <th style="${thStyle}">Rep Máx</th>
+          <th style="${thStyle}">Peso kg</th>
+          <th style="${thStyle}">RIR/RPE</th>
+          <th style="${thStyle}">Descanso s</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+};
+
+window.updateEjDia = async (rutinaId, mes, semana, dia, idx) => {
+  const ejId = document.getElementById('ejSel').value;
+  if(!ejId) return Swal.fire({icon:'warning',title:'Selecciona un ejercicio',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+
+  const n = Math.max(1, +document.getElementById('ejSeries').value || 4);
+
+  const seriesConfig = Array.from({length: n}, (_, i) => ({
+    repsMin:  +document.getElementById(`s_repsMin_${i}`)?.value  || 0,
+    repsMax:  +document.getElementById(`s_repsMax_${i}`)?.value  || 0,
+    peso:     +document.getElementById(`s_peso_${i}`)?.value     || 0,
+    rirRpe:   +document.getElementById(`s_rirRpe_${i}`)?.value   || 0,
+    descanso: +document.getElementById(`s_descanso_${i}`)?.value || 90,
+  }));
+
+  const path = `rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios/${idx}`;
+  await set(ref(db, path), {
+    ejercicioId:  ejId,
+    series:       n,
+    seriesConfig,
+    repsMin:  seriesConfig[0].repsMin,
+    repsMax:  seriesConfig[0].repsMax,
+    peso:     seriesConfig[0].peso,
+    rirRpe:   seriesConfig[0].rirRpe,
+    descanso: seriesConfig[0].descanso,
+    tiempo:   +document.getElementById('ejTiempo').value || 0,
+    metodo:   document.getElementById('ejMetodo').value.trim(),
+    anotaciones: document.getElementById('ejAnotaciones').value.trim(),
+  });
+
+  closeOverlay();
+  Swal.fire({icon:'success',title:'¡Ejercicio actualizado!',timer:1200,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  renderRutinaDetail(rutinaId);
 };
 
 window.showRutinaModal = async () => {
