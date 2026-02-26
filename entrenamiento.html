@@ -250,6 +250,240 @@ select.glass-input option { background:#0d1a35; }
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-thumb { background:rgba(0,200,255,0.2);border-radius:2px; }
 
+/* SESIÓN EN CURSO — dot indicator on Entrenar tab */
+.nav-tab .session-dot {
+  display:none;
+  position:absolute;
+  top:4px; right:calc(50% - 18px);
+  width:8px; height:8px;
+  border-radius:50%;
+  background:var(--success);
+  box-shadow:0 0 8px var(--success);
+  animation:pulse-dot 1.4s ease-in-out infinite;
+}
+.nav-tab { position:relative; }
+.nav-tab.has-session .session-dot { display:block; }
+@keyframes pulse-dot {
+  0%,100% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.4); opacity:0.7; }
+}
+
+/* ═══════════════════════════════════════════════
+   REST TIMER — Full overlay modal
+═══════════════════════════════════════════════ */
+#restTimerOverlay {
+  position:fixed; inset:0; z-index:800;
+  background:rgba(3,7,18,0.88);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:0;
+  animation:rtFadeIn 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes rtFadeIn { from{opacity:0} to{opacity:1} }
+#restTimerOverlay.rt-exit {
+  animation:rtFadeOut 0.3s ease forwards;
+}
+@keyframes rtFadeOut { from{opacity:1} to{opacity:0} }
+
+/* Label superior */
+.rt-label {
+  font-family:'Space Mono',monospace;
+  font-size:0.72rem; letter-spacing:5px;
+  text-transform:uppercase;
+  color:rgba(232,244,255,0.35);
+  margin-bottom:32px;
+}
+
+/* Serie completada badge */
+.rt-series-badge {
+  background:rgba(0,229,160,0.1);
+  border:1px solid rgba(0,229,160,0.3);
+  border-radius:30px; padding:6px 18px;
+  font-size:0.78rem; font-weight:700;
+  color:var(--success); letter-spacing:1px;
+  margin-bottom:36px;
+  animation:rtBadgePop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes rtBadgePop { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+
+/* Ring container */
+.rt-ring-wrap {
+  position:relative;
+  width:220px; height:220px;
+  margin-bottom:36px;
+}
+.rt-ring-wrap svg {
+  transform:rotate(-90deg);
+  filter:drop-shadow(0 0 18px var(--rt-glow, rgba(0,200,255,0.5)));
+  transition:filter 0.6s ease;
+}
+.rt-ring-bg {
+  fill:none;
+  stroke:rgba(255,255,255,0.06);
+  stroke-width:10;
+}
+.rt-ring-track {
+  fill:none;
+  stroke:rgba(255,255,255,0.04);
+  stroke-width:10;
+}
+.rt-ring-fill {
+  fill:none;
+  stroke:var(--rt-color, var(--primary));
+  stroke-width:10;
+  stroke-linecap:round;
+  transition:stroke-dashoffset 1s linear, stroke 0.5s ease;
+}
+/* Inner glow ring (decorative) */
+.rt-ring-inner {
+  fill:none;
+  stroke:var(--rt-color, var(--primary));
+  stroke-width:1;
+  opacity:0.25;
+  transition:stroke 0.5s ease;
+}
+
+/* Number in center */
+.rt-number {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:2px;
+}
+.rt-count {
+  font-family:'Space Mono',monospace;
+  font-size:5.5rem; font-weight:700; line-height:1;
+  color:var(--rt-color, var(--primary));
+  transition:color 0.5s ease;
+  text-shadow:0 0 40px var(--rt-glow, rgba(0,200,255,0.4));
+  animation:rtCountPop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes rtCountPop { from{transform:scale(1.15)} to{transform:scale(1)} }
+.rt-secs-label {
+  font-size:0.7rem; letter-spacing:3px;
+  color:rgba(232,244,255,0.3);
+  text-transform:uppercase;
+}
+
+/* Status message */
+.rt-msg {
+  font-size:1.15rem; font-weight:700;
+  color:rgba(232,244,255,0.75);
+  letter-spacing:0.5px;
+  margin-bottom:10px;
+  min-height:1.6em;
+  text-align:center;
+  transition:color 0.4s ease;
+}
+
+/* Progress bar (thin, below ring) */
+.rt-progress-bar {
+  width:200px; height:3px;
+  background:rgba(255,255,255,0.06);
+  border-radius:2px; overflow:hidden;
+  margin-bottom:44px;
+}
+.rt-progress-fill {
+  height:100%;
+  background:var(--rt-color, var(--primary));
+  border-radius:2px;
+  transition:width 1s linear, background 0.5s ease;
+  box-shadow:0 0 8px var(--rt-glow, rgba(0,200,255,0.6));
+}
+
+/* Skip button */
+.rt-skip {
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:50px; padding:12px 36px;
+  color:rgba(232,244,255,0.5);
+  font-family:'Exo 2',sans-serif;
+  font-size:0.88rem; font-weight:600; letter-spacing:1px;
+  cursor:pointer;
+  transition:all 0.25s ease;
+}
+.rt-skip:hover {
+  background:rgba(255,255,255,0.1);
+  border-color:rgba(255,255,255,0.25);
+  color:rgba(232,244,255,0.9);
+  transform:scale(1.03);
+}
+.rt-skip:active { transform:scale(0.97); }
+
+/* URGENCY PULSE — when <= 10s */
+.rt-ring-wrap.rt-urgent svg {
+  animation:rtUrgentPulse 0.8s ease-in-out infinite;
+}
+@keyframes rtUrgentPulse {
+  0%,100% { filter:drop-shadow(0 0 18px var(--rt-glow)); }
+  50%      { filter:drop-shadow(0 0 36px var(--rt-glow)) drop-shadow(0 0 60px var(--rt-glow)); }
+}
+
+/* DONE state */
+#restTimerOverlay.rt-done .rt-count {
+  animation:rtDonePop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes rtDonePop { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+
+/* AUTOSAVE MICRO-FEEDBACK */
+.autosave-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  background:rgba(0,229,160,0.12); border:1px solid rgba(0,229,160,0.3);
+  border-radius:8px; padding:3px 8px;
+  font-size:0.68rem; color:var(--success); font-weight:700;
+  animation:fadeInOut 1.5s ease forwards;
+  pointer-events:none;
+}
+@keyframes fadeInOut { 0%{opacity:0;transform:translateY(4px)} 15%{opacity:1;transform:translateY(0)} 75%{opacity:1} 100%{opacity:0} }
+
+/* LANDSCAPE VIDEO EXPAND BUTTON */
+.video-expand-btn {
+  position:absolute; bottom:10px; right:10px;
+  background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.2);
+  border-radius:8px; padding:6px 10px;
+  color:#fff; font-size:0.75rem; font-weight:700;
+  cursor:pointer; z-index:10; backdrop-filter:blur(6px);
+  display:flex; align-items:center; gap:5px;
+  transition:all 0.2s ease;
+}
+.video-expand-btn:hover { background:rgba(0,200,255,0.3); border-color:rgba(0,200,255,0.5); }
+
+/* SUBSCRIPTION EXPIRY BANNER — sticky under header, always visible */
+#expiryBanner {
+  position:sticky; top:0; z-index:99;
+  background:linear-gradient(90deg, rgba(20,8,4,0.97) 0%, rgba(30,10,4,0.97) 100%);
+  border-bottom:2px solid rgba(255,107,53,0.7);
+  padding:10px 16px;
+  display:flex; align-items:center; gap:10px;
+  box-shadow:0 4px 20px rgba(255,107,53,0.2);
+  animation:expirySlideIn 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes expirySlideIn { from{opacity:0;transform:translateY(-100%)} to{opacity:1;transform:translateY(0)} }
+.expiry-banner-pulse {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+  background:#ff6b35;
+  box-shadow:0 0 0 0 rgba(255,107,53,0.7);
+  animation:expiryPulse 1.6s ease-in-out infinite;
+}
+@keyframes expiryPulse {
+  0%   { box-shadow:0 0 0 0 rgba(255,107,53,0.7); }
+  70%  { box-shadow:0 0 0 8px rgba(255,107,53,0); }
+  100% { box-shadow:0 0 0 0 rgba(255,107,53,0); }
+}
+.expiry-banner-text { flex:1; min-width:0; }
+.expiry-banner-title { font-size:0.82rem; font-weight:800; color:#ff6b35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.expiry-banner-sub { font-size:0.72rem; color:rgba(255,180,140,0.8); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.expiry-banner-close {
+  background:rgba(255,107,53,0.15); border:1px solid rgba(255,107,53,0.35);
+  border-radius:8px; padding:5px 10px;
+  color:#ff6b35; font-family:'Exo 2',sans-serif; font-size:0.72rem; font-weight:700;
+  cursor:pointer; white-space:nowrap; flex-shrink:0;
+  transition:all 0.2s ease;
+}
+.expiry-banner-close:hover { background:rgba(255,107,53,0.28); }
+
 /* STAT MINI */
 .mini-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px; }
 .mini-stat { background:rgba(0,0,0,0.3);border-radius:14px;padding:14px;text-align:center;border:1px solid var(--glass-border); }
@@ -356,6 +590,8 @@ select.glass-input option { background:#0d1a35; }
   </div>
 </div>
 
+<div id="expiryBanner" style="display:none"></div>
+
 <div class="page page-wrap" id="mainPage">
   <div class="page-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px">
     <div class="spinner"></div>
@@ -364,7 +600,8 @@ select.glass-input option { background:#0d1a35; }
 </div>
 
 <nav class="bottom-nav" id="bottomNav" style="display:none">
-  <div class="nav-tab active" data-tab="entrenar" onclick="switchTab('entrenar')">
+  <div class="nav-tab active" data-tab="entrenar" id="navTabEntrenar" onclick="switchTab('entrenar')">
+    <span class="session-dot"></span>
     <span class="tab-icon">💪</span><span class="tab-label">Entrenar</span>
   </div>
   <div class="nav-tab" data-tab="progreso" onclick="switchTab('progreso')">
@@ -412,6 +649,12 @@ let userNotifListener = null;
 function setupUserNotifListener() {
   const notifRef = ref(db, `notificaciones/${currentUser.id}`);
   if(userNotifListener) off(notifRef, 'value', userNotifListener);
+
+  // Track which notif IDs we've already toasted this session (survives JS but not page reload)
+  // Use sessionStorage so reload doesn't re-show toasts for old notifs
+  const shownKey = `saykyo_shown_notifs_${currentUser.id}`;
+  let shownIds = new Set(JSON.parse(sessionStorage.getItem(shownKey)||'[]'));
+
   userNotifListener = onValue(notifRef, (snap) => {
     const notifs = snap.val()||{};
     const unread = Object.values(notifs).filter(n=>!n.leida).length;
@@ -422,12 +665,15 @@ function setupUserNotifListener() {
     }
     window._userNotifData = notifs;
 
-    // Push toast for new notifications
-    const latest = Object.entries(notifs).filter(([,n])=>!n.leida&&!n._shown).sort((a,b)=>b[1].creadaEn-a[1].creadaEn)[0];
+    // Push toast only for truly new notifications (not seen this session AND unread)
+    const latest = Object.entries(notifs)
+      .filter(([nid, n]) => !n.leida && !shownIds.has(nid))
+      .sort((a,b) => b[1].creadaEn - a[1].creadaEn)[0];
     if(latest) {
       const [nid, n] = latest;
       showUserPushToast(n);
-      window._userNotifData[nid]._shown = true;
+      shownIds.add(nid);
+      sessionStorage.setItem(shownKey, JSON.stringify([...shownIds]));
     }
   });
 }
@@ -444,7 +690,7 @@ function showUserPushToast(n) {
       <div style="font-size:0.8rem;font-weight:700;color:var(--primary);margin-bottom:2px">Mensaje de tu entrenador</div>
       <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.4"><strong>${n.deNombre||'Entrenador'}:</strong> ${n.mensaje}</div>
     </div>
-    <button onclick="this.closest('#userPushToast').remove()" style="background:none;border:none;color:var(--text-muted);font-size:0.9rem;cursor:pointer;position:absolute;top:8px;right:10px">✕</button>
+    <button onclick="document.getElementById('userPushToast')?.remove()" style="background:none;border:none;color:var(--text-muted);font-size:0.9rem;cursor:pointer;position:absolute;top:8px;right:10px">✕</button>
   `;
   toast.style.position='fixed';
   toast.onclick = (e) => { if(e.target.tagName==='BUTTON') return; toggleUserNotifSheet(); toast.remove(); };
@@ -826,8 +1072,58 @@ async function init() {
   
   state.progreso = progresoSnap.val()||{mesActual:1,semanaActual:1,diaActual:1};
   document.getElementById('bottomNav').style.display='flex';
+
+  // ── SUBSCRIPTION EXPIRY BANNER ──
+  if(currentUser.validoHasta) {
+    const now = new Date();
+    const expiry = new Date(currentUser.validoHasta);
+    const diffDays = Math.round((expiry - now) / (1000 * 60 * 60 * 24));
+    if(diffDays >= 0 && diffDays <= 7) {
+      showExpiryBanner(diffDays);
+    }
+  }
+
   renderTab('entrenar');
 }
+
+// ── EXPIRY BANNER (sticky, persists across tab switches) ──
+function showExpiryBanner(daysLeft) {
+  // If user already dismissed it today, don't show again until tomorrow
+  const dismissedKey = `saykyo_expiry_dismissed_${currentUser.id}`;
+  const dismissedDate = localStorage.getItem(dismissedKey);
+  const today = new Date().toISOString().slice(0,10); // 'YYYY-MM-DD'
+  if(dismissedDate === today) return;
+
+  const banner = document.getElementById('expiryBanner');
+  if(!banner) return;
+
+  const urgency = daysLeft === 0;
+  const title = urgency ? '⚠️ Tu suscripción vence HOY' : `⚠️ Suscripción vence en ${daysLeft} día${daysLeft===1?'':'s'}`;
+  const sub = urgency
+    ? 'Contacta a tu entrenador para renovar y no perder acceso.'
+    : `Renueva antes del ${new Date(currentUser.validoHasta).toLocaleDateString('es-CO',{day:'2-digit',month:'long'})} para continuar entrenando.`;
+
+  banner.innerHTML = `
+    <div class="expiry-banner-pulse"></div>
+    <div class="expiry-banner-text">
+      <div class="expiry-banner-title">${title}</div>
+      <div class="expiry-banner-sub">${sub}</div>
+    </div>
+    <button class="expiry-banner-close" onclick="dismissExpiryBanner()">Entendido ✓</button>
+  `;
+  banner.style.display = 'flex';
+}
+
+window.dismissExpiryBanner = () => {
+  const banner = document.getElementById('expiryBanner');
+  if(banner) {
+    banner.style.animation = 'expirySlideIn 0.3s ease reverse';
+    setTimeout(() => { banner.style.display = 'none'; }, 280);
+  }
+  // Remember dismissal for today so it doesn't reappear on same day
+  const dismissedKey = `saykyo_expiry_dismissed_${currentUser.id}`;
+  localStorage.setItem(dismissedKey, new Date().toISOString().slice(0,10));
+};
 
 // ============ ANAMNESIS ============
 const PREGUNTAS = [
@@ -1387,37 +1683,44 @@ function renderEjercicioActual() {
   const metodoMax  = currentUser.metodo === 'RPE' ? 10 : 6;
   const esBiext    = ejInfo.biextremidad === true;
 
+  // Helper: get per-serie value with fallback to global ejConfig
+  const sc = ejConfig.seriesConfig; // may be undefined for legacy exercises
+  const sv = (i, field, fallback) => (sc && sc[i] && sc[i][field] != null) ? sc[i][field] : (ejConfig[field] ?? fallback);
+
   const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
     <div class="serie-row">
       <div class="serie-header">
         <div class="serie-num">${i+1}</div>
-        <div style="flex:1;font-size:0.8rem;color:var(--text-muted);font-weight:600">Serie ${i+1}</div>
+        <div style="flex:1;font-size:0.8rem;color:var(--text-muted);font-weight:600">
+          Serie ${i+1}
+          ${sc?`<span style="font-size:0.7rem;color:rgba(0,229,160,0.6);margin-left:6px">⏱ ${sv(i,'descanso',90)}s descanso</span>`:''}
+        </div>
         <button class="serie-done" id="done_${i}" onclick="toggleSerie(${i})">✓</button>
       </div>
       <div class="serie-inputs">
         <div class="serie-field">
           <label>Reps</label>
-          <input type="number" id="reps_${i}" placeholder="${ejConfig.repsMin}-${ejConfig.repsMax}" min="0" value="${ejConfig.repsMin||0}">
+          <input type="number" id="reps_${i}" placeholder="${sv(i,'repsMin',0)}-${sv(i,'repsMax',0)}" min="0" value="${sv(i,'repsMin',0)}">
         </div>
         <div class="serie-field">
           <label>Peso (kg)</label>
-          <input type="number" id="peso_${i}" placeholder="${ejConfig.peso||0}" min="0" step="0.5" value="${ejConfig.peso||0}">
+          <input type="number" id="peso_${i}" placeholder="${sv(i,'peso',0)}" min="0" step="0.5" value="${sv(i,'peso',0)}">
         </div>
         ${esBiext ? `
         <div class="serie-field">
           <label style="color:#00e5a0">🦾 Izq ${metodoLabel}</label>
-          <input type="number" id="rpe_izq_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
+          <input type="number" id="rpe_izq_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" value="${sv(i,'rirRpe',0)}"
             style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)">
         </div>
         <div class="serie-field">
           <label style="color:#ff6b35">🦾 Der ${metodoLabel}</label>
-          <input type="number" id="rpe_der_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
+          <input type="number" id="rpe_der_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" value="${sv(i,'rirRpe',0)}"
             style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)">
         </div>
         ` : `
         <div class="serie-field">
           <label style="color:var(--primary)">${metodoLabel}</label>
-          <input type="number" id="rpe_${i}" placeholder="${ejConfig.rirRpe}" min="${metodoMin}" max="${metodoMax}" value="${ejConfig.rirRpe||0}"
+          <input type="number" id="rpe_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" value="${sv(i,'rirRpe',0)}"
             style="border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06)">
         </div>
         `}
@@ -1440,8 +1743,8 @@ function renderEjercicioActual() {
     </div>
 
     <div class="training-card">
-      <div class="training-video">
-        ${ejInfo.urlVideo?`<iframe src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>`:`<div class="no-video"><div style="font-size:3rem">🏋️</div><div>Sin video disponible</div></div>`}
+      <div class="training-video" id="trainingVideoWrap">
+        ${ejInfo.urlVideo?`<iframe id="trainingVideoIframe" src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>}`:`<div class="no-video"><div style="font-size:3rem">🏋️</div><div>Sin video disponible</div></div>`}
       </div>
       <div class="training-info">
         <div class="training-title">${ejInfo.nombre||'Ejercicio'}</div>
@@ -1450,7 +1753,7 @@ function renderEjercicioActual() {
           <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
           <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
           <span class="meta-pill">${currentUser.metodo} ${ejConfig.rirRpe}</span>
-          <span class="meta-pill">⏱️ ${ejConfig.descanso}s descanso</span>
+          <span class="meta-pill">⏱️ ${ejConfig.seriesConfig ? 'descanso por serie' : ejConfig.descanso+'s descanso'}</span>
           ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
         </div>
         ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
@@ -1472,10 +1775,211 @@ function renderEjercicioActual() {
 
 window.toggleSerie = (i) => {
   const btn = document.getElementById(`done_${i}`);
+  const wasChecked = btn.classList.contains('checked');
   btn.classList.toggle('checked');
+  const isNowChecked = !wasChecked;
+
+  // 1. Haptic feedback (mobile)
+  if(isNowChecked && navigator.vibrate) navigator.vibrate(50);
+
+  // 2. Autosave micro-feedback
+  showAutosaveFeedback(btn);
+
+  // 3. Rest timer — only when marking as done
+  if(isNowChecked) {
+    const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+    const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+    const ejConfig = Object.values(diaData?.ejercicios||{})[state.ejercicioActual];
+    // Per-serie descanso with fallback to global
+    const sc = ejConfig?.seriesConfig;
+    const restSecs = (sc && sc[i] && sc[i].descanso != null) ? sc[i].descanso : (ejConfig?.descanso || 90);
+    startRestTimer(restSecs);
+
+    // 4. Session-in-progress indicator
+    updateSessionDot(true);
+  }
 };
 
+function showAutosaveFeedback(anchorEl) {
+  const old = document.getElementById('autosaveBadge');
+  if(old) old.remove();
+  const badge = document.createElement('span');
+  badge.id = 'autosaveBadge';
+  badge.className = 'autosave-badge';
+  badge.innerHTML = '💾 Guardado';
+  badge.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:700';
+  document.body.appendChild(badge);
+  setTimeout(() => badge.remove(), 1600);
+}
+
+function updateSessionDot(active) {
+  const tab = document.getElementById('navTabEntrenar');
+  if(tab) tab.classList.toggle('has-session', active);
+}
+
+// ── REST TIMER (full overlay) ──
+let _restTimerInterval = null;
+
+function startRestTimer(totalSecs) {
+  if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+  const existing = document.getElementById('restTimerToast');
+  if(existing) existing.remove();
+  const existingOvl = document.getElementById('restTimerOverlay');
+  if(existingOvl) existingOvl.remove();
+
+  let remaining = totalSecs;
+  // r=95, circumference
+  const R = 95;
+  const C = 2 * Math.PI * R;
+
+  // Color states: normal → warm → urgent → done
+  const getColors = (rem, tot) => {
+    const pct = rem / tot;
+    if(pct > 0.5)  return { color:'#00c8ff', glow:'rgba(0,200,255,0.55)' };
+    if(pct > 0.25) return { color:'#ffd60a', glow:'rgba(255,214,10,0.55)' };
+    return               { color:'#ff4d6d', glow:'rgba(255,77,109,0.6)' };
+  };
+
+  const getMsg = (rem, tot) => {
+    const pct = rem / tot;
+    if(pct > 0.75) return 'Recupera la respiración 💨';
+    if(pct > 0.45) return 'Descansa, lo mereces 🧘';
+    if(pct > 0.15) return 'Casi listo... 💪';
+    if(rem > 0)    return '¡Prepárate! 🔥';
+    return '¡A por la siguiente serie! 🚀';
+  };
+
+  const { color, glow } = getColors(remaining, totalSecs);
+  const offset = C * (1 - remaining / totalSecs);
+
+  const ovl = document.createElement('div');
+  ovl.id = 'restTimerOverlay';
+  ovl.innerHTML = `
+    <div class="rt-label">Tiempo de descanso</div>
+    <div class="rt-series-badge">✅ Serie completada</div>
+
+    <div class="rt-ring-wrap" id="rtRingWrap">
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <circle class="rt-ring-bg"    cx="110" cy="110" r="${R}"/>
+        <circle class="rt-ring-track" cx="110" cy="110" r="${R}"/>
+        <circle class="rt-ring-inner" id="rtRingInner" cx="110" cy="110" r="${R-18}"
+          stroke-dasharray="${2*Math.PI*(R-18)}" stroke-dashoffset="${2*Math.PI*(R-18)*(1-remaining/totalSecs)}"/>
+        <circle class="rt-ring-fill"  id="rtRingFill"  cx="110" cy="110" r="${R}"
+          stroke-dasharray="${C}" stroke-dashoffset="${offset}"/>
+      </svg>
+      <div class="rt-number">
+        <span class="rt-count" id="rtCount">${remaining}</span>
+        <span class="rt-secs-label">segundos</span>
+      </div>
+    </div>
+
+    <div class="rt-msg" id="rtMsg">${getMsg(remaining, totalSecs)}</div>
+
+    <div class="rt-progress-bar">
+      <div class="rt-progress-fill" id="rtProgressFill" style="width:${(remaining/totalSecs)*100}%"></div>
+    </div>
+
+    <button class="rt-skip" onclick="skipRestTimer()">Saltar descanso</button>
+  `;
+
+  // Apply initial color via CSS variables
+  ovl.style.setProperty('--rt-color', color);
+  ovl.style.setProperty('--rt-glow',  glow);
+  document.body.appendChild(ovl);
+
+  _restTimerInterval = setInterval(() => {
+    remaining--;
+
+    const countEl     = document.getElementById('rtCount');
+    const ringFill    = document.getElementById('rtRingFill');
+    const ringInner   = document.getElementById('rtRingInner');
+    const msgEl       = document.getElementById('rtMsg');
+    const progressEl  = document.getElementById('rtProgressFill');
+    const ringWrap    = document.getElementById('rtRingWrap');
+    const overlay     = document.getElementById('restTimerOverlay');
+
+    if(!countEl || !overlay) { clearInterval(_restTimerInterval); return; }
+
+    // Update number with pop animation
+    countEl.textContent = remaining > 0 ? remaining : '✓';
+    countEl.style.animation = 'none';
+    void countEl.offsetWidth; // reflow
+    countEl.style.animation = 'rtCountPop 0.25s cubic-bezier(0.34,1.56,0.64,1)';
+
+    // Update ring
+    const newOffset = C * (1 - remaining / totalSecs);
+    if(ringFill) ringFill.style.strokeDashoffset = newOffset;
+    if(ringInner) ringInner.style.strokeDashoffset = 2*Math.PI*(R-18) * (1 - remaining/totalSecs);
+
+    // Update progress bar
+    if(progressEl) progressEl.style.width = `${Math.max(0, (remaining/totalSecs)*100)}%`;
+
+    // Update message
+    if(msgEl) msgEl.textContent = getMsg(remaining, totalSecs);
+
+    // Update colors based on urgency
+    const { color: c, glow: g } = getColors(remaining, totalSecs);
+    overlay.style.setProperty('--rt-color', c);
+    overlay.style.setProperty('--rt-glow',  g);
+
+    // Urgent pulse when <= 10s
+    if(ringWrap) ringWrap.classList.toggle('rt-urgent', remaining <= 10 && remaining > 0);
+
+    if(remaining <= 0) {
+      clearInterval(_restTimerInterval);
+      _restTimerInterval = null;
+      if(navigator.vibrate) navigator.vibrate([100, 50, 150]);
+
+      overlay.classList.add('rt-done');
+      overlay.style.setProperty('--rt-color', '#00e5a0');
+      overlay.style.setProperty('--rt-glow',  'rgba(0,229,160,0.6)');
+      if(ringWrap) ringWrap.classList.remove('rt-urgent');
+      if(progressEl) progressEl.style.width = '0%';
+
+      setTimeout(() => {
+        const o = document.getElementById('restTimerOverlay');
+        if(o) {
+          o.classList.add('rt-exit');
+          setTimeout(() => o.remove(), 320);
+        }
+      }, 1200);
+    }
+  }, 1000);
+}
+
+window.skipRestTimer = () => {
+  if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+  const o = document.getElementById('restTimerOverlay');
+  if(o) { o.classList.add('rt-exit'); setTimeout(() => o.remove(), 300); }
+};
+
+// ── LANDSCAPE VIDEO FULLSCREEN ──
+window.toggleVideoFullscreen = () => {
+  const iframe = document.getElementById('trainingVideoIframe');
+  if(!iframe) return;
+  if(iframe.requestFullscreen) iframe.requestFullscreen();
+  else if(iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+  else if(iframe.mozRequestFullScreen) iframe.mozRequestFullScreen();
+};
+
+// Auto-expand on landscape
+if(window.screen?.orientation) {
+  screen.orientation.addEventListener('change', () => {
+    const isLandscape = screen.orientation.type.includes('landscape');
+    const iframe = document.getElementById('trainingVideoIframe');
+    if(isLandscape && iframe) {
+      if(iframe.requestFullscreen) iframe.requestFullscreen().catch(()=>{});
+    }
+  });
+}
+
 window.completarEjercicio = async () => {
+  // Clear any running rest timer when moving to next exercise
+  if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+  const existing = document.getElementById('restTimerToast');
+  if(existing) existing.remove();
+  const existingOvl = document.getElementById('restTimerOverlay');
+  if(existingOvl) existingOvl.remove();
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
   const ejConfig = Object.values(diaData?.ejercicios||{})[state.ejercicioActual];
@@ -1528,6 +2032,13 @@ window.ejercicioAnterior = () => {
 };
 
 async function finalizarSesion() {
+  // Clear rest timer if running
+  if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+  const restToast = document.getElementById('restTimerToast');
+  if(restToast) restToast.remove();
+  const restOvl = document.getElementById('restTimerOverlay');
+  if(restOvl) restOvl.remove();
+  updateSessionDot(false);
   // Post-session fatigue
   const cansancio = await showFatigueModal('¿Qué tan cansado quedaste?', 'post');
   if(cansancio===null) return;
