@@ -429,7 +429,7 @@ textarea.glass-input { resize:vertical; min-height:80px; }
     <img class="admin-avatar" id="adminAvatar" src="" alt="admin">
     <div>
       <div class="admin-name" id="adminName">Admin</div>
-      <div class="admin-role">ADMINISTRADOR</div>
+      <div class="admin-role" id="adminRoleLabel">ADMINISTRADOR</div>
     </div>
   </div>
   <nav class="nav-menu">
@@ -547,11 +547,25 @@ const session = sessionStorage.getItem('saykyo_user');
 if (!session) { window.location.href='index.html'; }
 const currentUser = JSON.parse(session||'{}');
 if (!currentUser.id && currentUser.uid) { currentUser.id = currentUser.uid; }
-if (currentUser.rol !== 'admin') { window.location.href='entrenamiento.html'; }
+if (currentUser.rol !== 'admin' && currentUser.rol !== 'superadmin') { window.location.href='entrenamiento.html'; }
+
+// Helper: is superadmin?
+const isSuperAdmin = () => currentUser.rol === 'superadmin';
 
 // Init UI
 document.getElementById('adminName').textContent = currentUser.nombres + ' ' + (currentUser.apellidos||'');
 document.getElementById('adminAvatar').src = currentUser.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.usuario}`;
+// Show role badge
+const roleLabel = document.getElementById('adminRoleLabel');
+if(roleLabel) {
+  if(isSuperAdmin()) {
+    roleLabel.textContent = '⭐ SUPER ADMIN';
+    roleLabel.style.color = '#ffd60a';
+  } else {
+    roleLabel.textContent = 'ADMINISTRADOR';
+    roleLabel.style.color = 'var(--primary)';
+  }
+}
 
 // Avatar seeds for picker
 // Biblioteca de avatares (131 combinaciones únicas)
@@ -769,6 +783,7 @@ function initPagedTable(panel, allRows, theadHtml, renderRow, opts={}) {
   let page     = 1;
   let query    = '';
   let filtered = allRows;
+  let _allRows = allRows;
 
   const toolbar   = panel.querySelector('.table-toolbar');
   const tbody     = panel.querySelector('tbody');
@@ -776,7 +791,7 @@ function initPagedTable(panel, allRows, theadHtml, renderRow, opts={}) {
 
   function applyFilter() {
     const q = query.toLowerCase().trim();
-    filtered = q ? allRows.filter(r => opts.filterFn(r, q)) : allRows;
+    filtered = q ? _allRows.filter(r => opts.filterFn(r, q)) : _allRows;
     page = 1;
     render();
   }
@@ -835,6 +850,16 @@ function initPagedTable(panel, allRows, theadHtml, renderRow, opts={}) {
   }
 
   render();
+
+  // Return API for external control (e.g. role filter)
+  return {
+    setRows(newRows) {
+      _allRows = newRows;
+      filtered = newRows;
+      page = 1;
+      applyFilter();
+    }
+  };
 }
 
 // ============ HOME ============
@@ -848,9 +873,9 @@ async function renderHome(container) {
   const ejs = ejSnap.val()||{};
   const ruts = rutSnap.val()||{};
   // Scope to group members
-  const myUsers = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
+  const myUsers = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id));
   // "Activos" muestra todos los usuarios activos del sistema (no solo mis grupos)
-  const activeUsers = Object.values(users).filter(u=>u.rol!=='admin' && u.activo).length;
+  const activeUsers = Object.values(users).filter(u=>u.rol!=='admin' && u.rol!=='superadmin' && u.activo).length;
   const myRuts = Object.entries(ruts).filter(([,r])=>r.usuario && myUids.has(r.usuario));
 
   container.innerHTML = `
@@ -924,7 +949,11 @@ async function renderUsuarios(container, action) {
   const snap = await get(ref(db,'usuarios'));
   const users = snap.val()||{};
 
-  const rows = Object.entries(users).filter(([,u])=>u.rol!=='admin');
+  // SuperAdmin sees everyone; regular admin only sees regular users
+  const rows = isSuperAdmin()
+    ? Object.entries(users)
+    : Object.entries(users).filter(([,u])=>u.rol!=='admin' && u.rol!=='superadmin');
+
   container.innerHTML = `
     <div class="glass-panel" id="panelUsuarios">
       <div class="panel-header">
@@ -933,6 +962,11 @@ async function renderUsuarios(container, action) {
       </div>
       <div class="table-toolbar">
         <div class="search-box"><span class="search-icon">🔍</span><input type="search" placeholder="Buscar por nombre, usuario..."></div>
+        <select class="glass-input" id="filterRolUsuarios" style="width:auto;padding:8px 12px;font-size:0.82rem" onchange="applyUserRolFilter()">
+          <option value="">Todos</option>
+          <option value="usuario">Solo atletas</option>
+          ${isSuperAdmin()?'<option value="admin">Solo admins</option><option value="superadmin">Solo superadmins</option>':''}
+        </select>
         <select class="per-page-select">
           <option value="10">10 / pág</option>
           <option value="25">25 / pág</option>
@@ -943,7 +977,8 @@ async function renderUsuarios(container, action) {
         <table class="data-table">
           <thead><tr>
             <th>Avatar</th><th>Usuario</th><th>Nombre</th><th>Válido hasta</th>
-            <th>Método</th><th>Estado</th><th>Acciones</th>
+            <th>Método</th>${isSuperAdmin()?'<th>Perfil</th>':''}
+            <th>Estado</th><th>Acciones</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -954,18 +989,22 @@ async function renderUsuarios(container, action) {
       </div>
     </div>
   `;
-  initPagedTable(
+
+  const pagedTable = initPagedTable(
     document.getElementById('panelUsuarios'),
     rows,
-    '', // thead ya está en el HTML
+    '',
     ([id,u]) => `
       <tr>
         <td><img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:36px;height:36px;border-radius:50%;border:2px solid rgba(0,200,255,0.3)"></td>
         <td><code style="color:var(--primary)">@${u.usuario}</code></td>
         <td>${u.nombres} ${u.apellidos||''}</td>
-        <td style="font-size:0.82rem">${u.validoHasta||'—'}</td>
-        <td><span class="badge ${u.metodo==='RPE'?'badge-rpe':'badge-rir'}">${u.metodo}</span></td>
-        <td><span class="badge ${u.activo?'badge-active':'badge-inactive'}">${u.activo?'Activo':'Inactivo'}</span></td>
+        <td style="font-size:0.82rem;${u.validoHasta && new Date(u.validoHasta)<new Date(Date.now()+7*86400000)?'color:var(--warning);font-weight:700':''}">${u.validoHasta||'—'}</td>
+        <td><span class="badge ${u.metodo==='RPE'?'badge-rpe':'badge-rir'}">${u.metodo||'—'}</span></td>
+        ${isSuperAdmin()?`<td><span class="badge" style="${u.rol==='superadmin'?'background:rgba(255,214,0,0.15);color:#ffd60a;border:1px solid rgba(255,214,0,0.35)':u.rol==='admin'?'background:rgba(255,140,0,0.12);color:#ff9f43;border:1px solid rgba(255,140,0,0.3)':'background:rgba(0,200,255,0.1);color:var(--primary);border:1px solid rgba(0,200,255,0.3)'}">${u.rol==='superadmin'?'⭐ SuperAdmin':u.rol==='admin'?'👮 Admin':'👤 Atleta'}</span></td>`:''}
+        <td><div style="display:flex;align-items:center;gap:6px">
+          <span class="badge ${u.activo?'badge-active':'badge-inactive'}" style="cursor:pointer" title="Click para cambiar estado" onclick="toggleUserActivo('${id}',${u.activo})">${u.activo?'Activo':'Inactivo'}</span>
+        </div></td>
         <td><div style="display:flex;gap:6px">
           <button class="btn btn-secondary btn-sm" onclick="showUserModal('${id}')">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="deleteUser('${id}')">🗑️</button>
@@ -982,7 +1021,36 @@ async function renderUsuarios(container, action) {
         u.metodo?.toLowerCase().includes(q)
     }
   );
+
+  // Store reference for role filter
+  window._usuariosPagedTable = { rows, pagedTable };
 }
+
+window.applyUserRolFilter = () => {
+  const filterVal = document.getElementById('filterRolUsuarios')?.value;
+  const { rows, pagedTable } = window._usuariosPagedTable || {};
+  if(!pagedTable || !rows) return;
+  const filtered = filterVal ? rows.filter(([,u])=>u.rol===filterVal) : rows;
+  pagedTable.setRows(filtered);
+};
+
+// Toggle activo/inactivo inline desde la tabla
+window.toggleUserActivo = async (id, currentActivo) => {
+  const action = currentActivo ? 'desactivar' : 'activar';
+  const res = await Swal.fire({
+    icon: 'question',
+    title: `¿${action.charAt(0).toUpperCase()+action.slice(1)} usuario?`,
+    showCancelButton: true,
+    confirmButtonText: `Sí, ${action}`,
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: currentActivo ? '#ff4d6d' : '#00e5a0',
+    background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+  });
+  if(!res.isConfirmed) return;
+  await update(ref(db,`usuarios/${id}`), { activo: !currentActivo });
+  Swal.fire({icon:'success',title:`Usuario ${!currentActivo?'activado':'desactivado'}`,timer:1200,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  document.querySelector('[data-page="usuarios"]').click();
+};
 
 window.showUserModal = async (userId=null) => {
   editingUserId = userId;
@@ -1034,6 +1102,18 @@ window.showUserModal = async (userId=null) => {
           <option value="RIR" ${user.metodo==='RIR'?'selected':''}>RIR (Reps en Reserva)</option>
         </select>
       </div>
+      ${isSuperAdmin()?`
+      <div class="form-group"><label>Perfil de acceso</label>
+        <select class="glass-input" id="uRol">
+          <option value="usuario" ${(user.rol||'usuario')==='usuario'?'selected':''}>👤 Atleta (usuario)</option>
+          <option value="admin" ${user.rol==='admin'?'selected':''}>👮 Admin (acceso al dashboard)</option>
+          <option value="superadmin" ${user.rol==='superadmin'?'selected':''}>⭐ Super Admin (puede crear admins)</option>
+        </select>
+        <div style="margin-top:6px;font-size:0.72rem;color:var(--text-muted)">
+          ⚠️ Los perfiles <strong>Admin</strong> tienen acceso al panel de administración y pueden gestionar sus grupos de atletas.
+          Solo el <strong>Super Admin</strong> puede crear otros admins.
+        </div>
+      </div>`:''}
     </div>
     <div style="margin-top:14px">
       <label class="toggle-wrap">
@@ -1107,7 +1187,7 @@ window.saveUser = async () => {
       metodo: document.getElementById('uMetodo').value,
       activo: document.getElementById('uActivo').checked,
       avatar: selectedAvatar,
-      rol: 'usuario',
+      rol: isSuperAdmin() ? (document.getElementById('uRol')?.value || 'usuario') : 'usuario',
       creadoEn: editingUserId ? undefined : Date.now()
     };
 
@@ -2017,7 +2097,7 @@ window.updateEjDia = async (rutinaId, mes, semana, dia, idx) => {
 window.showRutinaModal = async () => {
   const [usSnap, myUids] = await Promise.all([get(ref(db,'usuarios')), getMyGroupUserUids()]);
   const users = usSnap.val()||{};
-  const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''} (@${u.usuario})</option>`).join('');
+  const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''} (@${u.usuario})</option>`).join('');
   showOverlay(`
     <div class="overlay-header">
       <span class="overlay-title">➕ Nueva Rutina</span>
@@ -2074,7 +2154,7 @@ async function renderAtletas(container, action) {
   const users = usSnap.val()||{};
   const ruts  = rutSnap.val()||{};
   const ejs   = ejSnap.val()||{};
-  const atletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
+  const atletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id));
 
   if(!atletas.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-text">No hay atletas registrados</div></div>`;
@@ -2122,21 +2202,37 @@ async function renderAtletas(container, action) {
         </div>
       </div>` : `<div style="margin-bottom:16px;padding:12px;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:12px;font-size:0.85rem;color:#ff6b35">⚠️ Sin progreso registrado aún</div>`;
 
-    // Timeline de sesiones (pills)
+    // Timeline de sesiones paginada (10 por página)
+    const SES_PER_PAGE = 10;
+    const _sesPage = window._atletaSesPage || 0;
+    window._atletaSesPage = _sesPage;
+    const sesSlice = sesiones.slice(_sesPage * SES_PER_PAGE, (_sesPage + 1) * SES_PER_PAGE);
+    const totalSesPages = Math.ceil(sesiones.length / SES_PER_PAGE);
+
     const timeline = sesiones.length ? `
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
-        ${sesiones.slice(0,20).map(s=>{
-          const ts = s.fecha||s.fechaFin||s.fechaInicio||0;
-          const fecha = ts ? new Date(ts).toLocaleDateString('es-CO',{day:'2-digit',month:'short'}) : '—';
-          const isActive = s._key === st.sesId;
-          return `<button onclick="window._atletaState.sesId='${s._key}';window._atletaRefresh()" style="
-            padding:5px 10px;border-radius:20px;border:1px solid ${isActive?'var(--primary)':'rgba(255,255,255,0.12)'};
-            background:${isActive?'rgba(0,200,255,0.15)':'rgba(255,255,255,0.04)'};
-            color:${isActive?'var(--primary)':'var(--text-muted)'};
-            font-size:0.72rem;font-family:'Exo 2',sans-serif;cursor:pointer;white-space:nowrap;
-            font-weight:${isActive?'700':'400'}"
-          >M${s.mes}·S${s.semana}·D${s.dia}<br><span style="font-size:0.62rem">${fecha}</span></button>`;
-        }).join('')}
+      <div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          ${sesSlice.map(s=>{
+            const ts = s.fecha||s.fechaFin||s.fechaInicio||0;
+            const fecha = ts ? new Date(ts).toLocaleDateString('es-CO',{day:'2-digit',month:'short'}) : '—';
+            const isActive = s._key === st.sesId;
+            return `<button onclick="window._atletaState.sesId='${s._key}';window._atletaRefresh()" style="
+              padding:5px 10px;border-radius:20px;border:1px solid ${isActive?'var(--primary)':'rgba(255,255,255,0.12)'};
+              background:${isActive?'rgba(0,200,255,0.15)':'rgba(255,255,255,0.04)'};
+              color:${isActive?'var(--primary)':'var(--text-muted)'};
+              font-size:0.72rem;font-family:'Exo 2',sans-serif;cursor:pointer;white-space:nowrap;
+              font-weight:${isActive?'700':'400'}"
+            >M${s.mes}·S${s.semana}·D${s.dia}<br><span style="font-size:0.62rem">${fecha}</span></button>`;
+          }).join('')}
+        </div>
+        ${totalSesPages > 1 ? `
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <span style="font-size:0.72rem;color:var(--text-muted)">Sesiones ${_sesPage*SES_PER_PAGE+1}–${Math.min((_sesPage+1)*SES_PER_PAGE,sesiones.length)} de ${sesiones.length}</span>
+          <div style="display:flex;gap:4px;margin-left:auto">
+            ${_sesPage>0?`<button onclick="window._atletaSesPage=${_sesPage-1};window._atletaRefresh()" style="padding:4px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.78rem;cursor:pointer">‹ Ant</button>`:''}
+            ${_sesPage<totalSesPages-1?`<button onclick="window._atletaSesPage=${_sesPage+1};window._atletaRefresh()" style="padding:4px 10px;border-radius:8px;border:1px solid rgba(0,200,255,0.3);background:rgba(0,200,255,0.1);color:var(--primary);font-family:'Exo 2',sans-serif;font-size:0.78rem;cursor:pointer">Sig ›</button>`:''}
+          </div>
+        </div>` : ''}
       </div>` : `<div style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px">Sin sesiones aún</div>`;
 
     // Detalle sesión seleccionada
@@ -2206,7 +2302,7 @@ async function renderAtletas(container, action) {
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div style="flex:1;min-width:200px">
             <label style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Atleta</label>
-            <select class="glass-input" onchange="window._atletaState.uid=this.value;window._atletaState.sesId=null;window._atletaRefresh()">${atletaOpts}</select>
+            <select class="glass-input" onchange="window._atletaState.uid=this.value;window._atletaState.sesId=null;window._atletaSesPage=0;window._atletaRefresh()">${atletaOpts}</select>
           </div>
           <button onclick="window._registrarComoAdmin('${uid}')" style="
             margin-top:18px;padding:10px 16px;background:linear-gradient(135deg,rgba(123,47,255,0.3),rgba(0,200,255,0.2));
@@ -2225,7 +2321,7 @@ async function renderAtletas(container, action) {
     `;
   };
 
-  window._atletaRefresh = () => renderVista();
+  window._atletaRefresh = () => { window._atletaSesPage = 0; renderVista(); };
   await renderVista();
 }
 
@@ -2605,7 +2701,7 @@ async function renderEstadisticas(container) {
   const users = usSnap.val()||{};
   const ejs = ejSnap.val()||{};
   const cats = catSnap.val()||{};
-  const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''}</option>`).join('');
+  const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''}</option>`).join('');
   const ejOpts = Object.entries(ejs).map(([id,e])=>`<option value="${id}">${e.nombre}</option>`).join('');
   const catOpts = Object.entries(cats).map(([id,c])=>`<option value="${id}">${c.nombre}</option>`).join('');
 
@@ -2783,7 +2879,7 @@ async function renderAnamnesis(container) {
 
   container.innerHTML = `
     <div class="dashboard-grid" style="margin-bottom:16px">
-      ${Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id)).map(([uid,u])=>{
+      ${Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id)).map(([uid,u])=>{
         const ana = anamnesis[uid];
         const completada = ana?.completada;
         return `
@@ -3002,10 +3098,10 @@ window.showInviteAdminModal = async (gid) => {
   const users = usSnap.val()||{};
   const g = gSnap.val()||{};
   const admins = Object.entries(users).filter(([uid,u]) =>
-    u.rol==='admin' && uid !== g.adminDueno && !(g.adminsInvitados && g.adminsInvitados[uid])
+    (u.rol==='admin' || u.rol==='superadmin') && uid !== g.adminDueno && !(g.adminsInvitados && g.adminsInvitados[uid])
   );
   if(!admins.length) {
-    return Swal.fire({icon:'info',title:'No hay más admins disponibles',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    return Swal.fire({icon:'info',title:'No hay más entrenadores disponibles',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
   }
   showOverlay(`
     <div class="overlay-header"><span class="overlay-title">👤 Invitar entrenador</span><button class="btn-close" onclick="closeOverlay()">✕</button></div>
@@ -3013,7 +3109,7 @@ window.showInviteAdminModal = async (gid) => {
       ${admins.map(([uid,u])=>`
         <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid var(--glass-border);cursor:pointer;transition:all 0.2s" onclick="inviteAdmin('${gid}','${uid}')" onmouseover="this.style.background='rgba(0,200,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
           <img src="${u.avatar||getAvatarUrl(u.usuario)}" style="width:38px;height:38px;border-radius:50%;border:2px solid rgba(0,200,255,0.3)">
-          <div><div style="font-weight:600">${u.nombres} ${u.apellidos||''}</div><div style="font-size:0.75rem;color:var(--text-muted)">@${u.usuario}</div></div>
+          <div><div style="font-weight:600">${u.nombres} ${u.apellidos||''} ${u.rol==='superadmin'?'<span style="font-size:0.65rem;background:rgba(255,214,0,0.15);color:#ffd60a;border:1px solid rgba(255,214,0,0.3);border-radius:10px;padding:1px 7px;margin-left:4px">⭐ SuperAdmin</span>':`<span style="font-size:0.65rem;background:rgba(0,200,255,0.1);color:var(--primary);border:1px solid rgba(0,200,255,0.3);border-radius:10px;padding:1px 7px;margin-left:4px">👮 Admin</span>`}</div><div style="font-size:0.75rem;color:var(--text-muted)">@${u.usuario}</div></div>
           <button class="btn btn-primary btn-sm" style="margin-left:auto">+ Invitar</button>
         </div>
       `).join('')}
@@ -3044,7 +3140,7 @@ window.showManageMembersModal = async (gid) => {
   const users = usSnap.val()||{};
 
   const currentMembers = Object.keys(g.miembros||{});
-  const allAthletes = Object.entries(users).filter(([,u])=>u.rol!=='admin');
+  const allAthletes = Object.entries(users).filter(([,u])=>u.rol!=='admin' && u.rol!=='superadmin');
 
   const membersHtml = allAthletes.map(([uid,u]) => {
     const isMember = currentMembers.includes(uid);
@@ -3372,7 +3468,9 @@ window.sendNotifToUser = async () => {
 
 // ============ GROUP SCOPING for existing pages ============
 // Helper: get UIDs that belong to groups this admin manages
+// SuperAdmin sees ALL athletes; regular admin only sees their groups
 async function getMyGroupUserUids() {
+  // Both admin and superadmin see only users from THEIR groups
   const [gruposSnap] = await Promise.all([get(ref(db,'grupos'))]);
   const grupos = gruposSnap.val()||{};
   const uids = new Set();
@@ -3412,10 +3510,56 @@ async function renderRevisiones(container) {
   const revMes = revMesSnap.val()||{};
 
   const atletasHtml = Object.entries(users)
-    .filter(([id,u])=>u.rol!=='admin' && myUids.has(id))
+    .filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id))
     .map(([uid,u]) => {
-      const semanas = Object.values(revSem[uid]||{}).sort((a,b)=>a.fecha-b.fecha);
-      const meses   = Object.values(revMes[uid]||{}).sort((a,b)=>a.fecha-b.fecha);
+      const semanas = Object.values(revSem[uid]||{}).sort((a,b)=>b.fecha-a.fecha);
+      const meses   = Object.values(revMes[uid]||{}).sort((a,b)=>b.fecha-a.fecha);
+      const REV_PAGE_SIZE = 5;
+      const safeName = uid.replace(/[^a-zA-Z0-9]/g,'_');
+
+      const buildSemHtml = (items, page) => {
+        const slice = items.slice(page * REV_PAGE_SIZE, (page+1)*REV_PAGE_SIZE);
+        const totalPages = Math.ceil(items.length / REV_PAGE_SIZE);
+        if(!slice.length) return '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Sin revisiones semanales aún</div></div>';
+        const cards = slice.map(r=>`
+          <div style="background:rgba(0,0,0,0.25);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.06)">
+            <div style="font-weight:700;margin-bottom:10px;color:var(--primary)">Mes ${r.mes} · Semana ${r.semana} <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400">${new Date(r.fecha).toLocaleDateString()}</span></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+              <div class="rev-info-card"><div class="ric-label">💢 DOMS</div><div class="ric-val" style="color:${r.doms>=7?'var(--error)':r.doms>=4?'var(--warning)':'var(--success)'}">${r.doms}/10</div></div>
+              <div class="rev-info-card"><div class="ric-label">🏋️ Músculo DOMS</div><div class="ric-val">${r.musculoDoms||'—'}</div></div>
+              <div class="rev-info-card"><div class="ric-label">😊 Ánimo</div><div class="ric-val">${r.animo}/5</div></div>
+              <div class="rev-info-card"><div class="ric-label">😴 Sueño</div><div class="ric-val">${r.sueno}</div></div>
+              <div class="rev-info-card" style="grid-column:1/-1"><div class="ric-label">🦴 Dolor articular/muscular</div><div class="ric-val">${r.dolor==='Si'?`⚠️ ${r.dolorDetalle}`:'✅ Sin dolor'}</div></div>
+            </div>
+          </div>`).join('');
+        const pager = totalPages > 1 ? ('<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span style="font-size:0.72rem;color:var(--text-muted)">'+(page*REV_PAGE_SIZE+1)+'–'+Math.min((page+1)*REV_PAGE_SIZE,items.length)+' de '+items.length+'</span><div style="margin-left:auto;display:flex;gap:4px">'+(page>0?'<button onclick="window._revSP_'+safeName+'('+(page-1)+')" style="padding:4px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text-muted);font-family:Exo 2,sans-serif;font-size:0.78rem;cursor:pointer">‹</button>':'')+' '+(page<totalPages-1?'<button onclick="window._revSP_'+safeName+'('+(page+1)+')" style="padding:4px 10px;border-radius:8px;border:1px solid rgba(0,200,255,0.3);background:rgba(0,200,255,0.1);color:var(--primary);font-family:Exo 2,sans-serif;font-size:0.78rem;cursor:pointer">›</button>':'')+' </div></div>') : '';
+        return cards + pager;
+      };
+
+      const buildMesHtml = (items, page) => {
+        const slice = items.slice(page * REV_PAGE_SIZE, (page+1)*REV_PAGE_SIZE);
+        const totalPages = Math.ceil(items.length / REV_PAGE_SIZE);
+        if(!slice.length) return '<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Sin revisiones mensuales aún</div></div>';
+        const cards = slice.map(r=>`
+          <div style="background:rgba(0,0,0,0.25);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid rgba(123,47,255,0.2)">
+            <div style="font-weight:700;margin-bottom:10px;color:var(--accent)">Mes ${r.mes} <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400">${new Date(r.fecha).toLocaleDateString()}</span></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
+              <div class="rev-info-card"><div class="ric-label">📈 ¿Siente mejora?</div><div class="ric-val">${r.mejora}</div></div>
+              <div class="rev-info-card"><div class="ric-label">🎯 Sin progreso en</div><div class="ric-val">${r.noProgresa||'—'}</div></div>
+              <div class="rev-info-card"><div class="ric-label">📅 Día más fatigante</div><div class="ric-val">${r.diaMasFatiga}</div></div>
+              <div class="rev-info-card"><div class="ric-label">❓ Motivo fatiga</div><div class="ric-val">${r.motivoFatiga}</div></div>
+              <div class="rev-info-card"><div class="ric-label">🛌 Más descanso</div><div class="ric-val">${r.masDescanso==='Si'?'⚠️ Sí lo necesita':'✅ No necesita'}</div></div>
+              ${r.motivoDetalle?`<div class="rev-info-card" style="grid-column:1/-1"><div class="ric-label">💬 Detalle</div><div class="ric-val">${r.motivoDetalle}</div></div>`:''}
+              ${r.cambioEjercicios?`<div class="rev-info-card" style="grid-column:1/-1"><div class="ric-label">🔄 Cambios</div><div class="ric-val">${r.cambioEjercicios}</div></div>`:''}
+            </div>
+          </div>`).join('');
+        const pager = totalPages > 1 ? ('<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span style="font-size:0.72rem;color:var(--text-muted)">'+(page*REV_PAGE_SIZE+1)+'–'+Math.min((page+1)*REV_PAGE_SIZE,items.length)+' de '+items.length+'</span><div style="margin-left:auto;display:flex;gap:4px">'+(page>0?'<button onclick="window._revMP_'+safeName+'('+(page-1)+')" style="padding:4px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text-muted);font-family:Exo 2,sans-serif;font-size:0.78rem;cursor:pointer">‹</button>':'')+' '+(page<totalPages-1?'<button onclick="window._revMP_'+safeName+'('+(page+1)+')" style="padding:4px 10px;border-radius:8px;border:1px solid rgba(0,200,255,0.3);background:rgba(0,200,255,0.1);color:var(--primary);font-family:Exo 2,sans-serif;font-size:0.78rem;cursor:pointer">›</button>':'')+' </div></div>') : '';
+        return cards + pager;
+      };
+
+      window[`_revSP_${safeName}`] = (p) => { const el=document.getElementById(`rev_sem_${uid}`); if(el) el.innerHTML=buildSemHtml(semanas,p); };
+      window[`_revMP_${safeName}`] = (p) => { const el=document.getElementById(`rev_mes_${uid}`); if(el) el.innerHTML=buildMesHtml(meses,p); };
+
       return `
         <div class="glass-panel" style="margin-bottom:16px">
           <div class="panel-header">
@@ -3429,51 +3573,17 @@ async function renderRevisiones(container) {
             <div style="font-size:0.8rem;color:var(--text-muted)">${semanas.length} sem · ${meses.length} mes</div>
           </div>
           <div class="panel-body">
-            <!-- TABS -->
             <div class="tabs" style="margin-bottom:14px">
               <div class="tab active" id="tab_sem_${uid}" onclick="switchRevTab('${uid}','sem')">📋 Semanales (${semanas.length})</div>
               <div class="tab" id="tab_mes_${uid}" onclick="switchRevTab('${uid}','mes')">🏆 Mensuales (${meses.length})</div>
             </div>
-
-            <!-- SEMANALES -->
-            <div id="rev_sem_${uid}">
-              ${semanas.length===0?'<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Sin revisiones semanales aún</div></div>':
-                semanas.map(r=>`
-                  <div style="background:rgba(0,0,0,0.25);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.06)">
-                    <div style="font-weight:700;margin-bottom:10px;color:var(--primary)">Mes ${r.mes} · Semana ${r.semana} <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400">${new Date(r.fecha).toLocaleDateString()}</span></div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
-                      <div class="rev-info-card"><div class="ric-label">💢 DOMS</div><div class="ric-val" style="color:${r.doms>=7?'var(--error)':r.doms>=4?'var(--warning)':'var(--success)'}">${r.doms}/10</div></div>
-                      <div class="rev-info-card"><div class="ric-label">🏋️ Músculo DOMS</div><div class="ric-val">${r.musculoDoms||'—'}</div></div>
-                      <div class="rev-info-card"><div class="ric-label">😊 Ánimo</div><div class="ric-val">${r.animo}/5</div></div>
-                      <div class="rev-info-card"><div class="ric-label">😴 Sueño</div><div class="ric-val">${r.sueno}</div></div>
-                      <div class="rev-info-card" style="grid-column:1/-1"><div class="ric-label">🦴 Dolor articular/muscular</div><div class="ric-val">${r.dolor==='Si'?`⚠️ ${r.dolorDetalle}`:'✅ Sin dolor'}</div></div>
-                    </div>
-                  </div>
-                `).join('')}
-            </div>
-
-            <!-- MENSUALES -->
-            <div id="rev_mes_${uid}" style="display:none">
-              ${meses.length===0?'<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Sin revisiones mensuales aún</div></div>':
-                meses.map(r=>`
-                  <div style="background:rgba(0,0,0,0.25);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid rgba(123,47,255,0.2)">
-                    <div style="font-weight:700;margin-bottom:10px;color:var(--accent)">Mes ${r.mes} <span style="font-size:0.72rem;color:var(--text-muted);font-weight:400">${new Date(r.fecha).toLocaleDateString()}</span></div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
-                      <div class="rev-info-card"><div class="ric-label">📈 ¿Siente mejora?</div><div class="ric-val">${r.mejora}</div></div>
-                      <div class="rev-info-card"><div class="ric-label">🎯 Sin progreso en</div><div class="ric-val">${r.noProgresa||'—'}</div></div>
-                      <div class="rev-info-card"><div class="ric-label">📅 Día más fatigante</div><div class="ric-val">${r.diaMasFatiga}</div></div>
-                      <div class="rev-info-card"><div class="ric-label">❓ Motivo fatiga</div><div class="ric-val">${r.motivoFatiga}</div></div>
-                      <div class="rev-info-card"><div class="ric-label">🛌 Más descanso</div><div class="ric-val">${r.masDescanso==='Si'?'⚠️ Sí lo necesita':'✅ No necesita'}</div></div>
-                      ${r.motivoDetalle?`<div class="rev-info-card" style="grid-column:1/-1"><div class="ric-label">💬 Detalle motivo</div><div class="ric-val">${r.motivoDetalle}</div></div>`:''}
-                      ${r.cambioEjercicios?`<div class="rev-info-card" style="grid-column:1/-1"><div class="ric-label">🔄 Cambios solicitados</div><div class="ric-val">${r.cambioEjercicios}</div></div>`:''}
-                    </div>
-                  </div>
-                `).join('')}
-            </div>
+            <div id="rev_sem_${uid}">${buildSemHtml(semanas, 0)}</div>
+            <div id="rev_mes_${uid}" style="display:none">${buildMesHtml(meses, 0)}</div>
           </div>
         </div>
       `;
     }).join('') || '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No hay atletas con revisiones</div></div>';
+
 
   container.innerHTML = atletasHtml;
 }
@@ -3911,7 +4021,7 @@ async function renderValoraciones(container, action) {
   ]);
   const users = usSnap.val()||{};
   const valoraciones = valSnap.val()||{};
-  const myAtletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
+  const myAtletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id));
 
   if(!myAtletas.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚖️</div><div class="empty-text">No tienes atletas en tus grupos</div></div>`;
@@ -4084,7 +4194,7 @@ async function renderValoraciones(container, action) {
 window.showValoracionModal = async (uid=null) => {
   const [usSnap, myUids] = await Promise.all([get(ref(db,'usuarios')), getMyGroupUserUids()]);
   const users = usSnap.val()||{};
-  const myAtletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && myUids.has(id));
+  const myAtletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id));
   const userOpts = myAtletas.map(([id,u])=>`<option value="${id}" ${id===uid?'selected':''}>${u.nombres} ${u.apellidos||''}</option>`).join('');
 
   showOverlay(`
