@@ -2047,8 +2047,11 @@ window.toggleSerie = (i) => {
   btn.classList.toggle('checked');
   const isNowChecked = !wasChecked;
 
-  // 1. Haptic feedback (mobile)
-  if(isNowChecked && navigator.vibrate) navigator.vibrate(50);
+  // 1. Haptic feedback (mobile) + desbloquear audio iOS sincrónicamente
+  if(isNowChecked) {
+    if(navigator.vibrate) navigator.vibrate(50);
+    primeVoiceQueue(); // debe estar en el call-stack síncrono del tap
+  }
 
   // 2. Autosave micro-feedback + guardar en Firebase
   showAutosaveFeedback(btn);
@@ -2088,6 +2091,211 @@ function updateSessionDot(active) {
 // ── REST TIMER (full overlay) ──
 let _restTimerInterval = null;
 
+// ── AUDIO ENGINE — Web Audio API ──
+// Lazy-init: el contexto se crea la primera vez que el usuario interactúa
+let _audioCtx = null;
+
+function getAudioCtx() {
+  if(!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return _audioCtx;
+}
+
+// Sonido de tick sofisticado: oscilador sinusoidal + filtro paso-alto + envolvente suave
+// freq    → frecuencia base (Hz)
+// gain    → volumen pico (0-1)
+// duration→ duración total del sonido (segundos)
+// attack  → tiempo de subida (segundos)
+// decay   → tiempo de caída (segundos)
+function playTick(freq = 880, gain = 0.18, duration = 0.08, attack = 0.004, decay = 0.06) {
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+
+  // Reanudar contexto si estaba suspendido (política autoplay)
+  if(ctx.state === 'suspended') ctx.resume();
+
+  const now = ctx.currentTime;
+
+  // Oscilador principal — senoidal pura (suave, no agresiva)
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, now);
+  // Ligera caída de frecuencia para dar sensación de "golpe" suave
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.85, now + duration);
+
+  // Oscilador de armónico — da cuerpo sin ser molesto
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(freq * 2, now);
+  osc2.frequency.exponentialRampToValueAtTime(freq * 1.6, now + duration);
+
+  // Ganancia del armónico (más suave que el principal)
+  const gainArmonic = ctx.createGain();
+  gainArmonic.gain.setValueAtTime(0, now);
+  gainArmonic.gain.linearRampToValueAtTime(gain * 0.3, now + attack);
+  gainArmonic.gain.exponentialRampToValueAtTime(0.0001, now + decay * 0.6);
+
+  // Envolvente principal: attack suave → decay exponencial
+  const gainNode = ctx.createGain();
+  gainNode.gain.setValueAtTime(0, now);
+  gainNode.gain.linearRampToValueAtTime(gain, now + attack);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+  // Filtro paso-alto para quitar baja frecuencia (evita "bum" molesto)
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 200;
+  filter.Q.value = 0.7;
+
+  // Compresor suave para evitar clipping
+  const compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.value = -18;
+  compressor.knee.value = 6;
+  compressor.ratio.value = 3;
+  compressor.attack.value = 0.003;
+  compressor.release.value = 0.08;
+
+  // Conectar grafo de audio
+  osc.connect(gainNode);
+  osc2.connect(gainArmonic);
+  gainNode.connect(filter);
+  gainArmonic.connect(filter);
+  filter.connect(compressor);
+  compressor.connect(ctx.destination);
+
+  osc.start(now);
+  osc.stop(now + duration + 0.01);
+  osc2.start(now);
+  osc2.stop(now + duration + 0.01);
+}
+
+// Tick normal de descanso: tono suave y bajo (528 Hz — "healing frequency")
+function playRestTick() {
+  playTick(528, 0.14, 0.09, 0.005, 0.07);
+}
+
+// Tick de cuenta regresiva final (últimos 5s): tono más agudo y brillante
+// idx 0=5s, 1=4s, 2=3s, 3=2s, 4=1s → frecuencia y velocidad suben progresivamente
+function playUrgentTick(idx) {
+  // Escala: 880 → 1047 → 1175 → 1319 → 1480 Hz (notas A5→C6→D6→E6→F#6)
+  const freqs = [880, 1047, 1175, 1319, 1480];
+  const gains = [0.20, 0.22, 0.24, 0.26, 0.30];
+  const freq = freqs[Math.min(idx, 4)];
+  const gain = gains[Math.min(idx, 4)];
+  playTick(freq, gain, 0.07, 0.003, 0.055);
+}
+
+// Fanfarria de finalización: 3 notas ascendentes
+function playFinishChime() {
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  if(ctx.state === 'suspended') ctx.resume();
+  // Notas: E5 → G5 → B5 (acorde mayor ascendente)
+  const notes = [659, 784, 988];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playTick(freq, 0.28, 0.22, 0.006, 0.18), i * 140);
+  });
+  // Después del chime, leer el mensaje de pantalla
+  setTimeout(() => speakText('¡Sigamos!'), 500);
+}
+
+// ══════════════════════════════════════════════
+// VOZ — compatible Safari iOS + Android Chrome
+// ══════════════════════════════════════════════
+// Safari iOS requiere que speechSynthesis.speak() se invoque
+// dentro del call-stack SÍNCRONO de un gesto táctil.
+// Solución: primeVoiceQueue() se llama desde toggleSerie()
+// (el tap del usuario). Hace speak+pause+cancel en sync,
+// "desbloqueando" el audio en iOS. Luego speakText() ya puede
+// llamar speak() desde setTimeout sin restricciones.
+
+let _bestVoice   = null;
+let _voicesReady = false;
+let _iosUnlocked = false;
+
+const VOICE_TEXTS = [
+  'Recupera la respiraci\u00f3n',
+  'Descansa, lo mereces',
+  'Casi listo',
+  'Prep\u00e1rate',
+  '¡Sigamos!',
+];
+
+function _stripEmoji(s) {
+  return s.replace(/[\u{1F300}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,'').trim();
+}
+
+function _pickVoice() {
+  if(!window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const order = [
+    v => v.name.includes('Google') && /es-(MX|CO|AR|CL|PE|VE|US)/i.test(v.lang),
+    v => v.name.includes('Google') && /es/i.test(v.lang),
+    v => /es-(MX|CO|AR|CL|PE|US)/i.test(v.lang) && v.localService,
+    v => /es/i.test(v.lang) && v.localService,
+    v => /es-(MX|CO|AR|CL|PE|US)/i.test(v.lang),
+    v => /es/i.test(v.lang),
+  ];
+  for(const t of order){ const m=voices.find(t); if(m) return m; }
+  return null;
+}
+
+function initVoices() {
+  const load = () => {
+    const v = window.speechSynthesis.getVoices();
+    if(!v.length) return false;
+    _bestVoice = _pickVoice();
+    _voicesReady = true;
+    return true;
+  };
+  if(!load()) window.speechSynthesis.onvoiceschanged = () => load();
+}
+
+function _makeUtter(text) {
+  const clean = _stripEmoji(text);
+  if(!clean) return null;
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang    = 'es-MX';
+  u.rate    = 1.07;
+  u.pitch   = 1.06;
+  u.volume  = 1.0;
+  const v   = _bestVoice || _pickVoice();
+  if(v) u.voice = v;
+  return u;
+}
+
+// Debe llamarse SINC\u00d3NICAMENTE desde el handler del tap del usuario.
+// En iOS Safari hace speak+pause+cancel de una utterance dummy,
+// lo que "desbloquea" el sistema de audio para llamadas futuras.
+function primeVoiceQueue() {
+  if(!window.speechSynthesis || _iosUnlocked) return;
+  const u = _makeUtter('ok');
+  if(!u) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+  window.speechSynthesis.pause();
+  window.speechSynthesis.cancel();
+  _iosUnlocked = true;
+}
+
+function speakText(rawText, delayMs = 0) {
+  if(!window.speechSynthesis) return;
+  const clean = _stripEmoji(rawText);
+  if(!clean) return;
+  const fire = () => {
+    window.speechSynthesis.cancel();
+    setTimeout(() => {
+      const u = _makeUtter(clean);
+      if(u) window.speechSynthesis.speak(u);
+    }, 55);
+  };
+  if(delayMs > 0) setTimeout(fire, delayMs);
+  else fire();
+}
+
+if(window.speechSynthesis) initVoices();
+
 function startRestTimer(totalSecs) {
   if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
   const existing = document.getElementById('restTimerToast');
@@ -2114,7 +2322,7 @@ function startRestTimer(totalSecs) {
     if(pct > 0.45) return 'Descansa, lo mereces 🧘';
     if(pct > 0.15) return 'Casi listo... 💪';
     if(rem > 0)    return '¡Prepárate! 🔥';
-    return '¡Sigamos! 🚀';
+    return '¡A por la siguiente serie! 🚀';
   };
 
   const { color, glow } = getColors(remaining, totalSecs);
@@ -2157,6 +2365,26 @@ function startRestTimer(totalSecs) {
 
   _restTimerInterval = setInterval(() => {
     remaining--;
+
+    // ── Audio tick ──
+    if(remaining > 0) {
+      if(remaining <= 5) {
+        playUrgentTick(5 - remaining);
+      } else {
+        playRestTick();
+      }
+    } else {
+      playFinishChime();
+    }
+
+    // ── Voz: hablar cuando el mensaje de pantalla cambia, 350ms después del tick ──
+    if(remaining > 0) {
+      const prevMsg = getMsg(remaining + 1, totalSecs);
+      const currMsg = getMsg(remaining, totalSecs);
+      if(currMsg !== prevMsg) {
+        speakText(currMsg, 350);
+      }
+    }
 
     const countEl     = document.getElementById('rtCount');
     const ringFill    = document.getElementById('rtRingFill');
