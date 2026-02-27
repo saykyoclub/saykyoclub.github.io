@@ -638,7 +638,7 @@ const auth = getAuth(app);
 const session = sessionStorage.getItem('saykyo_user');
 if(!session) { window.location.href='index.html'; }
 const currentUser = JSON.parse(session||'{}');
-if(currentUser.rol==='admin') { window.location.href='dashboard.html'; }
+if(currentUser.rol==='admin' || currentUser.rol==='superadmin') { window.location.href='dashboard.html'; }
 
 // Setup header
 document.getElementById('userName').textContent = currentUser.nombres;
@@ -3511,19 +3511,39 @@ async function renderProgreso() {
     <!-- ═══ HISTORIAL ═══ -->
     <div class="glass-card">
       <div class="card-title">📅 Últimas sesiones</div>
-      ${sesiones.length===0?'<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin sesiones aún</div>':
-        sesiones.slice(-10).reverse().map(s=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-            <div>
-              <div style="font-weight:600;font-size:0.88rem">M${s.mes}·S${s.semana}·D${s.dia}</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">${new Date(s.fecha||s.fechaFin||0).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'2-digit'})}</div>
-            </div>
-            <div style="text-align:right;font-size:0.82rem">
-              <div style="color:var(--primary)">${Object.values(s.ejerciciosCompletados||{}).length} ej.</div>
-              <div style="color:var(--text-muted)">😓 ${s.nivelCansancioFin||'—'}/10</div>
-            </div>
-          </div>
-        `).join('')}
+      <div id="sesHistorialWrap">
+      ${(()=>{
+        const SES_PG = 8;
+        const totalSesP = Math.ceil(sesiones.length / SES_PG);
+        const renderSesPage = (pg) => {
+          const slice = [...sesiones].reverse().slice(pg*SES_PG,(pg+1)*SES_PG);
+          if(!slice.length) return '<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin sesiones aún</div>';
+          return slice.map(s=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+              <div>
+                <div style="font-weight:600;font-size:0.88rem">M${s.mes}·S${s.semana}·D${s.dia}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted)">${new Date(s.fecha||s.fechaFin||0).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'2-digit'})}</div>
+              </div>
+              <div style="text-align:right;font-size:0.82rem">
+                <div style="color:var(--primary)">${Object.values(s.ejerciciosCompletados||{}).length} ej.</div>
+                <div style="color:var(--text-muted)">😓 ${s.nivelCansancioFin||'—'}/10</div>
+              </div>
+            </div>`).join('') +
+            (totalSesP > 1 ? `<div style="display:flex;align-items:center;gap:6px;margin-top:12px">
+              <span style="font-size:0.72rem;color:var(--text-muted)">${pg*SES_PG+1}–${Math.min((pg+1)*SES_PG,sesiones.length)} de ${sesiones.length}</span>
+              <div style="margin-left:auto;display:flex;gap:4px">
+                ${pg>0?`<button onclick="window._renderSesHistorial(${pg-1})" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.8rem;cursor:pointer">‹</button>`:''}
+                ${pg<totalSesP-1?`<button onclick="window._renderSesHistorial(${pg+1})" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(0,200,255,0.3);background:rgba(0,200,255,0.1);color:var(--primary);font-family:'Exo 2',sans-serif;font-size:0.8rem;cursor:pointer">›</button>`:''}
+              </div>
+            </div>` : '');
+        };
+        window._renderSesHistorial = (pg) => {
+          const el = document.getElementById('sesHistorialWrap');
+          if(el) el.innerHTML = renderSesPage(pg);
+        };
+        return sesiones.length===0 ? '<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin sesiones aún</div>' : renderSesPage(0);
+      })()}
+      </div>
     </div>
   `;
 
