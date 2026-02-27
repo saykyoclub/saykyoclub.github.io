@@ -3655,13 +3655,15 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
           });
         } else if(diffDays <= 7) {
           // ── 2. Próxima a vencer ─────────────────────────────────────────
-          // conditionValue = fecha de vencimiento (misma razón: si la cambian → reaparece).
+          // conditionValue incluye TANTO la fecha como los días restantes.
+          // Así, cuando pasan los días (7→6→5...) el cv cambia aunque no se toque la fecha,
+          // y la alerta reaparece aunque haya sido descartada el día anterior.
           alerts.push({
             nivel: diffDays <= 3 ? 'danger' : 'warning', emoji: '⏳',
             titulo: `${u.nombres} vence ${diffDays === 0 ? 'hoy' : 'en ' + diffDays + ' dia' + (diffDays===1?'':'s')}`,
             descripcion: `Suscripcion expira el ${exp.toLocaleDateString('es-CO')}`,
             alertKey: `memb_vence__${safeKey(uid)}`,
-            conditionValue: u.validoHasta,   // si se extiende la fecha → cv cambia → reaparece
+            conditionValue: `${u.validoHasta}__d${diffDays}`,  // cambia cada día Y si se extiende la fecha
             uid
           });
         }
@@ -3688,14 +3690,16 @@ async function computeIntelligentAlerts(myUids, users, ruts, sesiones, revSem) {
           const lastSes = Math.max(...sesses.map(s=>s.fecha||s.fechaFin||0));
           const diasSin = (now - lastSes) / (1000*60*60*24);
           if(diasSin > 7) {
-            // conditionValue = timestamp de la última sesión.
-            // Si el atleta entrena → lastSes cambia → cv cambia → alerta reaparece la próxima vez que supere 7 días.
+            // conditionValue = timestamp de la última sesión + bucket de semanas.
+            // Si el atleta entrena → lastSes cambia → cv cambia → reaparece la próxima vez.
+            // Si pasan 7 días más sin entrenar → el bucket cambia → reaparece.
+            const weekBucket = Math.floor(diasSin / 7); // 1 para 7-13 días, 2 para 14-20, etc.
             alerts.push({
               nivel: diasSin > 14 ? 'danger' : 'warning', emoji: '🏃',
               titulo: `${u.nombres} — ${Math.floor(diasSin)} dias sin entrenar`,
               descripcion: `Ultima sesion: ${new Date(lastSes).toLocaleDateString('es-CO')}. Tiene rutina activa.`,
               alertKey: `sin_entrenar__${safeKey(uid)}`,
-              conditionValue: String(lastSes),  // cambia cuando entrena
+              conditionValue: `${String(lastSes)}__w${weekBucket}`,  // cambia cuando entrena O cada 7 días adicionales
               uid
             });
           }
