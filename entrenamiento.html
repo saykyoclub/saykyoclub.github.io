@@ -267,6 +267,10 @@ select.glass-input option { background:#0d1a35; }
   0%,100% { transform:scale(1); opacity:1; }
   50% { transform:scale(1.4); opacity:0.7; }
 }
+@keyframes pulse-session {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,200,255,0.15); }
+  50% { box-shadow: 0 0 0 4px rgba(0,200,255,0.05); }
+}
 
 /* ═══════════════════════════════════════════════
    REST TIMER — Full overlay modal
@@ -1051,14 +1055,78 @@ let state = {
   categorias: {}
 };
 
+// ═══════════════════════════════════════════════
+// SESSION PERSISTENCE — guardada en Firebase para sobrevivir
+// cambio de dispositivo, cierre de app, apagón de celular, etc.
+// Ruta: sesiones_pendientes/{uid}
+// ═══════════════════════════════════════════════
+const PENDING_REF = () => ref(db, `sesiones_pendientes/${currentUser.id}`);
+
+async function savePendingSession() {
+  if(!state.sesionActiva) return;
+
+  // Capturar snapshot del formulario actual
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejsDia  = Object.values(diaData?.ejercicios||{});
+  const ejConfig = ejsDia[state.ejercicioActual];
+  const n = ejConfig?.series||0;
+  const ejInfo  = state.ejercicios[ejConfig?.ejercicioId]||{};
+  const esBiext = ejInfo.biextremidad === true;
+
+  const currentSeriesSnapshot = Array.from({length:n},(_,i)=>{
+    const base = {
+      reps: +document.getElementById(`reps_${i}`)?.value||0,
+      peso: +document.getElementById(`peso_${i}`)?.value||0,
+      completada: document.getElementById(`done_${i}`)?.classList.contains('checked')||false,
+      comentario: document.getElementById(`comentario_${i}`)?.value?.trim()||''
+    };
+    if(esBiext) {
+      base.rirRpeIzq = +document.getElementById(`rpe_izq_${i}`)?.value||0;
+      base.rirRpeDer = +document.getElementById(`rpe_der_${i}`)?.value||0;
+    } else {
+      base.rirRpe = +document.getElementById(`rpe_${i}`)?.value||0;
+    }
+    return base;
+  });
+
+  try {
+    await set(PENDING_REF(), {
+      sesionActiva: state.sesionActiva,
+      ejercicioActual: state.ejercicioActual,
+      currentSeriesSnapshot,
+      savedAt: Date.now()
+    });
+  } catch(e) { console.warn('savePendingSession error:', e); }
+}
+
+async function loadPendingSession() {
+  try {
+    const snap = await get(PENDING_REF());
+    if(!snap.exists()) return null;
+    const data = snap.val();
+    // Descartar sesiones de hace más de 24 horas
+    if(Date.now() - (data.savedAt||0) > 24*60*60*1000) {
+      await clearPendingSession();
+      return null;
+    }
+    return data;
+  } catch(e) { return null; }
+}
+
+async function clearPendingSession() {
+  try { await remove(PENDING_REF()); } catch(e) {}
+}
+
 // Init
 async function init() {
-  const [anaSnap, progresoSnap, ejSnap, catSnap, histSnap] = await Promise.all([
+  const [anaSnap, progresoSnap, ejSnap, catSnap, histSnap, pendingSnap] = await Promise.all([
     get(ref(db,`anamnesis/${currentUser.id}`)),
     get(ref(db,`sesiones/${currentUser.id}/progreso`)),
     get(ref(db,'ejercicios')),
     get(ref(db,'categorias')),
-    get(ref(db,`sesiones/${currentUser.id}/historial`))
+    get(ref(db,`sesiones/${currentUser.id}/historial`)),
+    get(PENDING_REF())
   ]);
   state.ejercicios = ejSnap.val()||{};
   state.categorias = catSnap.val()||{};
@@ -1083,16 +1151,121 @@ async function init() {
     }
   }
 
+  // ── SESIÓN PENDIENTE: mostrar emergente al inicio desde cualquier dispositivo ──
+  if(pendingSnap.exists()) {
+    const pending = pendingSnap.val();
+    const MAX_AGE = 24*60*60*1000;
+    const tooOld = Date.now() - (pending.savedAt||0) > MAX_AGE;
+
+    if(!tooOld && pending.sesionActiva) {
+      const sa = pending.sesionActiva;
+      const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso;
+      const matchesDay = sa.mes === mesActual && sa.semana === semanaActual && sa.dia === diaActual;
+
+      // Calcular tiempo transcurrido
+      const minutos = Math.round((Date.now() - pending.savedAt) / 60000);
+      const tiempoStr = minutos < 2 ? 'hace un momento' : minutos < 60 ? `hace ${minutos} min` : `hace ${Math.round(minutos/60)}h ${minutos%60}min`;
+
+      // Info del ejercicio donde quedó
+      const rutinaSnap = await get(ref(db,`sesiones/${currentUser.id}/progreso`));
+      const rutinaData = state.rutinaData; // puede ser null aún, se carga luego
+      const ejsHechos = Object.keys(sa.ejerciciosCompletados||{}).length;
+      const ejActualIdx = pending.ejercicioActual || 0;
+
+      // Buscar nombre del ejercicio donde quedó (si ya tenemos los ejercicios)
+      let ejNombre = `Ejercicio ${ejActualIdx + 1}`;
+      if(state.ejercicios && matchesDay) {
+        const progreso = state.progreso;
+        const rutSnap = await get(ref(db, `rutinas`));
+        const rutinas = rutSnap.val()||{};
+        const rutActiva = Object.values(rutinas).find(r => r.usuario === currentUser.id && r.activa);
+        if(rutActiva) {
+          const ejsDia = Object.values(rutActiva.meses?.[sa.mes]?.semanas?.[sa.semana]?.dias?.[sa.dia]?.ejercicios||{});
+          const ejConfig = ejsDia[ejActualIdx];
+          if(ejConfig) ejNombre = state.ejercicios[ejConfig.ejercicioId]?.nombre || ejNombre;
+        }
+      }
+
+      const result = await Swal.fire({
+        background: 'rgba(8,16,36,0.98)',
+        color: '#e8f4ff',
+        width: '360px',
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        html: `
+          <div style="text-align:left">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+              <div style="width:12px;height:12px;border-radius:50%;background:#00c8ff;box-shadow:0 0 12px #00c8ff;animation:pulse-dot 1.4s infinite;flex-shrink:0"></div>
+              <div style="font-size:1.1rem;font-weight:800;color:#00c8ff">Entrenamiento en curso</div>
+            </div>
+
+            <div style="background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.15);border-radius:14px;padding:16px;margin-bottom:16px">
+              <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:rgba(232,244,255,0.4);margin-bottom:10px">Donde quedaste</div>
+              <div style="display:flex;gap:10px;margin-bottom:12px">
+                <div style="flex:1;background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.2);border-radius:10px;padding:10px;text-align:center">
+                  <div style="font-size:1.4rem;font-weight:900;color:#00c8ff">${sa.mes}</div>
+                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:rgba(232,244,255,0.45);margin-top:2px">Mes</div>
+                </div>
+                <div style="flex:1;background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.2);border-radius:10px;padding:10px;text-align:center">
+                  <div style="font-size:1.4rem;font-weight:900;color:#a78bfa">${sa.semana}</div>
+                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:rgba(232,244,255,0.45);margin-top:2px">Semana</div>
+                </div>
+                <div style="flex:1;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:10px;text-align:center">
+                  <div style="font-size:1.4rem;font-weight:900;color:#00e5a0">${sa.dia}</div>
+                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:rgba(232,244,255,0.45);margin-top:2px">Día</div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.8rem">
+                <span style="color:rgba(232,244,255,0.5)">📍 En: <strong style="color:#e8f4ff">${ejNombre}</strong></span>
+                <span style="color:rgba(232,244,255,0.4)">${tiempoStr}</span>
+              </div>
+              ${ejsHechos > 0 ? `<div style="margin-top:8px;font-size:0.8rem;color:#00e5a0">✅ ${ejsHechos} ejercicio${ejsHechos!==1?'s':''} ya completado${ejsHechos!==1?'s':''}</div>` : ''}
+            </div>
+
+            ${!matchesDay ? `
+            <div style="background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:10px;padding:10px;margin-bottom:16px;font-size:0.78rem;color:#ffd60a">
+              ⚠️ Este entrenamiento era del <strong>M${sa.mes}·S${sa.semana}·D${sa.dia}</strong> pero tu progreso actual es <strong>M${mesActual}·S${semanaActual}·D${diaActual}</strong>
+            </div>` : ''}
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button id="swal-continuar" style="width:100%;padding:13px;background:linear-gradient(135deg,#0088cc,#00c8ff);border:none;border-radius:12px;color:#fff;font-family:'Exo 2',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.5px">
+                ▶️ Continuar donde quedé
+              </button>
+              <button id="swal-nueva" style="width:100%;padding:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:rgba(232,244,255,0.6);font-family:'Exo 2',sans-serif;font-size:0.85rem;cursor:pointer">
+                🔄 Descartar y empezar nueva sesión
+              </button>
+            </div>
+          </div>
+        `,
+        didOpen: () => {
+          document.getElementById('swal-continuar').onclick = () => {
+            state._pendingSessionData = pending;
+            updateSessionDot(true);
+            Swal.close();
+          };
+          document.getElementById('swal-nueva').onclick = async () => {
+            await clearPendingSession();
+            updateSessionDot(false);
+            Swal.close();
+          };
+        }
+      });
+    } else {
+      // Sesión expirada → limpiar silenciosamente
+      await clearPendingSession();
+    }
+  }
+
   renderTab('entrenar');
 }
 
-// ── EXPIRY BANNER (sticky, persists across tab switches) ──
+// ── EXPIRY BANNER ──
 function showExpiryBanner(daysLeft) {
-  // If user already dismissed it today, don't show again until tomorrow
-  const dismissedKey = `saykyo_expiry_dismissed_${currentUser.id}`;
-  const dismissedDate = localStorage.getItem(dismissedKey);
-  const today = new Date().toISOString().slice(0,10); // 'YYYY-MM-DD'
-  if(dismissedDate === today) return;
+  // Clave incluye los días restantes: si quedan 7 días y se descarta → clave "d7".
+  // Al día siguiente quedan 6 → clave "d6" → no existe → banner reaparece automáticamente.
+  const dismissedKey = `saykyo_expiry_dismissed_${currentUser.id}_d${daysLeft}`;
+  if(localStorage.getItem(dismissedKey)) return;
 
   const banner = document.getElementById('expiryBanner');
   if(!banner) return;
@@ -1109,20 +1282,22 @@ function showExpiryBanner(daysLeft) {
       <div class="expiry-banner-title">${title}</div>
       <div class="expiry-banner-sub">${sub}</div>
     </div>
-    <button class="expiry-banner-close" onclick="dismissExpiryBanner()">Entendido ✓</button>
+    <button class="expiry-banner-close" onclick="dismissExpiryBanner(${daysLeft})" title="Cerrar">✕</button>
   `;
   banner.style.display = 'flex';
 }
 
-window.dismissExpiryBanner = () => {
+window.dismissExpiryBanner = (daysLeft) => {
   const banner = document.getElementById('expiryBanner');
   if(banner) {
-    banner.style.animation = 'expirySlideIn 0.3s ease reverse';
-    setTimeout(() => { banner.style.display = 'none'; }, 280);
+    banner.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    banner.style.opacity = '0';
+    banner.style.transform = 'translateY(-8px)';
+    setTimeout(() => { banner.style.display = 'none'; banner.style.opacity = ''; banner.style.transform = ''; }, 300);
   }
-  // Remember dismissal for today so it doesn't reappear on same day
-  const dismissedKey = `saykyo_expiry_dismissed_${currentUser.id}`;
-  localStorage.setItem(dismissedKey, new Date().toISOString().slice(0,10));
+  // Guardar con clave específica de días: al día siguiente la clave cambia y reaparece
+  const dismissedKey = `saykyo_expiry_dismissed_${currentUser.id}_d${daysLeft}`;
+  localStorage.setItem(dismissedKey, '1');
 };
 
 // ============ ANAMNESIS ============
@@ -1442,18 +1617,19 @@ async function renderEntrenar() {
         <div class="mini-stat"><div class="val">${ejsDia.reduce((a,e)=>a+(e.series||0),0)}</div><div class="lbl">Series</div></div>
         <div class="mini-stat"><div class="val">${currentUser.metodo}</div><div class="lbl">Método</div></div>
       </div>
-      ${ejsDia.length>0 ? `
-        ${yaCompletado ? `
-          <div style="text-align:center;padding:12px;background:rgba(0,229,160,0.06);border-radius:12px;margin-bottom:10px">
-            <div style="font-size:0.85rem;color:var(--success);font-weight:600">✅ Ya completaste este día</div>
-            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Puedes repetirlo si lo deseas</div>
-          </div>
-          <button class="btn btn-secondary btn-full" onclick="iniciarSesion()">🔁 Repetir entrenamiento</button>
-        ` : `
+      ${ejsDia.length>0 ? (() => {
+        if(yaCompletado) {
+          return `
+            <div style="text-align:center;padding:12px;background:rgba(0,229,160,0.06);border-radius:12px;margin-bottom:10px">
+              <div style="font-size:0.85rem;color:var(--success);font-weight:600">✅ Ya completaste este día</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Puedes repetirlo si lo deseas</div>
+            </div>
+            <button class="btn btn-secondary btn-full" onclick="iniciarSesion()">🔁 Repetir entrenamiento</button>`;
+        }
+        return `
           <button class="btn btn-primary btn-full" onclick="iniciarSesion()">⚡ INICIAR ENTRENAMIENTO</button>
-          <div style="font-size:0.78rem;color:var(--text-muted);text-align:center;margin-top:8px">Tap para empezar tu sesión</div>
-        `}
-      ` : `
+          <div style="font-size:0.78rem;color:var(--text-muted);text-align:center;margin-top:8px">Tap para empezar tu sesión</div>`;
+      })() : `
         <div style="text-align:center;padding:20px;color:var(--text-muted)">
           <div style="font-size:2rem;margin-bottom:8px">😴</div>
           <div>Este día es descanso o no tiene ejercicios</div>
@@ -1572,14 +1748,25 @@ window.iniciarSesion = async () => {
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
   const ejsDia = Object.values(diaData?.ejercicios||{});
-  
   if(ejsDia.length===0) return;
 
-  // Refrescar historial para que el banner "última vez" tenga datos actualizados
+  // Refrescar historial
   const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
   state.historial = histSnap.val()||{};
 
-  // Pre-session fatigue
+  // ── Caso 1: Hay sesión pendiente → CONTINUAR (el botón ya dijo "Continuar") ──
+  const pending = state._pendingSessionData;
+  if(pending && pending.sesionActiva) {
+    state.sesionActiva    = pending.sesionActiva;
+    state.ejercicioActual = pending.ejercicioActual;
+    state._pendingSeriesSnapshot = pending.currentSeriesSnapshot;
+    state._pendingSessionData    = null;
+    updateSessionDot(true);
+    renderEjercicioActual();
+    return;
+  }
+
+  // ── Caso 2: Sesión nueva ──
   const nivel = await showFatigueModal('¿Cómo llegaste a la sesión de hoy?', 'pre');
   if(nivel===null) return;
 
@@ -1591,8 +1778,29 @@ window.iniciarSesion = async () => {
   };
   state.ejercicioActual = 0;
   state.seriesData = {};
-
+  state._pendingSeriesSnapshot = null;
+  updateSessionDot(true);
   renderEjercicioActual();
+};
+
+// Descartar sesión pendiente y empezar nueva
+window.descartarSesionPendiente = async () => {
+  const res = await Swal.fire({
+    icon: 'warning',
+    title: '¿Descartar sesión anterior?',
+    text: 'Se perderá el progreso no guardado de ese entrenamiento.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, empezar nueva',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ff6b35',
+    background: 'rgba(10,20,40,0.98)',
+    color: '#e8f4ff'
+  });
+  if(!res.isConfirmed) return;
+  state._pendingSessionData = null;
+  await clearPendingSession();
+  updateSessionDot(false);
+  renderTab('entrenar');
 };
 
 // Helper: find last recorded data for a given exercise from historial
@@ -1771,6 +1979,36 @@ function renderEjercicioActual() {
       ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
     </div>
   `;
+
+  // Restaurar snapshot si viene de una sesión pendiente recuperada
+  const snap = state._pendingSeriesSnapshot;
+  if(snap && Array.isArray(snap)) {
+    snap.forEach((s, i) => {
+      const repsEl = document.getElementById(`reps_${i}`);
+      const pesoEl = document.getElementById(`peso_${i}`);
+      const doneEl = document.getElementById(`done_${i}`);
+      const comEl  = document.getElementById(`comentario_${i}`);
+      if(repsEl && s.reps) repsEl.value = s.reps;
+      if(pesoEl && s.peso) pesoEl.value = s.peso;
+      if(comEl  && s.comentario) comEl.value = s.comentario;
+      if(doneEl && s.completada) doneEl.classList.add('checked');
+      if(esBiext) {
+        const izqEl = document.getElementById(`rpe_izq_${i}`);
+        const derEl = document.getElementById(`rpe_der_${i}`);
+        if(izqEl && s.rirRpeIzq) izqEl.value = s.rirRpeIzq;
+        if(derEl && s.rirRpeDer) derEl.value = s.rirRpeDer;
+      } else {
+        const rpeEl = document.getElementById(`rpe_${i}`);
+        if(rpeEl && s.rirRpe != null) rpeEl.value = s.rirRpe;
+      }
+    });
+    state._pendingSeriesSnapshot = null;
+  }
+
+  // Auto-save a Firebase en cada cambio de input
+  document.querySelectorAll('.serie-field input, .serie-row input[type="text"]').forEach(input => {
+    input.addEventListener('change', () => savePendingSession(), { passive: true });
+  });
 }
 
 window.toggleSerie = (i) => {
@@ -1782,15 +2020,15 @@ window.toggleSerie = (i) => {
   // 1. Haptic feedback (mobile)
   if(isNowChecked && navigator.vibrate) navigator.vibrate(50);
 
-  // 2. Autosave micro-feedback
+  // 2. Autosave micro-feedback + guardar en Firebase
   showAutosaveFeedback(btn);
+  savePendingSession();
 
   // 3. Rest timer — only when marking as done
   if(isNowChecked) {
     const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
     const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
     const ejConfig = Object.values(diaData?.ejercicios||{})[state.ejercicioActual];
-    // Per-serie descanso with fallback to global
     const sc = ejConfig?.seriesConfig;
     const restSecs = (sc && sc[i] && sc[i].descanso != null) ? sc[i].descanso : (ejConfig?.descanso || 90);
     startRestTimer(restSecs);
@@ -1806,7 +2044,7 @@ function showAutosaveFeedback(anchorEl) {
   const badge = document.createElement('span');
   badge.id = 'autosaveBadge';
   badge.className = 'autosave-badge';
-  badge.innerHTML = '💾 Guardado';
+  badge.innerHTML = '☁️ Guardado';
   badge.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:700';
   document.body.appendChild(badge);
   setTimeout(() => badge.remove(), 1600);
@@ -2023,6 +2261,8 @@ window.completarEjercicio = async () => {
   };
 
   state.ejercicioActual++;
+  // Guardar progreso en Firebase tras completar cada ejercicio
+  savePendingSession();
   renderEjercicioActual();
 };
 
@@ -2039,6 +2279,8 @@ async function finalizarSesion() {
   const restOvl = document.getElementById('restTimerOverlay');
   if(restOvl) restOvl.remove();
   updateSessionDot(false);
+  // Limpiar sesión pendiente de Firebase — ya se va a guardar como sesión completada
+  await clearPendingSession();
   // Post-session fatigue
   const cansancio = await showFatigueModal('¿Qué tan cansado quedaste?', 'post');
   if(cansancio===null) return;
