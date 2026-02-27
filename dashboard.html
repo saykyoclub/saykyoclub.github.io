@@ -426,7 +426,12 @@ textarea.glass-input { resize:vertical; min-height:80px; }
     <img src="logo_saykyo.png" alt="Saykyo Club" style="height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(0,200,255,0.25))">
   </div>
   <div class="admin-info">
-    <img class="admin-avatar" id="adminAvatar" src="" alt="admin">
+    <img class="admin-avatar" id="adminAvatar" src="" alt="admin"
+         title="Cambiar avatar"
+         style="cursor:pointer;transition:box-shadow 0.2s,transform 0.2s"
+         onmouseover="this.style.boxShadow='0 0 0 3px var(--primary)';this.style.transform='scale(1.08)'"
+         onmouseout="this.style.boxShadow='';this.style.transform=''"
+         onclick="openOwnAvatarPicker()">
     <div>
       <div class="admin-name" id="adminName">Admin</div>
       <div class="admin-role" id="adminRoleLabel">ADMINISTRADOR</div>
@@ -1129,6 +1134,80 @@ window.showUserModal = async (userId=null) => {
   showOverlay(html);
 };
 
+// ── Picker de avatar propio para admin/superadmin ───────────────────────────
+// Usa data-url en vez de onclick anidados para evitar conflictos de comillas.
+// El título va dentro del HTML con overlay-header, igual que el resto del dashboard.
+window.openOwnAvatarPicker = () => {
+  window._ownAvatarTemp = currentUser.avatar || AVATAR_LIST[0];
+
+  const gridHtml = AVATAR_LIST.map(url =>
+    `<div class="avatar-option${window._ownAvatarTemp===url?' selected':''}"
+          data-url="${url}"
+          style="width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,0.12);
+                 overflow:hidden;cursor:pointer;transition:all 0.2s ease">
+       <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+     </div>`
+  ).join('');
+
+  showOverlay(`
+    <div class="overlay-header">
+      <span class="overlay-title">🖼️ Cambiar mi avatar</span>
+      <button class="btn-close" onclick="closeOverlay()">✕</button>
+    </div>
+    <div style="text-align:center;margin-bottom:20px">
+      <img id="ownAvatarPreview" src="${window._ownAvatarTemp}"
+           style="width:90px;height:90px;border-radius:50%;border:3px solid var(--primary);
+                  object-fit:cover;box-shadow:0 0 20px rgba(0,200,255,0.3)">
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-top:8px">Vista previa</div>
+    </div>
+    <div id="ownAvatarGrid" class="avatar-grid" style="max-height:320px;overflow-y:auto;padding:4px">
+      ${gridHtml}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveOwnAvatar()">💾 Guardar avatar</button>
+    </div>
+  `);
+
+  // Event delegation: un solo listener en la grilla, sin onclick inline
+  requestAnimationFrame(() => {
+    const grid = document.getElementById('ownAvatarGrid');
+    if (!grid) return;
+    grid.addEventListener('click', e => {
+      const opt = e.target.closest('[data-url]');
+      if (!opt) return;
+      const url = opt.dataset.url;
+      grid.querySelectorAll('[data-url]').forEach(el => el.classList.remove('selected'));
+      opt.classList.add('selected');
+      document.getElementById('ownAvatarPreview').src = url;
+      window._ownAvatarTemp = url;
+    });
+  });
+};
+
+window.saveOwnAvatar = async () => {
+  const newAvatar = window._ownAvatarTemp;
+  if (!newAvatar) return;
+  try {
+    await update(ref(db, `usuarios/${currentUser.id}`), { avatar: newAvatar });
+    currentUser.avatar = newAvatar;
+    sessionStorage.setItem('saykyo_user', JSON.stringify(currentUser));
+    document.getElementById('adminAvatar').src = newAvatar;
+    closeOverlay();
+    Swal.fire({
+      icon:'success', title:'¡Avatar actualizado!',
+      timer:1500, showConfirmButton:false,
+      background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+    });
+  } catch(e) {
+    Swal.fire({
+      icon:'error', title:'Error al guardar', text:e.message,
+      background:'rgba(10,20,40,0.95)', color:'#e8f4ff', confirmButtonColor:'#ff4d6d'
+    });
+  }
+};
+// ────────────────────────────────────────────────────────────────────────────
+
 window.selectAvatar = (url, el) => {
   selectedAvatar = url;
   document.querySelectorAll('.avatar-option').forEach(a=>a.classList.remove('selected'));
@@ -1199,6 +1278,14 @@ window.saveUser = async () => {
         ? { ...(await get(ref(db, `usuarios/${uid}`))).val(), ...dataToSave }
         : dataToSave
     );
+
+    // Si el admin editó su propio perfil: sync inmediato sin relogueo
+    if (editingUserId && (editingUserId === currentUser.id || editingUserId === currentUser.uid)) {
+      Object.assign(currentUser, dataToSave);
+      sessionStorage.setItem('saykyo_user', JSON.stringify(currentUser));
+      document.getElementById('adminAvatar').src = currentUser.avatar || '';
+      document.getElementById('adminName').textContent = (currentUser.nombres||'') + ' ' + (currentUser.apellidos||'');
+    }
 
     closeOverlay();
 
