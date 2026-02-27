@@ -1064,6 +1064,8 @@ const PENDING_REF = () => ref(db, `sesiones_pendientes/${currentUser.id}`);
 
 async function savePendingSession() {
   if(!state.sesionActiva) return;
+  // Asegurarse de que nivelCansancioInicio se preserve (puede haberse seteado antes del primer save)
+  // ya está en state.sesionActiva, solo necesitamos persistirlo en Firebase junto con el resto.
 
   // Capturar snapshot del formulario actual
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
@@ -1239,9 +1241,28 @@ async function init() {
           </div>
         `,
         didOpen: () => {
-          document.getElementById('swal-continuar').onclick = () => {
-            state._pendingSessionData = pending;
+          document.getElementById('swal-continuar').onclick = async () => {
+            // Cargar la rutina si aún no está disponible (ANTES de cerrar el Swal)
+            if(!state.rutinaData) {
+              const rutSnap = await get(ref(db,'rutinas'));
+              const rutinas = rutSnap.val()||{};
+              const rutActiva = Object.values(rutinas).find(r => r.usuario === currentUser.id && r.activa);
+              if(rutActiva) {
+                state.rutinaData = rutActiva;
+                state.rutinaId   = Object.keys(rutinas).find(k => rutinas[k] === rutActiva);
+              }
+            }
+            // Restaurar estado completo de la sesión
+            state.sesionActiva            = pending.sesionActiva;
+            state.ejercicioActual         = pending.ejercicioActual || 0;
+            state._pendingSeriesSnapshot  = pending.currentSeriesSnapshot;
+            state._pendingSessionData     = null;
             updateSessionDot(true);
+            // Cambiar tab activo visualmente
+            state.tab = 'entrenar';
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'entrenar'));
+            // Flag para evitar que el renderTab('entrenar') posterior sobreescriba la vista
+            state._resumeDirectly = true;
             Swal.close();
           };
           document.getElementById('swal-nueva').onclick = async () => {
@@ -1255,6 +1276,13 @@ async function init() {
       // Sesión expirada → limpiar silenciosamente
       await clearPendingSession();
     }
+  }
+
+  // Si el usuario eligió continuar sesión pendiente, ir directo al ejercicio
+  if(state._resumeDirectly) {
+    state._resumeDirectly = false;
+    renderEjercicioActual();
+    return;
   }
 
   renderTab('entrenar');
@@ -1780,6 +1808,8 @@ window.iniciarSesion = async () => {
   state.seriesData = {};
   state._pendingSeriesSnapshot = null;
   updateSessionDot(true);
+  // Guardar inmediatamente para persistir nivelCansancioInicio antes de cualquier interacción
+  await savePendingSession();
   renderEjercicioActual();
 };
 
@@ -2084,7 +2114,7 @@ function startRestTimer(totalSecs) {
     if(pct > 0.45) return 'Descansa, lo mereces 🧘';
     if(pct > 0.15) return 'Casi listo... 💪';
     if(rem > 0)    return '¡Prepárate! 🔥';
-    return '¡A por la siguiente serie! 🚀';
+    return '¡Sigamos! 🚀';
   };
 
   const { color, glow } = getColors(remaining, totalSecs);
