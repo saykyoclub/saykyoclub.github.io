@@ -1144,12 +1144,14 @@ async function init() {
   document.getElementById('bottomNav').style.display='flex';
 
   // ── SUBSCRIPTION EXPIRY BANNER ──
+  // diffDays compara fechas sin hora (hora local) para mostrar el número correcto.
   if(currentUser.validoHasta) {
-    const now = new Date();
-    const expiry = new Date(currentUser.validoHasta);
-    const diffDays = Math.round((expiry - now) / (1000 * 60 * 60 * 24));
+    const [_y,_m,_d] = currentUser.validoHasta.split('-').map(Number);
+    const expiry = new Date(_y, _m - 1, _d); // medianoche local del día de vencimiento
+    const today  = new Date(); today.setHours(0,0,0,0);
+    const diffDays = Math.round((expiry - today) / (1000 * 60 * 60 * 24));
     if(diffDays >= 0 && diffDays <= 7) {
-      showExpiryBanner(diffDays);
+      showExpiryBanner(diffDays, expiry);
     }
   }
 
@@ -1289,7 +1291,7 @@ async function init() {
 }
 
 // ── EXPIRY BANNER ──
-function showExpiryBanner(daysLeft) {
+function showExpiryBanner(daysLeft, expiryDate) {
   // Clave incluye los días restantes: si quedan 7 días y se descarta → clave "d7".
   // Al día siguiente quedan 6 → clave "d6" → no existe → banner reaparece automáticamente.
   const dismissedKey = `saykyo_expiry_dismissed_${currentUser.id}_d${daysLeft}`;
@@ -1298,11 +1300,18 @@ function showExpiryBanner(daysLeft) {
   const banner = document.getElementById('expiryBanner');
   if(!banner) return;
 
+  // Fecha en hora local — viene como objeto Date construido localmente desde init()
+  const fechaTexto = expiryDate
+    ? expiryDate.toLocaleDateString('es-CO', { day:'2-digit', month:'long' })
+    : '';
+
   const urgency = daysLeft === 0;
-  const title = urgency ? '⚠️ Tu suscripción vence HOY' : `⚠️ Suscripción vence en ${daysLeft} día${daysLeft===1?'':'s'}`;
+  const title = urgency
+    ? '⚠️ Tu suscripción vence HOY'
+    : `⚠️ Suscripción vence en ${daysLeft} día${daysLeft===1?'':'s'}`;
   const sub = urgency
-    ? 'Contacta a tu entrenador para renovar y no perder acceso.'
-    : `Renueva antes del ${new Date(currentUser.validoHasta).toLocaleDateString('es-CO',{day:'2-digit',month:'long'})} para continuar entrenando.`;
+    ? 'Contacta a tu entrenador para renovar y no perder el acceso.'
+    : `Tu membresía es válida hasta el ${fechaTexto}. Renueva con tu entrenador para continuar.`;
 
   banner.innerHTML = `
     <div class="expiry-banner-pulse"></div>
@@ -3693,6 +3702,76 @@ async function renderPerfil() {
   };
 }
 
+// ── WATCHER DE SESIÓN EN TIEMPO REAL ─────────────────────────────────────────
+// Abre un listener onValue sobre el nodo del usuario en Realtime DB.
+// Si el admin desactiva la cuenta o vence la membresía con la sesión abierta,
+// detecta el cambio al instante y fuerza el cierre de sesión.
+//
+// Por qué es necesario: Firebase Auth NO revoca tokens automáticamente cuando
+// un campo de la base de datos cambia, por lo que onAuthStateChanged no dispara.
+// Este watcher cubre ese hueco escuchando directamente el nodo del usuario.
+
+let _swRef      = null;
+let _swListener = null;
+let _swBooted   = false; // ignora el primer disparo (estado inicial al conectar)
+
+function parseEndOfLocalDay(str) {
+  if (!str) return null;
+  if (str.includes('T')) return new Date(str);
+  const [y, m, d] = str.split('-').map(Number);
+  // 23:59:59 local — el usuario tiene acceso todo el día de vencimiento
+  return new Date(y, m - 1, d, 23, 59, 59, 999);
+}
+
+function setupSessionWatcher(uid) {
+  if (_swRef) off(_swRef, 'value', _swListener);
+  _swRef    = ref(db, `usuarios/${uid}`);
+  _swBooted = false;
+
+  _swListener = onValue(_swRef, async (snap) => {
+    // Primer disparo = estado actual al registrar el listener, no un cambio real
+    if (!_swBooted) { _swBooted = true; return; }
+    if (!snap.exists()) return;
+
+    const data = snap.val();
+    let titulo  = null;
+    let mensaje = null;
+
+    // 1. Cuenta desactivada por el admin
+    if (data.activo === false) {
+      titulo  = 'Cuenta desactivada';
+      mensaje = 'Tu acceso fue desactivado. Comunícate con tu entrenador para más información.';
+    }
+
+    // 2. Membresía vencida — compara fin del día LOCAL para evitar falsos positivos en UTC-5
+    if (!titulo && data.validoHasta) {
+      const expiry = parseEndOfLocalDay(data.validoHasta);
+      if (expiry && new Date() > expiry) {
+        titulo  = 'Membresía vencida';
+        mensaje = `Tu suscripción venció el ${expiry.toLocaleDateString('es-CO', { day:'2-digit', month:'long', year:'numeric' })}. Renueva con tu entrenador para continuar.`;
+      }
+    }
+
+    if (titulo) {
+      off(_swRef, 'value', _swListener); // detener listener antes del logout
+      await Swal.fire({
+        icon: 'warning',
+        title: titulo,
+        text: mensaje,
+        background: 'rgba(10,20,40,0.97)',
+        color: '#e8f4ff',
+        confirmButtonColor: '#ff4d6d',
+        confirmButtonText: 'Entendido',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      });
+      sessionStorage.removeItem('saykyo_user');
+      signOut(auth).finally(() => { window.location.href = 'index.html'; });
+    }
+  });
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 // Init — esperar sesión Firebase antes de leer DB
 onAuthStateChanged(auth, (user) => {
   if (!user) {
@@ -3703,6 +3782,7 @@ onAuthStateChanged(auth, (user) => {
   if (!window._initDone) {
     window._initDone = true;
     setupUserNotifListener();
+    setupSessionWatcher(user.uid); // 🔒 expulsión en tiempo real si admin cambia estado
     init();
   }
 });
