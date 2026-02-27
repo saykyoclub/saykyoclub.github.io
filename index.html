@@ -209,6 +209,38 @@
   }
   .credits strong { color: var(--primary); }
 
+  /* Eye toggle */
+  .pass-wrapper { position: relative; }
+  .pass-wrapper input { padding-right: 46px; }
+  .eye-btn {
+    position: absolute; right: 14px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 1rem;
+    padding: 4px; line-height: 1;
+    transition: color 0.2s ease;
+  }
+  .eye-btn:hover { color: var(--primary); }
+
+  /* Remember me */
+  .remember-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 4px; margin-bottom: 4px;
+    cursor: pointer;
+  }
+  .remember-check {
+    width: 18px; height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .remember-label {
+    font-size: 0.82rem; color: var(--text-muted);
+    cursor: pointer; user-select: none;
+    transition: color 0.2s;
+  }
+  .remember-row:hover .remember-label { color: var(--text); }
+
   /* Floating particles */
   .particle {
     position: fixed; pointer-events: none;
@@ -266,10 +298,15 @@
         </div>
       </div>
       <div class="form-group">
-        <div class="icon-input">
+        <div class="icon-input pass-wrapper">
           <span class="input-icon">🔒</span>
-          <input type="password" id="contrasena" class="glass-input" placeholder="Contraseña" required>
+          <input type="password" id="contrasena" class="glass-input" placeholder="Contraseña" required style="padding-left:46px">
+          <button type="button" class="eye-btn" id="eyeBtn" onclick="toggleEye()" title="Ver contraseña">🙈</button>
         </div>
+      </div>
+      <div class="remember-row">
+        <input type="checkbox" class="remember-check" id="rememberMe">
+        <label class="remember-label" for="rememberMe">Recordarme en este dispositivo</label>
       </div>
       <button type="submit" class="btn-primary" id="loginBtn">
         <span id="btnText">ENTRAR</span>
@@ -304,6 +341,32 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+// Eye toggle
+window.toggleEye = () => {
+  const inp = document.getElementById('contrasena');
+  const btn = document.getElementById('eyeBtn');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = '🙉';
+    btn.title = 'Ocultar contraseña';
+  } else {
+    inp.type = 'password';
+    btn.textContent = '🙈';
+    btn.title = 'Ver contraseña';
+  }
+};
+
+// Restore remembered credentials
+const remembered = localStorage.getItem('saykyo_remember');
+if (remembered) {
+  try {
+    const { email, password } = JSON.parse(remembered);
+    document.getElementById('usuario').value = email || '';
+    document.getElementById('contrasena').value = password || '';
+    document.getElementById('rememberMe').checked = true;
+  } catch(e) {}
+}
+
 // Bandera para evitar que onAuthStateChanged redirija mientras el formulario maneja el login
 let loginEnProgreso = false;
 
@@ -315,7 +378,7 @@ auth.onAuthStateChanged(async (user) => {
     if (snapshot.exists()) {
       const userData = snapshot.val();
       sessionStorage.setItem('saykyo_user', JSON.stringify({ ...userData, uid: user.uid, id: user.uid }));
-      if (userData.rol === 'admin') window.location.href = 'dashboard.html';
+      if (userData.rol === 'admin' || userData.rol === 'superadmin') window.location.href = 'dashboard.html';
       else window.location.href = 'entrenamiento.html';
     }
   } else {
@@ -376,6 +439,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       }
     }
 
+    // Handle remember me
+    if (document.getElementById('rememberMe').checked) {
+      localStorage.setItem('saykyo_remember', JSON.stringify({ email, password }));
+    } else {
+      localStorage.removeItem('saykyo_remember');
+    }
+
     sessionStorage.setItem('saykyo_user', JSON.stringify({
       ...userData,
       uid: user.uid,
@@ -385,7 +455,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     await Swal.fire({
       icon: 'success',
       title: `¡Bienvenido(a), ${userData.nombres}!`,
-      text: userData.rol === 'admin' ? 'Acceso de administrador' : 'Listo para entrenar 💪',
+      text: userData.rol === 'superadmin' ? '⭐ Acceso Super Admin' : userData.rol === 'admin' ? 'Acceso de administrador' : 'Listo para entrenar 💪',
       background: 'rgba(10,20,40,0.95)',
       color: '#e8f4ff',
       confirmButtonColor: '#00c8ff',
@@ -394,7 +464,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       backdrop: 'rgba(0,0,0,0.7)'
     });
 
-    if (userData.rol === 'admin') {
+    if (userData.rol === 'admin' || userData.rol === 'superadmin') {
       window.location.href = 'dashboard.html';
     } else {
       window.location.href = 'entrenamiento.html';
@@ -412,7 +482,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     Swal.fire({
       icon: 'error',
       title: 'Error',
-      text: 'Credenciales incorrectas',
+      text: 'No se puede acceder, verifica los datos ingresados o consulta la vigencia de tu acceso con tu entrenador',
       background: 'rgba(10,20,40,0.95)',
       color: '#e8f4ff',
       confirmButtonColor: '#ff4d6d',
