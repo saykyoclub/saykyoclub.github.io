@@ -474,15 +474,64 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     loginEnProgreso = false;
     document.getElementById('btnText').style.display = '';
     document.getElementById('btnLoading').style.display = 'none';
-    
+
     // Asegurar que el login está visible si hay error
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('loginWrapper').style.display = 'block';
 
+    // Determinar título y mensaje según el tipo de error
+    let titulo = 'Acceso denegado';
+    let mensaje = 'Ocurrió un error inesperado. Intenta de nuevo.';
+    let icono = 'error';
+
+    const code = err.code || '';
+    const msg  = err.message || '';
+
+    if (msg === 'Tu cuenta está desactivada. Contacta a tu entrenador.') {
+      titulo  = 'Cuenta inactiva';
+      mensaje = 'Tu cuenta está desactivada. Comunícate con tu entrenador para reactivarla.';
+      icono   = 'warning';
+    } else if (msg === 'Tu suscripción ha vencido.') {
+      titulo  = 'Membresía vencida';
+      mensaje = 'Tu suscripción ha expirado. Renueva tu membresía con tu entrenador para continuar.';
+      icono   = 'warning';
+    } else if (msg === 'Usuario no configurado correctamente.') {
+      titulo  = 'Usuario no encontrado';
+      mensaje = 'No encontramos tu perfil en el sistema. Contacta a tu entrenador.';
+      icono   = 'error';
+    } else if (
+      code === 'auth/wrong-password' ||
+      code === 'auth/invalid-credential' ||
+      code === 'auth/invalid-password'
+    ) {
+      titulo  = 'Contraseña incorrecta';
+      mensaje = 'La contraseña que ingresaste no es correcta. Verifica e intenta de nuevo.';
+      icono   = 'error';
+    } else if (
+      code === 'auth/user-not-found' ||
+      code === 'auth/invalid-email'
+    ) {
+      titulo  = 'Usuario no encontrado';
+      mensaje = 'No existe una cuenta con ese correo. Verifica el email ingresado.';
+      icono   = 'error';
+    } else if (code === 'auth/too-many-requests') {
+      titulo  = 'Demasiados intentos';
+      mensaje = 'Bloqueamos temporalmente tu acceso por múltiples intentos fallidos. Espera unos minutos o restablece tu contraseña.';
+      icono   = 'warning';
+    } else if (code === 'auth/network-request-failed') {
+      titulo  = 'Sin conexión';
+      mensaje = 'No hay conexión a internet. Verifica tu red e intenta de nuevo.';
+      icono   = 'warning';
+    } else if (code === 'auth/user-disabled') {
+      titulo  = 'Cuenta deshabilitada';
+      mensaje = 'Tu cuenta fue deshabilitada. Contacta a tu entrenador.';
+      icono   = 'warning';
+    }
+
     Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se puede acceder, verifica los datos ingresados o consulta la vigencia de tu acceso con tu entrenador',
+      icon: icono,
+      title: titulo,
+      text: mensaje,
       background: 'rgba(10,20,40,0.95)',
       color: '#e8f4ff',
       confirmButtonColor: '#ff4d6d',
