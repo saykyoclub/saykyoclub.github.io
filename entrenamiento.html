@@ -572,6 +572,33 @@ select.glass-input option { background:#0d1a35; }
 .notif-item { padding:14px; border-radius:14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); margin-bottom:10px; position:relative; }
 .notif-item.unread { background:rgba(0,200,255,0.06); border-color:rgba(0,200,255,0.2); }
 .notif-item.unread::before { content:''; position:absolute;top:14px;left:-4px;width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary); }
+
+/* ── FLOATING HELP BUTTON ── */
+.help-fab{
+  position:fixed;bottom:24px;right:20px;z-index:9999;
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,136,204,.9),rgba(0,200,255,.9));
+  border:1.5px solid rgba(0,200,255,.5);
+  box-shadow:0 4px 20px rgba(0,200,255,.35),0 0 0 0 rgba(0,200,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace;font-size:1.15rem;font-weight:700;color:#fff;
+  cursor:grab;text-decoration:none;
+  animation:fabPulse 3s ease-in-out infinite;
+  transition:transform .2s,box-shadow .2s
+}
+.help-fab.dragging{cursor:grabbing;animation:none;transform:scale(1.1)}
+.help-fab:not(.dragging):hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(0,200,255,.55),0 0 0 8px rgba(0,200,255,.1)}
+@keyframes fabPulse{0%,100%{box-shadow:0 4px 20px rgba(0,200,255,.35),0 0 0 0 rgba(0,200,255,.4)}50%{box-shadow:0 4px 20px rgba(0,200,255,.35),0 0 0 8px rgba(0,200,255,.05)}}
+.help-fab-tooltip{
+  position:fixed;z-index:9998;
+  background:rgba(6,14,38,.95);border:1px solid rgba(0,200,255,.25);
+  border-radius:10px;padding:7px 12px;
+  font-family:'Exo 2',sans-serif;font-size:.72rem;font-weight:700;color:rgba(232,244,255,.8);
+  white-space:nowrap;pointer-events:none;
+  opacity:0;transition:all .2s
+}
+.help-fab:not(.dragging):hover + .help-fab-tooltip,.help-fab-tooltip.show{opacity:1}
+
 </style>
 </head>
 <body>
@@ -682,9 +709,61 @@ function setupUserNotifListener() {
   });
 }
 
+// ── AUDIO ENGINE — Web Audio API ─────────────────────────────────────────────
+function playSaykyoNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.18, ctx.currentTime);
+    master.connect(ctx.destination);
+
+    // Reverb convolver (impulse)
+    const convolver = ctx.createConvolver();
+    const irLen = ctx.sampleRate * 0.6;
+    const ir = ctx.createBuffer(2, irLen, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = ir.getChannelData(c);
+      for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 2.5);
+    }
+    convolver.buffer = ir;
+    convolver.connect(master);
+
+    function tone(freq, startT, dur, type, vol, fadeIn, fadeOut) {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + startT);
+      g.gain.setValueAtTime(0, ctx.currentTime + startT);
+      g.gain.linearRampToValueAtTime(vol, ctx.currentTime + startT + fadeIn);
+      g.gain.setValueAtTime(vol, ctx.currentTime + startT + dur - fadeOut);
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + startT + dur);
+      osc.connect(g);
+      g.connect(convolver);
+      g.connect(master);
+      osc.start(ctx.currentTime + startT);
+      osc.stop(ctx.currentTime + startT + dur + 0.05);
+    }
+
+    // Secuencia: do-mi-sol acorde mayor ascendente — elegante "ping"
+    tone(523.25, 0.00, 0.22, 'sine',     0.5,  0.005, 0.12);
+    tone(659.25, 0.13, 0.22, 'sine',     0.45, 0.005, 0.12);
+    tone(783.99, 0.26, 0.35, 'sine',     0.4,  0.005, 0.18);
+    // Sub-armónico cálido
+    tone(261.63, 0.00, 0.40, 'triangle', 0.2,  0.01,  0.20);
+    // Shimmer de alta frecuencia
+    tone(1046.5,  0.26, 0.30, 'sine',    0.08, 0.02,  0.20);
+
+    setTimeout(() => ctx.close(), 2000);
+  } catch(e) { /* AudioContext no disponible */ }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function showUserPushToast(n) {
   const existing = document.getElementById('userPushToast');
   if(existing) existing.remove();
+
+  playSaykyoNotifSound();
+
   const toast = document.createElement('div');
   toast.id = 'userPushToast';
   toast.className = 'push-toast';
@@ -699,7 +778,7 @@ function showUserPushToast(n) {
   toast.style.position='fixed';
   toast.onclick = (e) => { if(e.target.tagName==='BUTTON') return; toggleUserNotifSheet(); toast.remove(); };
   document.body.appendChild(toast);
-  setTimeout(()=>toast.remove?.(), 6000);
+  setTimeout(()=>toast.remove?.(), 10000);
 }
 
 window.toggleUserNotifSheet = () => {
@@ -1260,6 +1339,9 @@ async function init() {
             state._pendingSeriesSnapshot  = pending.currentSeriesSnapshot;
             state._pendingSessionData     = null;
             updateSessionDot(true);
+            // 🏋️ Notificar al entrenador que retomó el entrenamiento
+            const sa = pending.sesionActiva;
+            notifyTrainingStart(sa.mes||1, sa.semana||1, sa.dia||1, true);
             // Cambiar tab activo visualmente
             state.tab = 'entrenar';
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'entrenar'));
@@ -1781,6 +1863,31 @@ window.retrocederDia = async () => {
   renderTab('entrenar');
 };
 
+// 🏋️ Notifica a todos los admins del grupo que el usuario inició/retomó entrenamiento.
+async function notifyTrainingStart(mes, semana, dia, retomando) {
+  try {
+    const userSnap = await get(ref(db, `usuarios/${currentUser.id}`));
+    const userData = userSnap.val() || {};
+    const gid = userData.grupoId;
+    if (!gid) return;
+    const gSnap = await get(ref(db, `grupos/${gid}`));
+    const g = gSnap.val() || {};
+    const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados || {})].filter(Boolean);
+    if (!adminIds.length) return;
+    const accion = retomando ? 'retomó el entrenamiento' : 'empezó a entrenar';
+    const notif = {
+      mensaje:  `${accion} — Día ${dia}, Semana ${semana}, Mes ${mes}`,
+      deId:     currentUser.id,
+      deNombre: `${currentUser.nombres} ${currentUser.apellidos || ''}`.trim(),
+      avatar:   currentUser.avatar || '',
+      tipo:     'training_start',
+      leida:    false,
+      creadaEn: Date.now()
+    };
+    await Promise.all(adminIds.map(aid => push(ref(db, `notificaciones/${aid}`), notif)));
+  } catch(e) { console.warn('training notif failed', e); }
+}
+
 window.iniciarSesion = async () => {
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
@@ -1791,7 +1898,7 @@ window.iniciarSesion = async () => {
   const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
   state.historial = histSnap.val()||{};
 
-  // ── Caso 1: Hay sesión pendiente → CONTINUAR (el botón ya dijo "Continuar") ──
+  // ── Caso 1: Hay sesión pendiente → RETOMAR ──
   const pending = state._pendingSessionData;
   if(pending && pending.sesionActiva) {
     state.sesionActiva    = pending.sesionActiva;
@@ -1799,11 +1906,16 @@ window.iniciarSesion = async () => {
     state._pendingSeriesSnapshot = pending.currentSeriesSnapshot;
     state._pendingSessionData    = null;
     updateSessionDot(true);
+    // Notificar que retomó (no bloquea el render)
+    notifyTrainingStart(mesActual, semanaActual, diaActual, true);
     renderEjercicioActual();
     return;
   }
 
   // ── Caso 2: Sesión nueva ──
+  // Notificar ANTES del modal de fatiga para que llegue en el instante exacto
+  await notifyTrainingStart(mesActual, semanaActual, diaActual, false);
+
   const nivel = await showFatigueModal('¿Cómo llegaste a la sesión de hoy?', 'pre');
   if(nivel===null) return;
 
@@ -1817,7 +1929,6 @@ window.iniciarSesion = async () => {
   state.seriesData = {};
   state._pendingSeriesSnapshot = null;
   updateSessionDot(true);
-  // Guardar inmediatamente para persistir nivelCansancioInicio antes de cualquier interacción
   await savePendingSession();
   renderEjercicioActual();
 };
@@ -3723,10 +3834,49 @@ function parseEndOfLocalDay(str) {
   return new Date(y, m - 1, d, 23, 59, 59, 999);
 }
 
+let _membershipCheckInterval = null;
+
+async function checkMembershipExpiry() {
+  // Lee el nodo actual del usuario desde Firebase (no caché)
+  try {
+    const snap = await get(ref(db, `usuarios/${currentUser.id}`));
+    if (!snap.exists()) return;
+    const data = snap.val();
+    let titulo = null, mensaje = null;
+    if (data.activo === false) {
+      titulo  = 'Cuenta desactivada';
+      mensaje = 'Tu acceso fue desactivado. Comunícate con tu entrenador para más información.';
+    }
+    if (!titulo && data.validoHasta) {
+      const expiry = parseEndOfLocalDay(data.validoHasta);
+      if (expiry && new Date() > expiry) {
+        titulo  = 'Membresía vencida';
+        mensaje = `Tu suscripción venció el ${expiry.toLocaleDateString('es-CO', { day:'2-digit', month:'long', year:'numeric' })}. Renueva con tu entrenador para continuar.`;
+      }
+    }
+    if (titulo) {
+      clearInterval(_membershipCheckInterval);
+      if (_swRef) off(_swRef, 'value', _swListener);
+      await Swal.fire({
+        icon: 'warning', title: titulo, text: mensaje,
+        background: 'rgba(10,20,40,0.97)', color: '#e8f4ff',
+        confirmButtonColor: '#ff4d6d', confirmButtonText: 'Entendido',
+        allowOutsideClick: false, allowEscapeKey: false
+      });
+      sessionStorage.removeItem('saykyo_user');
+      signOut(auth).finally(() => { window.location.href = 'index.html'; });
+    }
+  } catch(e) { console.warn('checkMembershipExpiry error', e); }
+}
+
 function setupSessionWatcher(uid) {
   if (_swRef) off(_swRef, 'value', _swListener);
   _swRef    = ref(db, `usuarios/${uid}`);
   _swBooted = false;
+
+  // ⏱️ Verificar membresía cada 60s para detectar vencimiento automático (sin cambio en DB)
+  if (_membershipCheckInterval) clearInterval(_membershipCheckInterval);
+  _membershipCheckInterval = setInterval(checkMembershipExpiry, 60_000);
 
   _swListener = onValue(_swRef, async (snap) => {
     // Primer disparo = estado actual al registrar el listener, no un cambio real
@@ -3753,6 +3903,7 @@ function setupSessionWatcher(uid) {
     }
 
     if (titulo) {
+      clearInterval(_membershipCheckInterval);
       off(_swRef, 'value', _swListener); // detener listener antes del logout
       await Swal.fire({
         icon: 'warning',
@@ -3786,6 +3937,97 @@ onAuthStateChanged(auth, (user) => {
     init();
   }
 });
+</script>
+
+<a class="help-fab" id="helpFab" href="manual.html" title="Abrir manual">?</a>
+<div class="help-fab-tooltip" id="helpFabTooltip">📖 Manual de uso</div>
+
+<script>
+(function(){
+  const fab = document.getElementById('helpFab');
+  const tip = document.getElementById('helpFabTooltip');
+  const KEY = 'saykyo_fab_pos';
+
+  function updateTooltip(){
+    const r = fab.getBoundingClientRect();
+    const tipW = 140;
+    if(r.left > tipW + 10){
+      tip.style.left = (r.left - tipW - 8)+'px';
+    } else {
+      tip.style.left = (r.right + 8)+'px';
+    }
+    tip.style.top = (r.top + r.height/2 - 16)+'px';
+    tip.style.right = 'auto';
+    tip.style.bottom = 'auto';
+  }
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY));
+    if(saved) {
+      fab.style.left=saved.l; fab.style.top=saved.t;
+      fab.style.right='auto'; fab.style.bottom='auto';
+      setTimeout(updateTooltip,0);
+    }
+  } catch(e){}
+
+  let dragging=false, ox=0, oy=0, moved=false;
+
+  fab.addEventListener('mousedown', e=>{
+    dragging=true; moved=false;
+    const r=fab.getBoundingClientRect();
+    ox=e.clientX-r.left; oy=e.clientY-r.top;
+    fab.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    moved=true;
+    const x=Math.min(Math.max(e.clientX-ox,0),window.innerWidth-48);
+    const y=Math.min(Math.max(e.clientY-oy,0),window.innerHeight-48);
+    fab.style.left=x+'px'; fab.style.top=y+'px';
+    fab.style.right='auto'; fab.style.bottom='auto';
+    updateTooltip();
+  });
+
+  document.addEventListener('mouseup', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    fab.classList.remove('dragging');
+    if(moved) try{ localStorage.setItem(KEY, JSON.stringify({l:fab.style.left,t:fab.style.top})); }catch(e){}
+  });
+
+  fab.addEventListener('touchstart', e=>{
+    const t=e.touches[0];
+    dragging=true; moved=false;
+    const r=fab.getBoundingClientRect();
+    ox=t.clientX-r.left; oy=t.clientY-r.top;
+    fab.classList.add('dragging');
+  },{passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!dragging) return;
+    moved=true;
+    const t=e.touches[0];
+    const x=Math.min(Math.max(t.clientX-ox,0),window.innerWidth-48);
+    const y=Math.min(Math.max(t.clientY-oy,0),window.innerHeight-48);
+    fab.style.left=x+'px'; fab.style.top=y+'px';
+    fab.style.right='auto'; fab.style.bottom='auto';
+    e.preventDefault();
+  },{passive:false});
+
+  document.addEventListener('touchend', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    fab.classList.remove('dragging');
+    if(moved) try{ localStorage.setItem(KEY, JSON.stringify({l:fab.style.left,t:fab.style.top})); }catch(e){}
+  });
+
+  fab.addEventListener('click', e=>{ if(moved){ e.preventDefault(); moved=false; } });
+
+  updateTooltip();
+  window.addEventListener('resize', updateTooltip);
+})();
 </script>
 </body>
 </html>

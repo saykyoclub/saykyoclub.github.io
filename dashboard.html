@@ -378,6 +378,49 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 .toast-body { font-size:0.78rem; color:var(--text-muted); line-height:1.4; }
 .toast-close { position:absolute;top:8px;right:10px;font-size:0.8rem;color:var(--text-muted);cursor:pointer;background:none;border:none;color:var(--text-muted); }
 
+/* TRAINING-START TOAST */
+.training-toast {
+  position:fixed; top:20px; right:20px; z-index:9999;
+  background:rgba(0,18,8,0.97);
+  border:1px solid rgba(0,229,160,0.4);
+  border-radius:16px; padding:14px 18px; max-width:320px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 0 24px rgba(0,229,160,0.15);
+  animation:trainingToastIn 0.45s cubic-bezier(0.16,1,0.3,1);
+  display:flex; align-items:center; gap:12px; overflow:hidden;
+  cursor:pointer;
+}
+@keyframes trainingToastIn { from{opacity:0;transform:translateX(110%)} to{opacity:1;transform:translateX(0)} }
+@keyframes trainingToastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(110%)} }
+.training-toast.dismissing { animation:trainingToastOut 0.3s ease forwards; }
+.training-toast-bar {
+  position:absolute; bottom:0; left:0; height:3px;
+  background:linear-gradient(90deg, var(--success), var(--primary));
+  border-radius:0 0 16px 16px;
+  animation:trainingBarCountdown 10s linear forwards;
+}
+@keyframes trainingBarCountdown { from{width:100%} to{width:0%} }
+.tt-avatar {
+  width:40px; height:40px; border-radius:50%; flex-shrink:0;
+  border:2px solid var(--success); object-fit:cover;
+  box-shadow:0 0 12px rgba(0,229,160,0.4);
+}
+.tt-pulse {
+  width:40px; height:40px; border-radius:50%; flex-shrink:0;
+  background:rgba(0,229,160,0.12); border:2px solid var(--success);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem;
+  box-shadow:0 0 12px rgba(0,229,160,0.4);
+  animation:ttAvatarPulse 1.8s ease-in-out infinite;
+}
+@keyframes ttAvatarPulse {
+  0%,100% { box-shadow:0 0 12px rgba(0,229,160,0.4); }
+  50%      { box-shadow:0 0 24px rgba(0,229,160,0.7); }
+}
+.tt-title { font-size:0.8rem; font-weight:800; color:var(--success); margin-bottom:2px; letter-spacing:0.3px; }
+.tt-body  { font-size:0.78rem; color:var(--text-muted); line-height:1.4; }
+.tt-close { position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(0,229,160,0.5);font-size:0.85rem;cursor:pointer; transition:color 0.2s; }
+.tt-close:hover { color:var(--success); }
+
 /* NOTIF PANEL */
 .notif-item {
   padding:14px; border-radius:14px; background:rgba(255,255,255,0.04);
@@ -414,6 +457,33 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 .color-picker { display:flex;gap:8px;flex-wrap:wrap;margin-top:8px; }
 .color-swatch { width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.2s;flex-shrink:0; }
 .color-swatch.selected,.color-swatch:hover { transform:scale(1.2);border-color:rgba(255,255,255,0.6); }
+
+/* ── FLOATING HELP BUTTON ── */
+.help-fab{
+  position:fixed;bottom:24px;right:20px;z-index:9999;
+  width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,136,204,.9),rgba(0,200,255,.9));
+  border:1.5px solid rgba(0,200,255,.5);
+  box-shadow:0 4px 20px rgba(0,200,255,.35),0 0 0 0 rgba(0,200,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace;font-size:1.15rem;font-weight:700;color:#fff;
+  cursor:grab;text-decoration:none;
+  animation:fabPulse 3s ease-in-out infinite;
+  transition:transform .2s,box-shadow .2s
+}
+.help-fab.dragging{cursor:grabbing;animation:none;transform:scale(1.1)}
+.help-fab:not(.dragging):hover{transform:scale(1.12);box-shadow:0 6px 28px rgba(0,200,255,.55),0 0 0 8px rgba(0,200,255,.1)}
+@keyframes fabPulse{0%,100%{box-shadow:0 4px 20px rgba(0,200,255,.35),0 0 0 0 rgba(0,200,255,.4)}50%{box-shadow:0 4px 20px rgba(0,200,255,.35),0 0 0 8px rgba(0,200,255,.05)}}
+.help-fab-tooltip{
+  position:fixed;z-index:9998;
+  background:rgba(6,14,38,.95);border:1px solid rgba(0,200,255,.25);
+  border-radius:10px;padding:7px 12px;
+  font-family:'Exo 2',sans-serif;font-size:.72rem;font-weight:700;color:rgba(232,244,255,.8);
+  white-space:nowrap;pointer-events:none;
+  opacity:0;transition:all .2s
+}
+.help-fab:not(.dragging):hover + .help-fab-tooltip,.help-fab-tooltip.show{opacity:1}
+
 </style>
 </head>
 <body>
@@ -531,7 +601,7 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, get, set, push, update, remove, onValue, off, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, get, set, push, update, remove, onValue, off, onChildAdded, onChildChanged, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, updateEmail, updatePassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -3298,6 +3368,175 @@ window.confirmMoveMember = async (newGid, uid, oldGid) => {
 // ============ NOTIFICATIONS ============
 let notifListener = null;
 
+// ── AUDIO ENGINE — Web Audio API ─────────────────────────────────────────────
+// Sonido elegante de notificación (acorde mayor ascendente con reverb)
+function playSaykyoNotifSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.18, ctx.currentTime);
+    master.connect(ctx.destination);
+
+    // Reverb impulse response
+    const convolver = ctx.createConvolver();
+    const irLen = ctx.sampleRate * 0.6;
+    const ir = ctx.createBuffer(2, irLen, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = ir.getChannelData(c);
+      for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 2.5);
+    }
+    convolver.buffer = ir;
+    convolver.connect(master);
+
+    function tone(freq, startT, dur, typ, vol, fi, fo) {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type = typ;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + startT);
+      g.gain.setValueAtTime(0, ctx.currentTime + startT);
+      g.gain.linearRampToValueAtTime(vol, ctx.currentTime + startT + fi);
+      g.gain.setValueAtTime(vol, ctx.currentTime + startT + dur - fo);
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + startT + dur);
+      osc.connect(g);
+      g.connect(convolver);
+      g.connect(master);
+      osc.start(ctx.currentTime + startT);
+      osc.stop(ctx.currentTime + startT + dur + 0.05);
+    }
+
+    if (type === 'training') {
+      // Sonido de "inicio" — enérgico, motivador
+      tone(392.00, 0.00, 0.15, 'square',   0.12, 0.005, 0.08);
+      tone(523.25, 0.12, 0.20, 'sine',     0.5,  0.005, 0.10);
+      tone(659.25, 0.24, 0.20, 'sine',     0.45, 0.005, 0.10);
+      tone(783.99, 0.36, 0.40, 'sine',     0.4,  0.005, 0.20);
+      tone(261.63, 0.00, 0.50, 'triangle', 0.2,  0.01,  0.25);
+      tone(1568.0, 0.36, 0.28, 'sine',     0.07, 0.02,  0.18);
+    } else {
+      // Sonido estándar notificación — acorde do-mi-sol
+      tone(523.25, 0.00, 0.22, 'sine',     0.5,  0.005, 0.12);
+      tone(659.25, 0.13, 0.22, 'sine',     0.45, 0.005, 0.12);
+      tone(783.99, 0.26, 0.35, 'sine',     0.4,  0.005, 0.18);
+      tone(261.63, 0.00, 0.40, 'triangle', 0.2,  0.01,  0.20);
+      tone(1046.5,  0.26, 0.30, 'sine',   0.08, 0.02,  0.20);
+    }
+    setTimeout(() => ctx.close(), 2000);
+  } catch(e) { /* AudioContext no disponible */ }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── TRAINING START TOASTS ─────────────────────────────────────────────────────
+// ── TRAINING START LISTENER ──────────────────────────────────────────────────
+// Estrategia: escucha onChildAdded (nodo nuevo) Y onChildChanged (nodo reescrito).
+// El cliente borra+crea el nodo en cada sesión para garantizar child_added,
+// pero child_changed actúa como red de seguridad si el borrado no llega primero.
+// El deduplicador usa `inicioEn` (timestamp único por sesión).
+
+let _trainingListenerAdded   = null;
+let _trainingListenerChanged = null;
+let _trainingBootTime        = 0; // ignorar eventos anteriores a cuando abrimos el dashboard
+
+const _shownTrainingSessions = new Set(
+  JSON.parse(sessionStorage.getItem('saykyo_shown_training') || '[]')
+);
+
+function setupTrainingStartListener() {
+  const tRef = ref(db, 'sesiones_activas');
+
+  // Limpiar listeners previos
+  if (_trainingListenerAdded)   { off(tRef, 'child_added',   _trainingListenerAdded);   _trainingListenerAdded   = null; }
+  if (_trainingListenerChanged) { off(tRef, 'child_changed', _trainingListenerChanged); _trainingListenerChanged = null; }
+
+  // Tiempo de arranque con margen de 30s hacia atrás para absorber latencia de red.
+  // Si el evento llega justo al mismo tiempo que abrimos el dashboard no lo perdemos.
+  _trainingBootTime = Date.now() - 30_000;
+
+  async function handleTrainingSnap(snap) {
+    const uid  = snap.key;
+    const data = snap.val();
+    if (!uid || !data || !data.inicioEn) return;
+
+    // Ignorar sesiones que empezaron antes de que abrimos el dashboard (con margen)
+    if (data.inicioEn < _trainingBootTime) return;
+
+    // Deduplicar: mismo uid+inicioEn no se muestra dos veces
+    const sessionKey = `${uid}_${data.inicioEn}`;
+    if (_shownTrainingSessions.has(sessionKey)) return;
+    _shownTrainingSessions.add(sessionKey);
+    sessionStorage.setItem('saykyo_shown_training', JSON.stringify([..._shownTrainingSessions]));
+
+    // Verificar que el uid pertenece a alguno de mis grupos
+    // getMyGroupUserUids() devuelve un Set — usar .has() no .includes()
+    try {
+      const myUids = await getMyGroupUserUids();
+      if (!myUids.has(uid)) return; // <-- .has() correcto para Set
+      playSaykyoNotifSound('training');
+      showTrainingStartToast(data);
+    } catch(e) {
+      console.warn('training toast error', e);
+    }
+  }
+
+  _trainingListenerAdded   = onChildAdded(tRef,   handleTrainingSnap);
+  _trainingListenerChanged = onChildChanged(tRef,  handleTrainingSnap);
+}
+
+function showTrainingStartToast(data) {
+  // Soporta tanto el objeto de notificación (deNombre, avatar, mensaje)
+  // como el objeto legacy de sesiones_activas (nombre, avatar, dia/semana/mes)
+  const nombre  = data.deNombre || data.nombre || 'Atleta';
+  const avatar  = data.avatar || '';
+  // Extraer día/semana/mes del campo mensaje si viene de notificación
+  // mensaje = "ha empezado a entrenar — Día X, Semana Y, Mes Z"
+  let detalle = '';
+  if (data.dia) {
+    detalle = `Día ${data.dia} · Semana ${data.semana||'?'} · Mes ${data.mes||'?'}`;
+  } else if (data.mensaje) {
+    const m = data.mensaje.match(/Día (\d+), Semana (\d+), Mes (\d+)/);
+    if (m) detalle = `Día ${m[1]} · Semana ${m[2]} · Mes ${m[3]}`;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'training-toast';
+
+  // Stacking: desplazar si ya hay toasts abiertos
+  const existingToasts = document.querySelectorAll('.training-toast');
+  const offset = existingToasts.length * 86;
+  toast.style.top = (20 + offset) + 'px';
+
+  const avatarHtml = avatar
+    ? `<img class="tt-avatar" src="${avatar}" onerror="this.style.display='none'" alt="">`
+    : `<div class="tt-pulse">🏋️</div>`;
+
+  // Detectar si es retomar o nueva sesión por el texto del mensaje
+  const esRetoma = data.mensaje && data.mensaje.includes('retomó');
+  const accionLabel = esRetoma ? '🔄 RETOMANDO SESIÓN' : '⚡ SESIÓN INICIADA';
+  const accionTexto = esRetoma ? 'retomó su entrenamiento' : 'ha empezado a entrenar';
+
+  toast.innerHTML = `
+    ${avatarHtml}
+    <div style="flex:1;min-width:0">
+      <div class="tt-title">${accionLabel}</div>
+      <div class="tt-body"><strong style="color:var(--text)">${nombre}</strong> ${accionTexto}</div>
+      ${detalle ? `<div style="font-size:0.68rem;color:rgba(0,229,160,0.5);margin-top:3px;font-weight:600">${detalle}</div>` : ''}
+    </div>
+    <button class="tt-close" title="Descartar">✕</button>
+    <div class="training-toast-bar"></div>
+  `;
+
+  function dismiss() {
+    toast.classList.add('dismissing');
+    setTimeout(() => toast.remove(), 310);
+  }
+
+  toast.querySelector('.tt-close').addEventListener('click', (e) => { e.stopPropagation(); dismiss(); });
+  toast.addEventListener('click', dismiss);
+
+  document.body.appendChild(toast);
+  setTimeout(dismiss, 10000);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function setupNotifListener() {
   const notifRef = ref(db, `notificaciones/${currentUser.id}`);
   if(notifListener) off(notifRef, 'value', notifListener);
@@ -3323,8 +3562,16 @@ function setupNotifListener() {
 }
 
 function showPushToast(n) {
+  // training_start usa el toast verde especial
+  if (n.tipo === 'training_start') {
+    playSaykyoNotifSound('training');
+    showTrainingStartToast(n);
+    return;
+  }
+
   const existing = document.getElementById('pushToast');
   if(existing) existing.remove();
+  playSaykyoNotifSound('notif');
   const toast = document.createElement('div');
   toast.id = 'pushToast';
   toast.className = 'push-toast';
@@ -3338,7 +3585,7 @@ function showPushToast(n) {
   `;
   toast.onclick = (e) => { if(e.target.closest('.toast-close')) return; toggleNotifPanel(); toast.remove(); };
   document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(), 6000);
+  setTimeout(()=>toast.remove(), 10000);
 }
 
 window.toggleNotifPanel = () => {
@@ -3375,10 +3622,14 @@ function renderNotifList() {
     //   'alerta'            → usuario envió alerta/pregunta → admin PUEDE responder una vez
     //   'respuesta_usuario' → usuario respondió a algo del admin → hilo cerrado
     // El admin NO ve mensajes tipo 'mensaje' ni 'respuesta_admin' (esos los envía él)
-    const isAlerta = n.tipo === 'alerta';
-    const isRespUsuario = n.tipo === 'respuesta_usuario';
+    const isAlerta       = n.tipo === 'alerta';
+    const isRespUsuario  = n.tipo === 'respuesta_usuario';
+    const isTraining     = n.tipo === 'training_start';
     const canReply = isAlerta && !n.respondida && n.deId;
-    const fromLabel = isAlerta ? '🚨 Alerta de ' : isRespUsuario ? '💬 Respuesta de ' : '📩 Mensaje de ';
+    const fromLabel = isAlerta    ? '🚨 Alerta de '
+                    : isRespUsuario ? '💬 Respuesta de '
+                    : isTraining    ? '🏋️ Sesión iniciada por '
+                    :                 '📩 Mensaje de ';
     return `
     <div class="notif-item ${n.leida?'':'unread'}" id="notif_${nid}">
       <div style="display:flex;align-items:flex-start;gap:8px">
@@ -4442,6 +4693,8 @@ onAuthStateChanged(auth, async (user) => {
     await loadDismissedAlerts();
     // Setup notification listener
     setupNotifListener();
+    // Listener de sesiones activas (cuando un atleta empieza a entrenar)
+    setupTrainingStartListener();
     // Alertas en tiempo real
     setupAlertBadgeListener();
     // Restaurar página tras reload post-sesión admin
@@ -4460,6 +4713,102 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 });
+</script>
+
+<a class="help-fab" id="helpFab" href="manual.html" title="Abrir manual">?</a>
+<div class="help-fab-tooltip" id="helpFabTooltip">📖 Manual de uso</div>
+
+<script>
+(function(){
+  const fab = document.getElementById('helpFab');
+  const tip = document.getElementById('helpFabTooltip');
+  const KEY = 'saykyo_fab_pos';
+
+  function updateTooltip(){
+    const r = fab.getBoundingClientRect();
+    const tipW = 140;
+    if(r.left > tipW + 10){
+      tip.style.left = (r.left - tipW - 8)+'px';
+    } else {
+      tip.style.left = (r.right + 8)+'px';
+    }
+    tip.style.top = (r.top + r.height/2 - 16)+'px';
+    tip.style.right = 'auto';
+    tip.style.bottom = 'auto';
+  }
+
+  // Restaurar posición guardada
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY));
+    if(saved) {
+      fab.style.left=saved.l; fab.style.top=saved.t;
+      fab.style.right='auto'; fab.style.bottom='auto';
+      setTimeout(updateTooltip,0);
+    }
+  } catch(e){}
+
+  let dragging=false, ox=0, oy=0, moved=false;
+
+  fab.addEventListener('mousedown', e=>{
+    dragging=true; moved=false;
+    const r=fab.getBoundingClientRect();
+    ox=e.clientX-r.left; oy=e.clientY-r.top;
+    fab.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    moved=true;
+    const x=Math.min(Math.max(e.clientX-ox,0),window.innerWidth-48);
+    const y=Math.min(Math.max(e.clientY-oy,0),window.innerHeight-48);
+    fab.style.left=x+'px'; fab.style.top=y+'px';
+    fab.style.right='auto'; fab.style.bottom='auto';
+    updateTooltip();
+  });
+
+  document.addEventListener('mouseup', e=>{
+    if(!dragging) return;
+    dragging=false;
+    fab.classList.remove('dragging');
+    if(moved){
+      try{ localStorage.setItem(KEY, JSON.stringify({l:fab.style.left,t:fab.style.top})); }catch(e){}
+    }
+  });
+
+  // Touch support
+  fab.addEventListener('touchstart', e=>{
+    const t=e.touches[0];
+    dragging=true; moved=false;
+    const r=fab.getBoundingClientRect();
+    ox=t.clientX-r.left; oy=t.clientY-r.top;
+    fab.classList.add('dragging');
+  },{passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!dragging) return;
+    moved=true;
+    const t=e.touches[0];
+    const x=Math.min(Math.max(t.clientX-ox,0),window.innerWidth-48);
+    const y=Math.min(Math.max(t.clientY-oy,0),window.innerHeight-48);
+    fab.style.left=x+'px'; fab.style.top=y+'px';
+    fab.style.right='auto'; fab.style.bottom='auto';
+    e.preventDefault();
+  },{passive:false});
+
+  document.addEventListener('touchend', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    fab.classList.remove('dragging');
+    if(moved) try{ localStorage.setItem(KEY, JSON.stringify({l:fab.style.left,t:fab.style.top})); }catch(e){}
+  });
+
+  // Evitar navegación si se arrastró
+  fab.addEventListener('click', e=>{ if(moved){ e.preventDefault(); moved=false; } });
+
+  updateTooltip();
+  window.addEventListener('resize', updateTooltip);
+})();
 </script>
 </body>
 </html>

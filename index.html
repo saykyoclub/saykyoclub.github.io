@@ -433,7 +433,10 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     if (userData.validoHasta) {
       const now = new Date();
-      const valid = new Date(userData.validoHasta);
+      // Parsear la fecha como LOCAL (no UTC) para que "2026-02-28" signifique
+      // el fin del día 28 en la zona horaria del usuario, no las 19:00 del 27.
+      const [vy, vm, vd] = userData.validoHasta.split('-').map(Number);
+      const valid = new Date(vy, vm - 1, vd, 23, 59, 59, 999); // fin del día local
       if (now > valid) {
         throw new Error("Tu suscripción ha vencido.");
       }
