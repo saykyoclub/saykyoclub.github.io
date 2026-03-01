@@ -1165,6 +1165,10 @@ async function savePendingSession() {
     if(esBiext) {
       base.rirRpeIzq = +document.getElementById(`rpe_izq_${i}`)?.value||0;
       base.rirRpeDer = +document.getElementById(`rpe_der_${i}`)?.value||0;
+      const repsIzqEl = document.getElementById(`reps_izq_${i}`);
+      const repsDerEl = document.getElementById(`reps_der_${i}`);
+      if(repsIzqEl) base.repsIzq = +repsIzqEl.value||0;
+      if(repsDerEl) base.repsDer = +repsDerEl.value||0;
     } else {
       base.rirRpe = +document.getElementById(`rpe_${i}`)?.value||0;
     }
@@ -1420,12 +1424,16 @@ window.dismissExpiryBanner = (daysLeft) => {
 };
 
 // ============ ANAMNESIS ============
+// PREGUNTA_CONDICION_IDX = 4 (índice de la pregunta de enfermedad/condición)
+const ANAMNESIS_CONDICION_IDX = 4;
 const PREGUNTAS = [
   { q:'¿Cuántos años tienes?', tipo:'number', placeholder:'Ej: 28' },
   { q:'¿Cuál es tu peso actual? (kg)', tipo:'number', placeholder:'Ej: 75' },
   { q:'¿Cuál es tu talla? (cm)', tipo:'number', placeholder:'Ej: 175' },
   { q:'¿Cuál es tu objetivo principal?', tipo:'opciones', opciones:['Ganar masa muscular','Perder grasa','Mejorar rendimiento','Mejorar salud general','Aumentar fuerza'] },
-  { q:'¿Tienes alguna lesión o condición médica relevante?', tipo:'text', placeholder:'Describe o escribe "Ninguna"' },
+  { q:'¿Tienes alguna enfermedad, lesión o condición médica relevante?', tipo:'opciones', opciones:['No, ninguna','Sí, tengo una condición o lesión'], esCondicion: true },
+  { q:'Describe tu condición o lesión', tipo:'text', placeholder:'Ej: Hernia discal L4-L5, hipotiroidismo...', soloSi: true },
+  { q:'¿Tomas algún medicamento actualmente?', tipo:'text', placeholder:'Nombre y dosis... o Ninguno', soloSi: true },
   { q:'¿Cuál es tu nivel de actividad física actual?', tipo:'opciones', opciones:['Sedentario','Poco activo','Moderadamente activo','Muy activo','Atleta competitivo'] },
   { q:'¿Cuántos días a la semana puedes entrenar?', tipo:'opciones', opciones:['2 días','3 días','4 días','5 días','6+ días'] },
   { q:'¿Cuánto tiempo llevas entrenando?', tipo:'opciones', opciones:['Soy principiante','Menos de 1 año','1-2 años','2-4 años','4+ años'] },
@@ -1438,6 +1446,28 @@ const PREGUNTAS = [
   { q:'¿Qué esperas lograr en los próximos 3 meses?', tipo:'text', placeholder:'Describe tu meta concreta...' }
 ];
 
+// Helper: decide si un paso debe mostrarse según respuestas previas
+function anamnesisStepVisible(idx) {
+  const q = PREGUNTAS[idx];
+  if(!q.soloSi) return true;
+  // soloSi: solo mostrar si la condición médica fue "Sí"
+  return anamnesisRespuestas[`p${ANAMNESIS_CONDICION_IDX}`] === 'Sí, tengo una condición o lesión';
+}
+
+// Avanza al siguiente paso visible
+function anamnesisNextVisible(from) {
+  let next = from + 1;
+  while(next < PREGUNTAS.length && !anamnesisStepVisible(next)) next++;
+  return next;
+}
+
+// Retrocede al paso visible anterior
+function anamesisPrevVisible(from) {
+  let prev = from - 1;
+  while(prev >= 0 && !anamnesisStepVisible(prev)) prev--;
+  return prev;
+}
+
 let anamnesisStep = 0;
 let anamnesisRespuestas = {};
 
@@ -1449,8 +1479,14 @@ function renderAnamnesis() {
 
 function renderAnamnesisStep() {
   const q = PREGUNTAS[anamnesisStep];
-  const total = PREGUNTAS.length;
-  const dots = PREGUNTAS.map((_,i)=>`<div class="step-dot ${i<anamnesisStep?'done':i===anamnesisStep?'current':''}"></div>`).join('');
+  // Only count visible steps for display
+  const visibleSteps = PREGUNTAS.map((_,i)=>anamnesisStepVisible(i) || i===anamnesisStep);
+  const total = visibleSteps.filter(Boolean).length;
+  const visibleIdx = visibleSteps.slice(0,anamnesisStep+1).filter(Boolean).length;
+  const dots = PREGUNTAS.map((_,i)=>{
+    if(!anamnesisStepVisible(i) && i!==anamnesisStep) return '';
+    return `<div class="step-dot ${i<anamnesisStep && visibleSteps[i]?'done':i===anamnesisStep?'current':''}"></div>`;
+  }).join('');
   
   let inputHtml = '';
   if(q.tipo==='text'||q.tipo==='number') {
@@ -1476,16 +1512,16 @@ function renderAnamnesisStep() {
   return `
     <div class="glass-card question-step">
       <div style="font-size:0.8rem;color:var(--primary);font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-        <span>ANAMNESIS INICIAL</span><span>${anamnesisStep+1}/${total}</span>
+        <span>ANAMNESIS INICIAL</span><span>${visibleIdx}/${total}</span>
       </div>
       <div class="step-progress">${dots}</div>
-      <div class="q-number">PREGUNTA ${anamnesisStep+1}</div>
+      <div class="q-number">PREGUNTA ${visibleIdx}</div>
       <div class="q-text">${q.q}</div>
       ${inputHtml}
       <div style="display:flex;gap:10px;justify-content:space-between">
         ${anamnesisStep>0?`<button class="btn btn-secondary" onclick="anamnesisBack()">← Atrás</button>`:'<div></div>'}
         <button class="btn btn-primary" onclick="anamnesisNext()">
-          ${anamnesisStep===total-1?'✅ Completar':'Siguiente →'}
+          ${anamnesisNextVisible(anamnesisStep) >= PREGUNTAS.length?'✅ Completar':'Siguiente →'}
         </button>
       </div>
     </div>
@@ -1501,7 +1537,7 @@ window.selectOption = (val) => {
 };
 
 window.anamnesisBack = () => {
-  anamnesisStep--;
+  anamnesisStep = anamesisPrevVisible(anamnesisStep);
   document.getElementById('mainPage').innerHTML = renderAnamnesisStep();
 };
 
@@ -1519,8 +1555,17 @@ window.anamnesisNext = async () => {
   }
   
   anamnesisRespuestas[`p${anamnesisStep}`] = val;
+
+  // Si respondió "No" a condición médica, limpiar las respuestas condicionales
+  if(q.esCondicion && val === 'No, ninguna') {
+    delete anamnesisRespuestas[`p${anamnesisStep+1}`];
+    delete anamnesisRespuestas[`p${anamnesisStep+2}`];
+  }
+
+  // Buscar siguiente paso visible
+  const nextStep = anamnesisNextVisible(anamnesisStep);
   
-  if(anamnesisStep===PREGUNTAS.length-1) {
+  if(nextStep >= PREGUNTAS.length) {
     // Save anamnesis
     await set(ref(db,`anamnesis/${currentUser.id}`), {
       completada:true, completadaEn:Date.now(), respuestas:anamnesisRespuestas
@@ -1535,7 +1580,7 @@ window.anamnesisNext = async () => {
     document.getElementById('bottomNav').style.display='flex';
     renderTab('entrenar');
   } else {
-    anamnesisStep++;
+    anamnesisStep = nextStep;
     document.getElementById('mainPage').innerHTML = renderAnamnesisStep();
   }
 };
@@ -1999,17 +2044,17 @@ function renderEjercicioActual() {
     const tdSt = 'padding:5px 6px;font-size:0.84rem;font-weight:700;color:#e8f4ff;';
 
     const thRpe = esBiextUlt
-      ? `<th style="${thSt}color:#00e5a0">Izq</th><th style="${thSt}color:#ff6b35">Der</th>`
+      ? `<th style="${thSt}color:#00e5a0">Izq reps</th><th style="${thSt}color:#ff6b35">Der reps</th><th style="${thSt}color:#00e5a0">Izq ${currentUser.metodo}</th><th style="${thSt}color:#ff6b35">Der ${currentUser.metodo}</th>`
       : `<th style="${thSt}color:#a78bfa">${currentUser.metodo}</th>`;
 
     const filas = series.map((s, i) => {
       const rpeCell = esBiextUlt
-        ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
+        ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.repsIzq??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.repsDer??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
         : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
       return `
         <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
           <td style="${tdSt};color:#a78bfa;font-weight:700">${i+1}</td>
-          <td style="${tdSt}">${s.reps??'—'}</td>
+          ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
           <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
           ${rpeCell}
           <td style="padding:5px 6px;font-size:0.72rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
@@ -2025,7 +2070,7 @@ function renderEjercicioActual() {
           <table style="width:100%;border-collapse:collapse;min-width:200px">
             <thead><tr style="border-bottom:1px solid rgba(123,47,255,0.3)">
               <th style="${thSt}">#</th>
-              <th style="${thSt}">Reps</th>
+              ${esBiextUlt ? '' : `<th style="${thSt}">Reps</th>`}
               <th style="${thSt}">Peso</th>
               ${thRpe}
               <th style="${thSt}">Nota</th>
@@ -2036,9 +2081,18 @@ function renderEjercicioActual() {
       </div>`;
   }
 
-  const metodoLabel = currentUser.metodo === 'RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
-  const metodoMin  = currentUser.metodo === 'RPE' ? 1 : -1;
-  const metodoMax  = currentUser.metodo === 'RPE' ? 10 : 6;
+  // Detect if exercise belongs to Cardiovascular category → always RPE
+  const ejCategoriaNombre = (() => {
+    const catId = ejInfo.categoria;
+    if(!catId) return '';
+    const cat = state.categorias[catId];
+    return (cat?.nombre||cat?.name||'').toLowerCase();
+  })();
+  const esCardio = ejCategoriaNombre.includes('cardiovascular') || ejCategoriaNombre.includes('cardio');
+
+  const metodoLabel = (currentUser.metodo === 'RPE' || esCardio) ? 'RPE (1-10)' : 'RIR (-1→6)';
+  const metodoMin  = (currentUser.metodo === 'RPE' || esCardio) ? 1 : -1;
+  const metodoMax  = (currentUser.metodo === 'RPE' || esCardio) ? 10 : 6;
   const esBiext    = ejInfo.biextremidad === true;
 
   // Helper: get per-serie value with fallback to global ejConfig
@@ -2056,10 +2110,27 @@ function renderEjercicioActual() {
         <button class="serie-done" id="done_${i}" onclick="toggleSerie(${i})">✓</button>
       </div>
       <div class="serie-inputs">
+        ${esBiext ? `
+        <div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">
+          <div style="grid-column:1/-1;font-size:0.68rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">🦾 Reps por lado</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
+            <input type="number" id="reps_izq_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
+              style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
+            <input type="number" id="reps_der_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
+              style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
+          </div>
+        </div>
+        <div class="serie-field" style="display:none"><input type="number" id="reps_${i}" value="${sv(i,'repsMin',0)}"></div>
+        ` : `
         <div class="serie-field">
           <label>Reps</label>
           <input type="number" id="reps_${i}" placeholder="${sv(i,'repsMin',0)}-${sv(i,'repsMax',0)}" min="0" value="${sv(i,'repsMin',0)}">
         </div>
+        `}
         <div class="serie-field">
           <label>Peso (kg)</label>
           <input type="number" id="peso_${i}" placeholder="${sv(i,'peso',0)}" min="0" step="0.5" value="${sv(i,'peso',0)}">
@@ -2110,7 +2181,7 @@ function renderEjercicioActual() {
           <span class="meta-pill">📦 ${ejConfig.series} series</span>
           <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
           <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
-          <span class="meta-pill">${currentUser.metodo} ${ejConfig.rirRpe}</span>
+          <span class="meta-pill">${(currentUser.metodo === 'RPE' || esCardio) ? 'RPE' : currentUser.metodo} ${ejConfig.rirRpe}</span>
           <span class="meta-pill">⏱️ ${ejConfig.seriesConfig ? 'descanso por serie' : ejConfig.descanso+'s descanso'}</span>
           ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
         </div>
@@ -2147,6 +2218,10 @@ function renderEjercicioActual() {
         const derEl = document.getElementById(`rpe_der_${i}`);
         if(izqEl && s.rirRpeIzq) izqEl.value = s.rirRpeIzq;
         if(derEl && s.rirRpeDer) derEl.value = s.rirRpeDer;
+        const repsIzqEl = document.getElementById(`reps_izq_${i}`);
+        const repsDerEl = document.getElementById(`reps_der_${i}`);
+        if(repsIzqEl && s.repsIzq != null) repsIzqEl.value = s.repsIzq;
+        if(repsDerEl && s.repsDer != null) repsDerEl.value = s.repsDer;
       } else {
         const rpeEl = document.getElementById(`rpe_${i}`);
         if(rpeEl && s.rirRpe != null) rpeEl.value = s.rirRpe;
@@ -2599,6 +2674,14 @@ window.completarEjercicio = async () => {
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
   const ejConfig = Object.values(diaData?.ejercicios||{})[state.ejercicioActual];
+
+  // Guard: if ejConfig lost reference (e.g. after resume), re-render and abort
+  if(!ejConfig) {
+    console.warn('completarEjercicio: ejConfig not found, re-rendering');
+    renderEjercicioActual();
+    return;
+  }
+
   const n = ejConfig?.series||3;
 
   // Collect series data — RPE/RIR already filled per serie in the table
@@ -2615,6 +2698,17 @@ window.completarEjercicio = async () => {
       base.rirRpeIzq = +document.getElementById(`rpe_izq_${i}`)?.value||0;
       base.rirRpeDer = +document.getElementById(`rpe_der_${i}`)?.value||0;
       base.rirRpe = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
+      // Reps por lado
+      const repsIzqVal = +document.getElementById(`reps_izq_${i}`)?.value;
+      const repsDerVal = +document.getElementById(`reps_der_${i}`)?.value;
+      if(!isNaN(repsIzqVal)) base.repsIzq = repsIzqVal;
+      if(!isNaN(repsDerVal)) base.repsDer = repsDerVal;
+      // reps general = promedio de ambos lados
+      if(base.repsIzq != null && base.repsDer != null) {
+        base.reps = Math.round((base.repsIzq + base.repsDer) / 2);
+      } else {
+        base.reps = base.repsIzq ?? base.repsDer ?? 0;
+      }
     } else {
       base.rirRpe = +document.getElementById(`rpe_${i}`)?.value||0;
     }
@@ -2633,6 +2727,14 @@ window.completarEjercicio = async () => {
     if(!res.isConfirmed) return;
   }
 
+  // Guard: ensure sesionActiva and ejerciciosCompletados are defined (bug fix for resumed sessions)
+  if(!state.sesionActiva) {
+    console.error('completarEjercicio: sesionActiva is undefined');
+    return;
+  }
+  if(!state.sesionActiva.ejerciciosCompletados) {
+    state.sesionActiva.ejerciciosCompletados = {};
+  }
   state.sesionActiva.ejerciciosCompletados[state.ejercicioActual] = {
     ejercicioId: ejConfig.ejercicioId,
     series: series

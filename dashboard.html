@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --primary: #00c8ff;
@@ -603,6 +604,7 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getDatabase, ref, get, set, push, update, remove, onValue, off, onChildAdded, onChildChanged, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, updateEmail, updatePassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { initializeApp as initializeSecondaryApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCDlQGoWTNtAna8unwVNgJZH8WNRsYF0MU",
@@ -1321,10 +1323,17 @@ window.saveUser = async () => {
 
     let uid = editingUserId;
 
-    // 🔥 CREAR EN AUTH SOLO SI ES NUEVO
+    // 🔥 CREAR EN AUTH SOLO SI ES NUEVO — usar app secundaria para no desloguear al admin
     if (!editingUserId) {
-      const cred = await createUserWithEmailAndPassword(auth, email, contrasena);
-      uid = cred.user.uid;
+      const secondaryApp = initializeSecondaryApp(firebaseConfig, `secondary_${Date.now()}`);
+      try {
+        const secondaryAuth = getAuth(secondaryApp);
+        const cred = await createUserWithEmailAndPassword(secondaryAuth, email, contrasena);
+        uid = cred.user.uid;
+        await signOut(secondaryAuth);
+      } finally {
+        await deleteApp(secondaryApp).catch(()=>{});
+      }
     }
 
     const dataToSave = {
@@ -1366,11 +1375,19 @@ window.saveUser = async () => {
       background:'rgba(10,20,40,0.95)',
       color:'#e8f4ff',
       confirmButtonColor:'#00c8ff',
-      timer:2000,
+      timer:1500,
       showConfirmButton:false
     });
 
-    document.querySelector('[data-page="usuarios"]').click();
+    // Navegar y forzar recarga del listado con los datos más recientes
+    // Activar nav item visualmente
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navUsuarios = document.querySelector('[data-page="usuarios"]');
+    if(navUsuarios) navUsuarios.classList.add('active');
+
+    // Llamar renderPage directamente para que haga un get() fresco sin depender del evento click
+    prevPage = currentPage; currentPage = 'usuarios';
+    renderPage('usuarios');
 
   } catch (e) {
 
@@ -1785,14 +1802,20 @@ async function renderRutinaDetail(rutinaId) {
       </div>
       <!-- SEMANAS -->
       ${mesActual?`
-        <div style="min-width:90px">
+        <div style="min-width:100px">
           <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Semana</div>
-          ${[1,2,3,4].map(s=>`
-            <div class="rb-item ${semActual==s?'active':''}" style="padding:6px 12px;margin-bottom:4px;position:relative" onclick="selSemana('${rutinaId}',${mesActual},${s})">
-              S${s}
-              ${nextMes==mesActual&&nextSem==s?'<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;background:rgba(0,200,255,0.2);color:var(--primary);border-radius:10px;padding:1px 6px">●</span>':''}
-            </div>
-          `).join('')}
+          ${[1,2,3,4].map(s=>{
+            const hasDays = Object.values(meses[mesActual]?.semanas?.[s]?.dias||{}).some(d=>Object.keys(d?.ejercicios||{}).length>0);
+            const nextWeek = s<4 ? s+1 : null;
+            return `
+            <div style="margin-bottom:4px">
+              <div class="rb-item ${semActual==s?'active':''}" style="padding:6px 10px;position:relative;margin-bottom:0" onclick="selSemana('${rutinaId}',${mesActual},${s})">
+                S${s}
+                ${nextMes==mesActual&&nextSem==s?'<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;background:rgba(0,200,255,0.2);color:var(--primary);border-radius:10px;padding:1px 6px">●</span>':''}
+              </div>
+              ${hasDays&&nextWeek?`<button title="Duplicar semana ${s} → semana ${nextWeek}" onclick="duplicarSemana('${rutinaId}',${mesActual},${s},${nextWeek})" style="width:100%;padding:2px 4px;font-size:0.62rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.25);border-radius:0 0 6px 6px;color:rgba(0,229,160,0.8);cursor:pointer;font-family:'Exo 2',sans-serif">📋 S${nextWeek}</button>`:''} 
+            </div>`;
+          }).join('')}
         </div>
       `:''}
       <!-- DIAS -->
@@ -1870,6 +1893,54 @@ window.selMes = (rid,m) => { rutinaState.selectedMes=m; rutinaState.selectedSema
 window.selSemana = (rid,m,s) => { rutinaState.selectedSemana=s; rutinaState.selectedDia=null; renderRutinaDetail(rid); };
 window.selDia = (rid,m,s,d) => { rutinaState.selectedDia=d; renderRutinaDetail(rid); };
 
+// ── Duplicar semana → semana siguiente ──
+window.duplicarSemana = async (rutinaId, mes, semOrigen, semDestino) => {
+  const semOriginPath = `rutinas/${rutinaId}/meses/${mes}/semanas/${semOrigen}`;
+  const semDestPath   = `rutinas/${rutinaId}/meses/${mes}/semanas/${semDestino}`;
+
+  // Check if destination already has data
+  const destSnap = await get(ref(db, semDestPath));
+  const destData = destSnap.val();
+  const hasDest = destData && Object.values(destData.dias||{}).some(d=>Object.keys(d?.ejercicios||{}).length>0);
+
+  if(hasDest) {
+    const r = await Swal.fire({
+      icon:'warning',
+      title:`¿Sobreescribir semana ${semDestino}?`,
+      text:`La semana ${semDestino} ya tiene datos. ¿Reemplazarla con la copia de la semana ${semOrigen}?`,
+      showCancelButton:true,
+      confirmButtonText:'Sí, reemplazar',
+      cancelButtonText:'Cancelar',
+      confirmButtonColor:'#ff6b35',
+      background:'rgba(10,20,40,0.95)',color:'#e8f4ff'
+    });
+    if(!r.isConfirmed) return;
+  }
+
+  // Deep-copy origin semana data
+  const originSnap = await get(ref(db, semOriginPath));
+  const originData = originSnap.val();
+  if(!originData) return Swal.fire({icon:'info',title:'La semana origen no tiene datos',background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+
+  // Write to destination
+  await set(ref(db, semDestPath), JSON.parse(JSON.stringify(originData)));
+
+  Swal.fire({
+    icon:'success',
+    title:`✅ Semana ${semOrigen} copiada a semana ${semDestino}`,
+    text:'Puedes editarla ahora.',
+    timer:1800,
+    showConfirmButton:false,
+    background:'rgba(10,20,40,0.95)',color:'#e8f4ff'
+  });
+
+  // Navigate to dest semana
+  rutinaState.selectedSemana = semDestino;
+  rutinaState.selectedDia = 1;
+  renderRutinaDetail(rutinaId);
+};
+
+
 window.addMes = async (rutinaId, mes) => {
   const snap = await get(ref(db,`rutinas/${rutinaId}/meses/${mes}`));
   if(snap.exists()) return Swal.fire({icon:'info',title:`El mes ${mes} ya existe`,background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
@@ -1901,7 +1972,7 @@ window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
           oninput="rebuildSeriesTable()">
       </div>
       <div class="form-group">
-        <label>Tiempo por rep (seg)</label>
+        <label>Tiempo entre rep (seg)</label>
         <input class="glass-input" type="number" id="ejTiempo" value="45" min="0">
       </div>
       <div class="form-group" style="grid-column:1/-1">
@@ -2405,22 +2476,25 @@ async function renderAtletas(container, action) {
           const rpeCell = esBiext
             ? `<td style="text-align:center"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span>/<span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
             : `<td style="text-align:center;color:#a78bfa">${s.rirRpe??'—'}</td>`;
+          const repsCell = esBiext
+            ? `<td style="padding:5px 8px;text-align:center"><span style="color:#00e5a0">${s.repsIzq??s.reps??'—'}</span>/<span style="color:#ff6b35">${s.repsDer??s.reps??'—'}</span></td>`
+            : `<td style="padding:5px 8px;text-align:center">${s.reps??'—'}</td>`;
           return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
             <td style="padding:5px 8px;text-align:center;color:var(--primary)">${i+1}</td>
-            <td style="padding:5px 8px;text-align:center">${s.reps??'—'}</td>
+            ${repsCell}
             <td style="padding:5px 8px;text-align:center">${s.peso?s.peso+' kg':'—'}</td>
             ${rpeCell}
             <td style="padding:5px 8px;font-size:0.72rem;color:var(--text-muted);font-style:italic">${s.comentario||''}</td>
           </tr>`;
         }).join('');
-        const metodoH = esBiext ? 'Izq/Der' : (user.metodo||'RPE');
+        const metodoH = esBiext ? `Izq/Der ${user.metodo||'RPE'}` : (user.metodo||'RPE');
         return `<div style="margin-bottom:14px">
           <div style="font-weight:700;font-size:0.9rem;margin-bottom:6px;color:#e8f4ff">${ejInfo.nombre||ec.ejercicioId}${ec.metodo?`<span style="margin-left:8px;font-size:0.68rem;background:rgba(123,47,255,0.2);color:#c084fc;border:1px solid rgba(123,47,255,0.4);border-radius:20px;padding:2px 8px;font-weight:700">⚡ ${ec.metodo}</span>`:''}</div>
           <div style="overflow-x:auto">
             <table style="width:100%;border-collapse:collapse;font-size:0.83rem">
               <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
                 <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">#</th>
-                <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">REPS</th>
+                <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">${esBiext?'REPS Izq/Der':'REPS'}</th>
                 <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">PESO</th>
                 <th style="padding:4px 8px;color:#a78bfa;font-weight:600;font-size:0.7rem">${metodoH}</th>
                 <th style="padding:4px 8px;color:var(--text-muted);font-weight:600;font-size:0.7rem">NOTA</th>
@@ -2631,17 +2705,17 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
       const esBiextUlt = series.some(s => s.rirRpeIzq != null);
       const fechaStr   = new Date(fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
       const thRpe = esBiextUlt
-        ? `<th style="${thSt}color:#00e5a0">Izq</th><th style="${thSt}color:#ff6b35">Der</th>`
+        ? `<th style="${thSt}color:#00e5a0">Izq reps</th><th style="${thSt}color:#ff6b35">Der reps</th><th style="${thSt}color:#00e5a0">Izq ${metodo}</th><th style="${thSt}color:#ff6b35">Der ${metodo}</th>`
         : `<th style="${thSt}color:#a78bfa">${metodo}</th>`;
 
       const filas = series.map((s,i) => {
         const rpeCell = esBiextUlt
-          ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
+          ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.repsIzq??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.repsDer??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
           : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
         return `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
             <td style="${tdSt};color:#a78bfa">${i+1}</td>
-            <td style="${tdSt}">${s.reps??'—'}</td>
+            ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
             <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
             ${rpeCell}
             <td style="padding:5px 6px;font-size:0.7rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
@@ -2657,7 +2731,7 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
             <table style="width:100%;border-collapse:collapse">
               <thead><tr style="border-bottom:1px solid rgba(123,47,255,0.3)">
                 <th style="${thSt}">#</th>
-                <th style="${thSt}">Reps</th>
+                ${esBiextUlt ? '' : `<th style="${thSt}">Reps</th>`}
                 <th style="${thSt}">Peso</th>
                 ${thRpe}
                 <th style="${thSt}">Nota</th>
@@ -2670,14 +2744,32 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
   }
 
   const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
-    <div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">
-      <div style="width:24px;text-align:center;font-weight:700;color:var(--primary)">${i+1}</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">
+      <div style="width:24px;text-align:center;font-weight:700;color:var(--primary);padding-top:28px">${i+1}</div>
       <div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">
+        ${esBiext ? `
+        <div style="display:flex;flex-direction:column;gap:3px;width:100%;background:rgba(0,229,160,0.05);border-radius:10px;padding:8px;border:1px solid rgba(0,229,160,0.15)">
+          <div style="font-size:0.65rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">🦾 Reps por lado</div>
+          <div style="display:flex;gap:8px">
+            <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+              <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
+              <input type="number" id="adm_reps_izq_${i}" value="${ejConfig.repsMin||0}" min="0"
+                style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+              <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
+              <input type="number" id="adm_reps_der_${i}" value="${ejConfig.repsMin||0}" min="0"
+                style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+            </div>
+          </div>
+        </div>
+        <div style="display:none"><input type="number" id="adm_reps_${i}" value="${ejConfig.repsMin||0}"></div>
+        ` : `
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
           <label style="font-size:0.68rem;color:var(--text-muted)">Reps</label>
           <input type="number" id="adm_reps_${i}" value="${ejConfig.repsMin||0}" min="0"
             style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-        </div>
+        </div>`}
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
           <label style="font-size:0.68rem;color:var(--text-muted)">Peso kg</label>
           <input type="number" id="adm_peso_${i}" value="${ejConfig.peso||0}" min="0" step="0.5"
@@ -2755,6 +2847,15 @@ window._completarAdminEj = () => {
       base.rirRpeIzq = +document.getElementById(`adm_rpe_izq_${i}`)?.value||0;
       base.rirRpeDer = +document.getElementById(`adm_rpe_der_${i}`)?.value||0;
       base.rirRpe    = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
+      const repsIzqVal = +document.getElementById(`adm_reps_izq_${i}`)?.value;
+      const repsDerVal = +document.getElementById(`adm_reps_der_${i}`)?.value;
+      if(!isNaN(repsIzqVal)) base.repsIzq = repsIzqVal;
+      if(!isNaN(repsDerVal)) base.repsDer = repsDerVal;
+      if(base.repsIzq != null && base.repsDer != null) {
+        base.reps = Math.round((base.repsIzq + base.repsDer) / 2);
+      } else {
+        base.reps = base.repsIzq ?? base.repsDer ?? 0;
+      }
     } else {
       base.rirRpe = +document.getElementById(`adm_rpe_${i}`)?.value||0;
     }
@@ -3065,12 +3166,12 @@ window.verAnamnesis = async (uid) => {
 
   const preguntas = [
     'Edad','Peso (kg)','Talla (cm)','Objetivo principal',
-    '¿Lesiones o condiciones médicas?','Nivel de actividad física actual',
-    '¿Cuántos días entrenas por semana?','¿Cuánto tiempo llevas entrenando?',
-    '¿Realizas algún deporte adicional?','Horario preferido de entrenamiento',
-    '¿Tomas algún suplemento?','Horas de sueño promedio',
-    '¿Tienes alguna restricción alimentaria?','Nivel de estrés (1-10)',
-    '¿Qué esperas lograr en los próximos 3 meses?'
+    '¿Enfermedad/lesión/condición médica?','Descripción condición (si aplica)','Medicamentos (si aplica)',
+    'Nivel de actividad física actual','¿Cuántos días entrenas por semana?',
+    '¿Cuánto tiempo llevas entrenando?','¿Realizas algún deporte adicional?',
+    'Horario preferido de entrenamiento','¿Tomas algún suplemento?',
+    'Horas de sueño promedio','¿Tienes alguna restricción alimentaria?',
+    'Nivel de estrés (1-10)','¿Qué esperas lograr en los próximos 3 meses?'
   ];
 
   showOverlay(`
@@ -4348,6 +4449,141 @@ async function renderAlertas(container) {
   `;
 }
 
+// ============ BODY MAP HELPERS ============
+// Zonas de medición con posición relativa en la silueta (mx=0..1, my=0..1)
+const BODY_ZONES = [
+  {key:'cuello',      label:'Cuello',        side:'front', mx:0.50,my:0.16, col:'#00c8ff', unit:'cm', cat:'medida'},
+  {key:'torax',       label:'Tórax',         side:'back',  mx:0.50,my:0.28,  col:'#00b4d8', unit:'cm', cat:'medida'},
+  {key:'bicepRelIzq', label:'Bíc. Rel. Izq', side:'front', mx:0.14,my:0.31,  col:'#00e5a0', unit:'cm', cat:'medida'},
+  {key:'bicepRelDer', label:'Bíc. Rel. Der', side:'front', mx:0.86,my:0.31,  col:'#00e5a0', unit:'cm', cat:'medida'},
+  {key:'bicepContIzq',label:'Bíc. Con. Izq', side:'front', mx:0.14,my:0.31,  col:'#4ade80', unit:'cm', cat:'medida'},
+  {key:'bicepContDer',label:'Bíc. Con. Der', side:'front', mx:0.86,my:0.38,  col:'#4ade80', unit:'cm', cat:'medida'},
+  {key:'cintura',     label:'Cintura',       side:'front', mx:0.50,my:0.47, col:'#ffd60a', unit:'cm', cat:'medida'},
+  {key:'abdomen',     label:'Abdomen',       side:'front', mx:0.50,my:0.42, col:'#ff6b35', unit:'cm', cat:'medida'},
+  {key:'cadera',      label:'Cadera',        side:'front', mx:0.64,my:0.47, col:'#ff4d6d', unit:'cm', cat:'medida'},
+  {key:'musloIzq',    label:'Muslo Izq',     side:'front', mx:0.37,my:0.62, col:'#a78bfa', unit:'cm', cat:'medida'},
+  {key:'musloDer',    label:'Muslo Der',     side:'front', mx:0.64,my:0.62, col:'#a78bfa', unit:'cm', cat:'medida'},
+  {key:'pantorrilla', label:'Pantorrilla',   side:'back', mx:0.66,my:0.845, col:'#7b2fff', unit:'cm', cat:'medida'},
+];
+const PLIEGUES_ZONES = [
+  {key:'Tríceps',      label:'Pl. Tríceps',       side:'back',  mx:0.85,my:0.29,  col:'#fb923c', unit:'mm', cat:'pliegue'},
+  {key:'Subescapular', label:'Pl. Subescapular',  side:'back',  mx:0.62,my:0.245, col:'#f472b6', unit:'mm', cat:'pliegue'},
+  {key:'Supraespinal', label:'Pl. Supraespinal',  side:'front', mx:0.38,my:0.43, col:'#e879f9', unit:'mm', cat:'pliegue'},
+  {key:'Abdominal',    label:'Pl. Abdominal',     side:'front', mx:0.64,my:0.525, col:'#c084fc', unit:'mm', cat:'pliegue'},
+  {key:'Muslo',        label:'Pl. Muslo',         side:'front', mx:0.37,my:0.65,  col:'#818cf8', unit:'mm', cat:'pliegue'},
+  {key:'Pantorrilla',  label:'Pl. Pantorrilla',   side:'back',  mx:0.34,my:0.845, col:'#38bdf8', unit:'mm', cat:'pliegue'},
+];
+
+
+
+function buildBodyMapSVG(val) {
+  const accentColor = '#00c8ff';
+  const IMG_W = 130, IMG_H = 325;
+
+  const makeDots = (zones) => zones.map(z => {
+    const left = (z.mx * 100).toFixed(2);
+    const top  = (z.my * 100).toFixed(2);
+    return `
+      <div title="${z.label}: ${z.displayVal}"
+           style="position:absolute;left:${left}%;top:${top}%;transform:translate(-50%,-50%);cursor:pointer;z-index:2">
+        <div style="position:absolute;width:22px;height:22px;border-radius:50%;
+                    background:${z.col};opacity:0.2;top:50%;left:50%;
+                    transform:translate(-50%,-50%);
+                    animation:bodyPulse 2.5s ease-in-out infinite"></div>
+        <div style="width:11px;height:11px;border-radius:50%;
+                    background:${z.col};border:2px solid rgba(255,255,255,0.9);
+                    box-shadow:0 0 8px ${z.col}99;position:relative;z-index:1">
+          <div style="width:4px;height:4px;border-radius:50%;background:white;
+                      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Zonas frontales
+  const frontZones = [
+    ...BODY_ZONES.filter(z => z.side === 'front' && val[z.key] != null)
+      .map(z => ({...z, displayVal: `${val[z.key]} cm`})),
+    ...PLIEGUES_ZONES.filter(z => z.side === 'front' && val.pliegues?.[z.key] != null)
+      .map(z => ({...z, displayVal: `${val.pliegues[z.key]} mm`}))
+  ];
+
+  // Zonas posteriores
+  const backZones = [
+    ...BODY_ZONES.filter(z => z.side === 'back' && val[z.key] != null)
+      .map(z => ({...z, displayVal: `${val[z.key]} cm`})),
+    ...PLIEGUES_ZONES.filter(z => z.side === 'back' && val.pliegues?.[z.key] != null)
+      .map(z => ({...z, displayVal: `${val.pliegues[z.key]} mm`}))
+  ];
+
+  const frontDots = makeDots(frontZones);
+  const backDots  = makeDots(backZones);
+
+  const imgBlock = (src, label, dots, id) => `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div style="font-size:0.65rem;letter-spacing:3px;color:${accentColor};font-weight:700;text-transform:uppercase">${label}</div>
+      <div id="${id}" style="position:relative;width:${IMG_W}px;height:${IMG_H}px;border-radius:16px;overflow:hidden;
+                  border:1px solid ${accentColor}33;
+                  box-shadow:0 0 30px ${accentColor}18">
+        <img src="${src}" style="width:100%;height:100%;object-fit:cover;display:block;" draggable="false">
+        ${dots}
+      </div>
+    </div>`;
+
+  return `
+    <style>
+      @keyframes bodyPulse {
+        0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.2}
+        50%{transform:translate(-50%,-50%) scale(1.6);opacity:0.05}
+      }
+    </style>
+    <div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+      ${imgBlock('body.png',      'FRONTAL',   frontDots, 'bodyImgWrapper')}
+      ${imgBlock('body_back.png', 'POSTERIOR', backDots,  'bodyImgWrapperBack')}
+    </div>`;
+}
+
+function buildBodyMapLegend(val) {
+  const allZones = [
+    ...BODY_ZONES.filter(z => val[z.key] != null)
+      .map(z => ({...z, displayVal: `${val[z.key]} cm`, cat:'medida'})),
+    ...PLIEGUES_ZONES.filter(z => val.pliegues?.[z.key] != null)
+      .map(z => ({...z, displayVal: `${val.pliegues[z.key]} mm`, cat:'pliegue'}))
+  ];
+  
+  if (!allZones.length) return `<div style="color:rgba(255,255,255,0.3);font-size:0.82rem">Sin mediciones registradas</div>`;
+  
+  const frontMed = allZones.filter(z => z.side === 'front' && z.cat === 'medida');
+  const backMed  = allZones.filter(z => z.side === 'back'  && z.cat === 'medida');
+  const frontPli = allZones.filter(z => z.side === 'front' && z.cat === 'pliegue');
+  const backPli  = allZones.filter(z => z.side === 'back'  && z.cat === 'pliegue');
+  
+  const section = (title, zones, accentCol) => {
+    if (!zones.length) return '';
+    return `
+      <div style="margin-bottom:12px">
+        <div style="font-size:0.62rem;letter-spacing:2px;color:${accentCol};text-transform:uppercase;font-weight:700;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid ${accentCol}30">${title}</div>
+        ${zones.map(z => `
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:9px;margin-bottom:3px;
+                      background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);
+                      transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            <div style="width:10px;height:10px;border-radius:50%;background:${z.col};flex-shrink:0;
+                        box-shadow:0 0 6px ${z.col}88"></div>
+            <div style="flex:1;font-size:0.78rem;color:rgba(232,244,255,0.7)">${z.label}</div>
+            <div style="font-size:0.85rem;font-weight:700;color:${z.col}">${z.displayVal}</div>
+          </div>`).join('')}
+      </div>`;
+  };
+  
+  return `
+    <div style="padding:4px 0">
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:14px;font-style:italic">Última valoración registrada</div>
+      ${section('Medidas Frontales (cm)', frontMed, '#00c8ff')}
+      ${section('Medidas Posteriores (cm)', backMed, '#00c8ff')}
+      ${section('Pliegues Frontales (mm)', frontPli, '#a78bfa')}
+      ${section('Pliegues Posteriores (mm)', backPli, '#a78bfa')}
+    </div>`;
+}
+
 // ============ VALORACIONES ============
 async function renderValoraciones(container, action) {
   action.textContent = '+ Nueva Valoración';
@@ -4434,50 +4670,100 @@ async function renderValoraciones(container, action) {
       </div>` : `<div style="padding:16px;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);border-radius:12px;margin-bottom:16px;font-size:0.85rem;color:#ff6b35">⚠️ Sin valoraciones registradas aún</div>`}
 
       ${vals.length >= 2 ? `
+      <!-- Charts composición corporal -->
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:20px">
-        <div class="glass-panel">
-          <div class="panel-header"><span class="panel-title">🔥 % Grasa corporal</span></div>
-          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartGrasa"></canvas></div></div>
-        </div>
-        <div class="glass-panel">
-          <div class="panel-header"><span class="panel-title">💪 % Masa muscular</span></div>
-          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartMuscular"></canvas></div></div>
-        </div>
-        <div class="glass-panel">
-          <div class="panel-header"><span class="panel-title">⚖️ Peso corporal</span></div>
-          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartPesoVal"></canvas></div></div>
-        </div>
-        <div class="glass-panel">
-          <div class="panel-header"><span class="panel-title">📊 Composición integral</span></div>
-          <div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chartComp"></canvas></div></div>
-        </div>
+        <div class="glass-panel"><div class="panel-header"><span class="panel-title">🔥 % Grasa</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartGrasa"></canvas></div></div></div>
+        <div class="glass-panel"><div class="panel-header"><span class="panel-title">💪 % Muscular</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartMuscular"></canvas></div></div></div>
+        <div class="glass-panel"><div class="panel-header"><span class="panel-title">⚖️ Peso</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartPesoVal"></canvas></div></div></div>
+        <div class="glass-panel"><div class="panel-header"><span class="panel-title">📊 Composición integral</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartComp"></canvas></div></div></div>
+        ${vals.some(v=>v.metabolismo)?`<div class="glass-panel"><div class="panel-header"><span class="panel-title">🔥 Metabolismo basal</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartMetab"></canvas></div></div></div>`:''}
+        ${vals.some(v=>v.icc)?`<div class="glass-panel"><div class="panel-header"><span class="panel-title">📐 Índice cintura-cadera</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartICC"></canvas></div></div></div>`:''}
+        ${vals.some(v=>v.cintura)?`<div class="glass-panel"><div class="panel-header"><span class="panel-title">📏 Medidas (cintura/cadera)</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartMedidas"></canvas></div></div></div>`:''}
+        ${vals.some(v=>v.bicepRelIzq||v.bicepContIzq)?`<div class="glass-panel"><div class="panel-header"><span class="panel-title">💪 Bíceps</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartBicep"></canvas></div></div></div>`:''}
+        ${vals.some(v=>v.musloIzq)?`<div class="glass-panel"><div class="panel-header"><span class="panel-title">🦵 Muslos y pantorrilla</span></div><div class="panel-body"><div class="chart-container" style="height:180px"><canvas id="chartPiernas"></canvas></div></div></div>`:''}
+        ${vals.some(v=>v.pliegues)?`
+          <div class="glass-panel" style="grid-column:1/-1">
+            <div class="panel-header"><span class="panel-title">📐 Pliegues cutáneos — Evolución por zona</span></div>
+            <div class="panel-body">
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+                ${['Tríceps','Subescapular','Supraespinal','Abdominal','Muslo','Pantorrilla'].map((pk,pi)=>`
+                  <div style="background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.2);border-radius:14px;padding:12px">
+                    <div style="font-size:0.72rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600">📍 ${pk}</div>
+                    <div class="chart-container" style="height:130px"><canvas id="chartPliegue_${pi}"></canvas></div>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>`:''}
       </div>` : vals.length===1 ? `<div style="padding:12px;background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.2);border-radius:12px;margin-bottom:16px;font-size:0.85rem;color:var(--primary)">📊 Agrega al menos 2 valoraciones para ver las gráficas de tendencia</div>` : ''}
 
+      ${lastVal ? `
+      <!-- ═══════ MAPA CORPORAL PROFESIONAL ═══════ -->
+      <div class="glass-panel" style="margin-bottom:20px">
+        <div class="panel-header" style="border-bottom:1px solid rgba(0,200,255,0.15)">
+          <span class="panel-title">🧬 Mapa de Mediciones Corporales</span>
+          <span style="font-size:0.72rem;color:var(--text-muted);letter-spacing:1px">${lastVal.mes?`MES ${lastVal.mes} · `:''} ${new Date(lastVal.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})}</span>
+        </div>
+        <div class="panel-body" style="padding:24px">
+          <div id="bodyMapContainer" style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap;justify-content:center">
+            <!-- IMAGEN CORPORAL FRONTAL -->
+            <div style="display:flex;gap:20px;justify-content:center;flex-shrink:0">
+              ${buildBodyMapSVG(lastVal)}
+            </div>
+            <!-- LEYENDA -->
+            <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px">
+              ${buildBodyMapLegend(lastVal)}
+            </div>
+          </div>
+        </div>
+      </div>` : ''}
+
       <div class="glass-panel">
-        <div class="panel-header"><span class="panel-title">📅 Historial de valoraciones</span></div>
+        <div class="panel-header">
+          <span class="panel-title">📅 Historial de valoraciones</span>
+        </div>
         <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
           ${vals.length===0?'<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin valoraciones aún</div></div>':
-            [...vals].reverse().map((v,i)=>`
+            [...vals].reverse().map((v,i)=>{
+              const vid = Object.entries(valoraciones[uid]||{}).find(([,val])=>val.fecha===v.fecha)?.[0];
+              return `
               <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:14px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
                   <div style="font-weight:700;color:var(--primary)">
                     ${v.mes?`Mes ${v.mes}`:''} 
                     <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400">${new Date(v.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})}</span>
                   </div>
-                  <button class="btn btn-danger btn-sm" onclick="deleteValoracion('${uid}','${Object.entries(valoraciones[uid]||{}).find(([,val])=>val.fecha===v.fecha)?.[0]}')">🗑️</button>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn btn-secondary btn-sm" onclick="exportValoracionPDF('${uid}','${vid}')">📄</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteValoracion('${uid}','${vid}')">🗑️</button>
+                  </div>
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
                   <div class="rev-info-card"><div class="ric-label">🔥 % Grasa</div><div class="ric-val" style="color:#ff6b35">${v.grasa}%</div></div>
                   <div class="rev-info-card"><div class="ric-label">💪 % Muscular</div><div class="ric-val" style="color:var(--success)">${v.muscular}%</div></div>
                   <div class="rev-info-card"><div class="ric-label">⚖️ Peso</div><div class="ric-val">${v.peso} kg</div></div>
                   ${v.imc?`<div class="rev-info-card"><div class="ric-label">📏 IMC</div><div class="ric-val">${v.imc}</div></div>`:''}
+                  ${v.metabolismo?`<div class="rev-info-card"><div class="ric-label">🔥 Metab. basal</div><div class="ric-val">${v.metabolismo} kcal</div></div>`:''}
+                  ${v.icc?`<div class="rev-info-card"><div class="ric-label">📐 ICC</div><div class="ric-val">${v.icc}</div></div>`:''}
+                  ${v.cuello?`<div class="rev-info-card"><div class="ric-label">Cuello</div><div class="ric-val">${v.cuello} cm</div></div>`:''}
+                  ${v.torax?`<div class="rev-info-card"><div class="ric-label">Tórax</div><div class="ric-val">${v.torax} cm</div></div>`:''}
+                  ${v.cintura?`<div class="rev-info-card"><div class="ric-label">Cintura</div><div class="ric-val">${v.cintura} cm</div></div>`:''}
+                  ${v.abdomen?`<div class="rev-info-card"><div class="ric-label">Abdomen</div><div class="ric-val">${v.abdomen} cm</div></div>`:''}
+                  ${v.cadera?`<div class="rev-info-card"><div class="ric-label">Cadera</div><div class="ric-val">${v.cadera} cm</div></div>`:''}
+                  ${v.bicepRelIzq?`<div class="rev-info-card"><div class="ric-label">💪 Bíc.Rel.Izq</div><div class="ric-val">${v.bicepRelIzq} cm</div></div>`:''}
+                  ${v.bicepRelDer?`<div class="rev-info-card"><div class="ric-label">💪 Bíc.Rel.Der</div><div class="ric-val">${v.bicepRelDer} cm</div></div>`:''}
+                  ${v.bicepContIzq?`<div class="rev-info-card"><div class="ric-label">💪 Bíc.Cont.Izq</div><div class="ric-val">${v.bicepContIzq} cm</div></div>`:''}
+                  ${v.bicepContDer?`<div class="rev-info-card"><div class="ric-label">💪 Bíc.Cont.Der</div><div class="ric-val">${v.bicepContDer} cm</div></div>`:''}
+                  ${v.musloIzq?`<div class="rev-info-card"><div class="ric-label">🦵 Muslo Izq</div><div class="ric-val">${v.musloIzq} cm</div></div>`:''}
+                  ${v.musloDer?`<div class="rev-info-card"><div class="ric-label">🦵 Muslo Der</div><div class="ric-val">${v.musloDer} cm</div></div>`:''}
+                  ${v.pantorrilla?`<div class="rev-info-card"><div class="ric-label">🦵 Pantorrilla</div><div class="ric-val">${v.pantorrilla} cm</div></div>`:''}
                   ${v.pesoGraso?`<div class="rev-info-card"><div class="ric-label">🏋️ Masa grasa</div><div class="ric-val">${v.pesoGraso} kg</div></div>`:''}
                   ${v.pesoMagro?`<div class="rev-info-card"><div class="ric-label">🎯 Masa magra</div><div class="ric-val">${v.pesoMagro} kg</div></div>`:''}
                   ${v.pesoOseo?`<div class="rev-info-card"><div class="ric-label">🦴 Peso óseo</div><div class="ric-val">${v.pesoOseo} kg</div></div>`:''}
                 </div>
+                ${v.pliegues && Object.keys(v.pliegues).length ? `<div style="margin-top:8px"><div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Pliegues cutáneos (mm)</div><div style="display:flex;flex-wrap:wrap;gap:6px">${Object.entries(v.pliegues).map(([k,val])=>`<span style="background:rgba(123,47,255,0.12);border:1px solid rgba(123,47,255,0.25);border-radius:8px;padding:3px 8px;font-size:0.78rem">${k}: <strong>${val}</strong></span>`).join('')}</div></div>` : ''}
                 ${v.notas?`<div style="margin-top:8px;font-size:0.82rem;color:var(--text-muted);padding:8px;background:rgba(255,255,255,0.03);border-radius:8px">💬 ${v.notas}</div>`:''}
-              </div>
-          `).join('')}
+              </div>`;
+            }).join('')}
         </div>
       </div>
     `;
@@ -4486,32 +4772,96 @@ async function renderValoraciones(container, action) {
     if(vals.length >= 2) {
       const chartOpts = {
         responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}},
+        plugins:{
+          legend:{display:false},
+          // Plugin inline para fondo oscuro al exportar como imagen
+          beforeDraw: (chart) => {
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = 'rgba(15,25,50,0.98)';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+          }
+        },
         scales:{
           x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}},
           y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}}
         }
       };
-      const makeGradient = (ctx, c1, c2) => { const g=ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,c1); g.addColorStop(1,c2); return g; };
+      const chartOptsLegend = {...chartOpts, plugins:{...chartOpts.plugins, legend:{display:true,labels:{color:'rgba(232,244,255,0.7)',font:{size:10}}}}};
+      const makeGradient = (ctx, c1, c2) => { const g=ctx.createLinearGradient(0,0,0,180); g.addColorStop(0,c1); g.addColorStop(1,c2); return g; };
+      const mkLine = (el, label, data, color, fill=true) => {
+        if(!el) return;
+        const hasData = data.some(d=>d!=null);
+        if(!hasData) return;
+        new Chart(el, {type:'line',data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:fill?(ctx)=>makeGradient(ctx.chart.ctx,color.replace(')',',0.3)').replace('rgb','rgba'),color.replace(')',',0)').replace('rgb','rgba')):'transparent',tension:0.4,fill,pointBackgroundColor:color,pointRadius:4,spanGaps:true}]},options:chartOpts});
+      };
 
-      // Chart Grasa
-      const cg = document.getElementById('chartGrasa');
-      if(cg) new Chart(cg, {type:'line',data:{labels,datasets:[{label:'% Grasa',data:vals.map(v=>v.grasa),borderColor:'#ff6b35',backgroundColor:(ctx)=>makeGradient(ctx.chart.ctx,'rgba(255,107,53,0.3)','rgba(255,107,53,0)'),tension:0.4,fill:true,pointBackgroundColor:'#ff6b35',pointRadius:5}]},options:chartOpts});
-
-      // Chart Muscular
-      const cm = document.getElementById('chartMuscular');
-      if(cm) new Chart(cm, {type:'line',data:{labels,datasets:[{label:'% Muscular',data:vals.map(v=>v.muscular),borderColor:'#00e5a0',backgroundColor:(ctx)=>makeGradient(ctx.chart.ctx,'rgba(0,229,160,0.3)','rgba(0,229,160,0)'),tension:0.4,fill:true,pointBackgroundColor:'#00e5a0',pointRadius:5}]},options:chartOpts});
-
-      // Chart Peso
-      const cp = document.getElementById('chartPesoVal');
-      if(cp) new Chart(cp, {type:'line',data:{labels,datasets:[{label:'Peso (kg)',data:vals.map(v=>v.peso),borderColor:'#00c8ff',backgroundColor:(ctx)=>makeGradient(ctx.chart.ctx,'rgba(0,200,255,0.3)','rgba(0,200,255,0)'),tension:0.4,fill:true,pointBackgroundColor:'#00c8ff',pointRadius:5}]},options:chartOpts});
-
-      // Chart Composición (multi-line)
+      mkLine(document.getElementById('chartGrasa'), '% Grasa', vals.map(v=>v.grasa), '#ff6b35');
+      mkLine(document.getElementById('chartMuscular'), '% Muscular', vals.map(v=>v.muscular), '#00e5a0');
+      mkLine(document.getElementById('chartPesoVal'), 'Peso kg', vals.map(v=>v.peso), '#00c8ff');
+      // Composición integral (multi-line)
       const cc = document.getElementById('chartComp');
-      if(cc) new Chart(cc, {type:'line',data:{labels,datasets:[
-        {label:'% Grasa',data:vals.map(v=>v.grasa),borderColor:'#ff6b35',tension:0.4,fill:false,pointRadius:4},
-        {label:'% Muscular',data:vals.map(v=>v.muscular),borderColor:'#00e5a0',tension:0.4,fill:false,pointRadius:4},
-      ]},options:{...chartOpts,plugins:{legend:{display:true,labels:{color:'rgba(232,244,255,0.7)',font:{size:11}}}}}});
+      if(cc) new Chart(cc,{type:'line',data:{labels,datasets:[
+        {label:'% Grasa',data:vals.map(v=>v.grasa),borderColor:'#ff6b35',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'% Muscular',data:vals.map(v=>v.muscular),borderColor:'#00e5a0',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+      ]},options:chartOptsLegend});
+      mkLine(document.getElementById('chartMetab'), 'Kcal', vals.map(v=>v.metabolismo||null), '#ffd60a');
+      mkLine(document.getElementById('chartICC'), 'ICC', vals.map(v=>v.icc||null), '#a78bfa');
+      // Medidas cintura/cadera/torax
+      const cm2 = document.getElementById('chartMedidas');
+      if(cm2) new Chart(cm2,{type:'line',data:{labels,datasets:[
+        {label:'Cintura',data:vals.map(v=>v.cintura||null),borderColor:'#ff6b35',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'Cadera',data:vals.map(v=>v.cadera||null),borderColor:'#00c8ff',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'Abdomen',data:vals.map(v=>v.abdomen||null),borderColor:'#ffd60a',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+      ]},options:chartOptsLegend});
+      // Bíceps
+      const cb = document.getElementById('chartBicep');
+      if(cb) new Chart(cb,{type:'line',data:{labels,datasets:[
+        {label:'Rel.Izq',data:vals.map(v=>v.bicepRelIzq||null),borderColor:'#00e5a0',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'Rel.Der',data:vals.map(v=>v.bicepRelDer||null),borderColor:'#7b2fff',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'Cont.Izq',data:vals.map(v=>v.bicepContIzq||null),borderColor:'#ff6b35',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'Cont.Der',data:vals.map(v=>v.bicepContDer||null),borderColor:'#ffd60a',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+      ]},options:chartOptsLegend});
+      // Piernas
+      const cpi = document.getElementById('chartPiernas');
+      if(cpi) new Chart(cpi,{type:'line',data:{labels,datasets:[
+        {label:'Muslo Izq',data:vals.map(v=>v.musloIzq||null),borderColor:'#00c8ff',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'Muslo Der',data:vals.map(v=>v.musloDer||null),borderColor:'#7b2fff',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'Pantorrilla',data:vals.map(v=>v.pantorrilla||null),borderColor:'#00e5a0',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+      ]},options:chartOptsLegend});
+      // Pliegues — gráfica individual por zona
+      {
+        const pliegueKeys = ['Tríceps','Subescapular','Supraespinal','Abdominal','Muslo','Pantorrilla'];
+        const plColors    = ['#ff6b35','#00c8ff','#00e5a0','#ffd60a','#a78bfa','#ff4d6d'];
+        pliegueKeys.forEach((k, pi) => {
+          const el = document.getElementById(`chartPliegue_${pi}`);
+          if(!el) return;
+          const data = vals.map(v => v.pliegues?.[k] ?? null);
+          if(!data.some(x => x != null)) return;
+          const col = plColors[pi];
+          new Chart(el, {
+            type:'line',
+            data:{ labels, datasets:[{
+              label: k, data,
+              borderColor: col,
+              backgroundColor: (ctx2) => {
+                const g = ctx2.chart.ctx.createLinearGradient(0,0,0,130);
+                g.addColorStop(0, col+'44'); g.addColorStop(1, col+'00'); return g;
+              },
+              tension:0.4, fill:true, pointBackgroundColor:col, pointRadius:4, spanGaps:true
+            }]},
+            options:{...chartOpts,
+              plugins:{...chartOpts.plugins, legend:{display:false}},
+              scales:{
+                x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(232,244,255,0.4)',font:{size:8}}},
+                y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(232,244,255,0.4)',font:{size:8}}}
+              }
+            }
+          });
+        });
+      }
     }
   };
 
@@ -4535,11 +4885,14 @@ window.showValoracionModal = async (uid=null) => {
   const myAtletas = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id));
   const userOpts = myAtletas.map(([id,u])=>`<option value="${id}" ${id===uid?'selected':''}>${u.nombres} ${u.apellidos||''}</option>`).join('');
 
+  const PLIEGUES = ['Tríceps','Subescapular','Supraespinal','Abdominal','Muslo','Pantorrilla'];
+
   showOverlay(`
     <div class="overlay-header">
       <span class="overlay-title">⚖️ Nueva Valoración</span>
       <button class="btn-close" onclick="closeOverlay()">✕</button>
     </div>
+    <div style="max-height:75vh;overflow-y:auto;padding-right:4px">
     <div class="form-grid">
       <div class="form-group" style="grid-column:1/-1"><label>Atleta *</label>
         <select class="glass-input" id="valUid"><option value="">Seleccionar...</option>${userOpts}</select>
@@ -4550,30 +4903,44 @@ window.showValoracionModal = async (uid=null) => {
       <div class="form-group"><label>Fecha *</label>
         <input class="glass-input" type="date" id="valFecha" value="${new Date().toISOString().split('T')[0]}">
       </div>
-      <div class="form-group"><label>Peso (kg) *</label>
-        <input class="glass-input" type="number" id="valPeso" placeholder="70.5" step="0.1">
+
+      <!-- COMPOSICIÓN CORPORAL -->
+      <div style="grid-column:1/-1;font-size:0.72rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:8px 0 2px;border-top:1px solid rgba(255,255,255,0.07);margin-top:6px">🔬 Composición corporal</div>
+      <div class="form-group"><label>Peso (kg) *</label><input class="glass-input" type="number" id="valPeso" placeholder="70.5" step="0.1"></div>
+      <div class="form-group"><label>% Grasa corporal *</label><input class="glass-input" type="number" id="valGrasa" placeholder="18.5" step="0.1" min="0" max="100"></div>
+      <div class="form-group"><label>% Masa muscular *</label><input class="glass-input" type="number" id="valMuscular" placeholder="42.0" step="0.1" min="0" max="100"></div>
+      <div class="form-group"><label>IMC</label><input class="glass-input" type="number" id="valIMC" placeholder="22.5" step="0.1"></div>
+      <div class="form-group"><label>Masa grasa (kg)</label><input class="glass-input" type="number" id="valPesoGraso" placeholder="12.5" step="0.1"></div>
+      <div class="form-group"><label>Masa magra (kg)</label><input class="glass-input" type="number" id="valPesoMagro" placeholder="55.0" step="0.1"></div>
+      <div class="form-group"><label>Peso óseo (kg)</label><input class="glass-input" type="number" id="valPesoOseo" placeholder="3.2" step="0.1"></div>
+      <div class="form-group"><label>Metabolismo basal (kcal)</label><input class="glass-input" type="number" id="valMetabolismo" placeholder="1650" step="1"></div>
+      <div class="form-group"><label>Índice cintura-cadera</label><input class="glass-input" type="number" id="valICC" placeholder="0.85" step="0.01"></div>
+
+      <!-- MEDIDAS CORPORALES -->
+      <div style="grid-column:1/-1;font-size:0.72rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:8px 0 2px;border-top:1px solid rgba(255,255,255,0.07);margin-top:6px">📏 Medidas corporales (cm)</div>
+      <div class="form-group"><label>Cuello</label><input class="glass-input" type="number" id="valCuello" placeholder="38.0" step="0.1"></div>
+      <div class="form-group"><label>Tórax</label><input class="glass-input" type="number" id="valTorax" placeholder="95.0" step="0.1"></div>
+      <div class="form-group"><label>Cintura</label><input class="glass-input" type="number" id="valCintura" placeholder="80.0" step="0.1"></div>
+      <div class="form-group"><label>Abdomen</label><input class="glass-input" type="number" id="valAbdomen" placeholder="85.0" step="0.1"></div>
+      <div class="form-group"><label>Cadera</label><input class="glass-input" type="number" id="valCadera" placeholder="95.0" step="0.1"></div>
+      <div class="form-group"><label>Bícep relajado Izq (cm)</label><input class="glass-input" type="number" id="valBicepRelIzq" placeholder="33.0" step="0.1"></div>
+      <div class="form-group"><label>Bícep relajado Der (cm)</label><input class="glass-input" type="number" id="valBicepRelDer" placeholder="33.0" step="0.1"></div>
+      <div class="form-group"><label>Bícep contraído Izq (cm)</label><input class="glass-input" type="number" id="valBicepContIzq" placeholder="35.0" step="0.1"></div>
+      <div class="form-group"><label>Bícep contraído Der (cm)</label><input class="glass-input" type="number" id="valBicepContDer" placeholder="35.0" step="0.1"></div>
+      <div class="form-group"><label>Muslo Izq (cm)</label><input class="glass-input" type="number" id="valMusloIzq" placeholder="55.0" step="0.1"></div>
+      <div class="form-group"><label>Muslo Der (cm)</label><input class="glass-input" type="number" id="valMusloDer" placeholder="55.0" step="0.1"></div>
+      <div class="form-group"><label>Pantorrilla (cm)</label><input class="glass-input" type="number" id="valPantorrilla" placeholder="37.0" step="0.1"></div>
+
+      <!-- PLIEGUES CUTÁNEOS -->
+      <div style="grid-column:1/-1;font-size:0.72rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:8px 0 2px;border-top:1px solid rgba(255,255,255,0.07);margin-top:6px">📐 Pliegues cutáneos (mm)</div>
+      <div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+        ${PLIEGUES.map(p=>`<div class="form-group" style="margin:0"><label>${p}</label><input class="glass-input" type="number" id="valP_${p.replace(/[^a-z]/gi,'_')}" placeholder="mm" step="0.1" min="0"></div>`).join('')}
       </div>
-      <div class="form-group"><label>% Grasa corporal *</label>
-        <input class="glass-input" type="number" id="valGrasa" placeholder="18.5" step="0.1" min="0" max="100">
-      </div>
-      <div class="form-group"><label>% Masa muscular *</label>
-        <input class="glass-input" type="number" id="valMuscular" placeholder="42.0" step="0.1" min="0" max="100">
-      </div>
-      <div class="form-group"><label>IMC</label>
-        <input class="glass-input" type="number" id="valIMC" placeholder="22.5" step="0.1">
-      </div>
-      <div class="form-group"><label>Masa grasa (kg)</label>
-        <input class="glass-input" type="number" id="valPesoGraso" placeholder="12.5" step="0.1">
-      </div>
-      <div class="form-group"><label>Masa magra (kg)</label>
-        <input class="glass-input" type="number" id="valPesoMagro" placeholder="55.0" step="0.1">
-      </div>
-      <div class="form-group"><label>Peso óseo (kg)</label>
-        <input class="glass-input" type="number" id="valPesoOseo" placeholder="3.2" step="0.1">
-      </div>
+
       <div class="form-group" style="grid-column:1/-1"><label>Notas</label>
         <textarea class="glass-input" id="valNotas" placeholder="Observaciones de la valoración..."></textarea>
       </div>
+    </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end">
       <button class="btn btn-secondary" onclick="closeOverlay()">Cancelar</button>
@@ -4581,6 +4948,8 @@ window.showValoracionModal = async (uid=null) => {
     </div>
   `);
 };
+
+const PLIEGUES_KEYS = ['Tríceps','Subescapular','Supraespinal','Abdominal','Muslo','Pantorrilla'];
 
 window.saveValoracion = async () => {
   const uid = document.getElementById('valUid').value;
@@ -4591,18 +4960,38 @@ window.saveValoracion = async () => {
   if(!uid || !fecha || isNaN(peso) || isNaN(grasa) || isNaN(muscular)) {
     return Swal.fire({icon:'warning',title:'Campos requeridos',text:'Completa atleta, fecha, peso, % grasa y % muscular',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
   }
+  const gv = id => { const el = document.getElementById(id); return el ? (parseFloat(el.value)||null) : null; };
+  const pliegues = {};
+  PLIEGUES_KEYS.forEach(p => {
+    const v = gv(`valP_${p.replace(/[^a-z]/gi,'_')}`);
+    if(v !== null) pliegues[p] = v;
+  });
   const data = {
     fecha: new Date(fecha).getTime(),
     peso, grasa, muscular,
     mes: parseInt(document.getElementById('valMes').value)||null,
-    imc: parseFloat(document.getElementById('valIMC').value)||null,
-    pesoGraso: parseFloat(document.getElementById('valPesoGraso').value)||null,
-    pesoMagro: parseFloat(document.getElementById('valPesoMagro').value)||null,
-    pesoOseo: parseFloat(document.getElementById('valPesoOseo').value)||null,
+    imc: gv('valIMC'),
+    pesoGraso: gv('valPesoGraso'),
+    pesoMagro: gv('valPesoMagro'),
+    pesoOseo: gv('valPesoOseo'),
+    metabolismo: gv('valMetabolismo'),
+    icc: gv('valICC'),
+    cuello: gv('valCuello'),
+    torax: gv('valTorax'),
+    cintura: gv('valCintura'),
+    abdomen: gv('valAbdomen'),
+    cadera: gv('valCadera'),
+    bicepRelIzq: gv('valBicepRelIzq'),
+    bicepRelDer: gv('valBicepRelDer'),
+    bicepContIzq: gv('valBicepContIzq'),
+    bicepContDer: gv('valBicepContDer'),
+    musloIzq: gv('valMusloIzq'),
+    musloDer: gv('valMusloDer'),
+    pantorrilla: gv('valPantorrilla'),
+    pliegues: Object.keys(pliegues).length ? pliegues : null,
     notas: document.getElementById('valNotas').value.trim()||null,
     creadaEn: Date.now()
   };
-  // Clean nulls
   Object.keys(data).forEach(k => data[k]===null && delete data[k]);
   await push(ref(db,`valoraciones/${uid}`), data);
   closeOverlay();
@@ -4619,6 +5008,543 @@ window.deleteValoracion = async (uid, vid) => {
     window._valState = {uid};
     document.querySelector('[data-page="valoraciones"]').click();
   }
+};
+
+// ══════════════════════════════════════════════════════════════
+// ── Exportar Valoración PDF — Versión Premium ──
+// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// ── Exportar Valoración PDF — Versión Elite ──
+// ══════════════════════════════════════════════════════════════
+window.exportValoracionPDF = async (uid, specificVid) => {
+  if (!specificVid) {
+    return Swal.fire({icon:'warning', title:'Selecciona una valoración', text:'Usa el botón 📄 de cada registro.', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'});
+  }
+  if (!window.jspdf?.jsPDF) {
+    return Swal.fire({icon:'error', title:'jsPDF no disponible', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'});
+  }
+
+  Swal.fire({title:'Generando PDF...', text:'Preparando informe elite', allowOutsideClick:false, didOpen:()=>Swal.showLoading(), background:'rgba(10,20,40,0.95)', color:'#e8f4ff'});
+
+  const [usSnap, valSnap, allValsSnap] = await Promise.all([
+    get(ref(db, `usuarios/${uid}`)),
+    get(ref(db, `valoraciones/${uid}/${specificVid}`)),
+    get(ref(db, `valoraciones/${uid}`))
+  ]);
+  const user = usSnap.val() || {};
+  const v    = valSnap.val();
+  if (!v) { Swal.close(); return Swal.fire({icon:'warning', title:'Valoración no encontrada', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'}); }
+
+  const allValsEntries = Object.entries(allValsSnap.val() || {}).sort((a,b) => a[1].fecha - b[1].fecha);
+  const allValsArr     = allValsEntries.map(([,vv]) => vv);
+  const thisIdx        = allValsEntries.findIndex(([id]) => id === specificVid);
+  const prevVal        = thisIdx > 0 ? allValsEntries[thisIdx - 1][1] : null;
+
+  const PLIEGUES_KEYS = ['Tríceps','Subescapular','Supraespinal','Abdominal','Muslo','Pantorrilla'];
+  const PLIEGUES_COLS = ['#ff6b35','#00c8ff','#00e5a0','#ffd60a','#a78bfa','#ff4d6d'];
+  const hexToRgb = h => [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+
+  // ── Generar gráficas en canvas offscreen ──
+  const anyHasMes = allValsArr.some(vv => vv.mes);
+  const labels    = allValsArr.map((vv,i) => anyHasMes ? `M${vv.mes||(i+1)}` : new Date(vv.fecha).toLocaleDateString('es-CO',{month:'short',year:'2-digit'}));
+
+  // Canvas con exactamente la misma proporción que GW x GH en el PDF
+  // GW ≈ 88mm, GH = 52mm → ratio = 88/52 ≈ 1.692
+  // Usamos 900x532 para alta resolución manteniendo ese ratio exacto
+  const CHART_W = 900, CHART_H = 532;
+  const offscreenChartImg = (cfg) => new Promise(resolve => {
+    const el = document.createElement('canvas');
+    el.width = CHART_W; el.height = CHART_H;
+    el.style.cssText = 'position:fixed;left:-9999px;top:-9999px;pointer-events:none';
+    document.body.appendChild(el);
+    const ctx2 = el.getContext('2d');
+    ctx2.fillStyle = '#0a0f1e';
+    ctx2.fillRect(0, 0, CHART_W, CHART_H);
+    const baseOpts = {
+      responsive: false, animation: false,
+      plugins: {
+        legend: {
+          display: cfg.legend || false,
+          labels: { color:'rgba(210,230,255,0.85)', font:{size:16, family:'Arial'}, padding:14 }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color:'rgba(255,255,255,0.08)', lineWidth:1 },
+          ticks: { color:'rgba(180,210,255,0.75)', font:{size:14} }
+        },
+        y: {
+          grid: { color:'rgba(255,255,255,0.08)', lineWidth:1 },
+          ticks: { color:'rgba(180,210,255,0.75)', font:{size:14} }
+        }
+      },
+      layout: { padding: { top:8, right:12, bottom:8, left:8 } }
+    };
+    try {
+      const ch = new Chart(el, { type:'line', data:{ labels, datasets: cfg.datasets }, options: baseOpts });
+      setTimeout(() => {
+        const img = el.toDataURL('image/png');
+        ch.destroy();
+        document.body.removeChild(el);
+        resolve(img);
+      }, 150);
+    } catch(e) { try { document.body.removeChild(el); } catch(_){} resolve(null); }
+  });
+
+  const mkDS = (label, data, color, fill=true) => ({
+    label, data, borderColor:color, pointBackgroundColor:color, borderWidth:2.5,
+    backgroundColor: fill ? color.replace(')',',0.15)').replace('rgb','rgba') : 'transparent',
+    tension:0.4, fill, pointRadius:4, pointHoverRadius:6, spanGaps:true
+  });
+
+  // Render all charts
+  const chartDefs = [
+    { id:'chartGrasa',    label:'% Grasa corporal',     col:[255,107,53],  datasets:[mkDS('% Grasa',   allValsArr.map(v=>v.grasa),    'rgb(255,107,53)')] },
+    { id:'chartMuscular', label:'% Masa muscular',      col:[0,229,160],   datasets:[mkDS('% Muscular',allValsArr.map(v=>v.muscular), 'rgb(0,229,160)')] },
+    { id:'chartPesoVal',  label:'Peso corporal (kg)',   col:[0,200,255],   datasets:[mkDS('Peso kg',   allValsArr.map(v=>v.peso),     'rgb(0,200,255)')] },
+    { id:'chartComp',     label:'Composición integral', col:[160,100,255], legend:true, datasets:[
+      mkDS('% Grasa',   allValsArr.map(v=>v.grasa),    'rgb(255,107,53)',false),
+      mkDS('% Muscular',allValsArr.map(v=>v.muscular), 'rgb(0,229,160)',false)
+    ]},
+    { id:'chartMetab',    label:'Metabolismo basal (kcal)', col:[255,214,10],  datasets:[mkDS('Kcal',    allValsArr.map(v=>v.metabolismo||null),'rgb(255,214,10)')] },
+    { id:'chartICC',      label:'Índice cintura-cadera',   col:[167,139,250], datasets:[mkDS('ICC',     allValsArr.map(v=>v.icc||null),       'rgb(167,139,250)')] },
+    { id:'chartMedidas',  label:'Medidas corporales (cm)', col:[0,229,160],   legend:true, datasets:[
+      mkDS('Cintura', allValsArr.map(v=>v.cintura||null),'rgb(255,107,53)',false),
+      mkDS('Cadera',  allValsArr.map(v=>v.cadera||null), 'rgb(0,200,255)',false),
+      mkDS('Abdomen', allValsArr.map(v=>v.abdomen||null),'rgb(255,214,10)',false)
+    ]},
+    { id:'chartBicep',    label:'Bíceps (cm)',           col:[0,200,255],   legend:true, datasets:[
+      mkDS('Rel.Izq', allValsArr.map(v=>v.bicepRelIzq||null), 'rgb(0,229,160)',false),
+      mkDS('Rel.Der', allValsArr.map(v=>v.bicepRelDer||null), 'rgb(123,47,255)',false),
+      mkDS('Con.Izq', allValsArr.map(v=>v.bicepContIzq||null),'rgb(255,107,53)',false),
+      mkDS('Con.Der', allValsArr.map(v=>v.bicepContDer||null),'rgb(255,214,10)',false)
+    ]},
+    { id:'chartPiernas',  label:'Muslos y pantorrilla (cm)', col:[123,47,255], legend:true, datasets:[
+      mkDS('Muslo Izq',   allValsArr.map(v=>v.musloIzq||null),  'rgb(0,200,255)',false),
+      mkDS('Muslo Der',   allValsArr.map(v=>v.musloDer||null),   'rgb(123,47,255)',false),
+      mkDS('Pantorrilla', allValsArr.map(v=>v.pantorrilla||null),'rgb(0,229,160)',false)
+    ]},
+    ...PLIEGUES_KEYS.map((k,i) => ({
+      id:`chartPliegue_${i}`, label:`Pliegue ${k}`,
+      col: hexToRgb(PLIEGUES_COLS[i]),
+      datasets:[mkDS(k, allValsArr.map(vv=>vv.pliegues?.[k]??null), PLIEGUES_COLS[i].replace('#','rgb(').replace(/(..)(..)(..)$/,(_,r,g,b)=>`${parseInt(r,16)},${parseInt(g,16)},${parseInt(b,16)})`).replace('rgb(rgb(','rgb('), false)]
+    }))
+  ];
+
+  // Helper to check if chart has data
+  const chartHasData = (def) => {
+    return def.datasets.some(ds => ds.data.some(d => d != null));
+  };
+
+  // Siempre regenerar offscreen con el ratio exacto del PDF (nunca tomar del DOM)
+  const chartImgs = {};
+  await Promise.all(chartDefs.filter(d => chartHasData(d)).map(async d => {
+    const img = await offscreenChartImg(d);
+    if(img) chartImgs[d.id] = img;
+  }));
+
+  // ── Setup jsPDF ──
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = 14;
+  let y = M;
+
+  // ── Colores ──
+  const CP  = [0,200,255];      // cyan
+  const CS  = [0,229,160];      // green
+  const CA  = [160,100,255];    // purple
+  const CW  = [255,214,10];     // yellow
+  const CE  = [255,80,110];     // red
+  const CO  = [255,107,53];     // orange
+  const CMU = [110,145,185];    // muted
+  const CTX = [210,232,255];    // text
+  const CG1 = [14,22,42];       // header/card bg
+  const CG2 = [18,28,52];       // card slightly lighter
+  const CRW1= [20,32,58];       // row odd
+  const CRW2= [24,38,65];       // row even
+
+  const F = (...c) => doc.setFillColor(...c);
+  const S = (...c) => doc.setDrawColor(...c);
+  const T = (...c) => doc.setTextColor(...c);
+  const LW = w => doc.setLineWidth(w);
+  const FT = (sz, bold='normal') => { doc.setFontSize(sz); doc.setFont('helvetica', bold); };
+
+  // ── FONDO: negro puro, sin rejilla ──
+  const drawBg = () => {
+    F(0,0,0);
+    doc.rect(0,0,W,H,'F');
+  };
+  const newPage = () => { doc.addPage(); drawBg(); y = M; };
+  // checkY con soporte de múltiples páginas y corrección de rowY
+  const checkY = (need, rowYRef) => {
+    if(y + need > H - 14) {
+      newPage();
+      if(rowYRef) rowYRef.v = y;
+    }
+  };
+  drawBg();
+
+  const delta  = (a,b) => (a!=null && b!=null) ? a-b : null;
+  const fmtD   = (d, inv=false) => {
+    if(d===null) return {txt:'—',col:CMU};
+    if(Math.abs(d)<0.05) return {txt:'sin cambio',col:CMU};
+    const up=d>0, good=inv?!up:up;
+    return {txt:`${up?'▲':'▼'} ${Math.abs(d).toFixed(1)}`, col:good?CS:CE};
+  };
+
+
+
+  // ─────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────
+  // SILUETA HUMANA — Render canvas offscreen para PDF (frontal y posterior)
+  // Replica EXACTAMENTE el contenedor web 130x325 con object-fit:cover
+  // ─────────────────────────────────────────────────────────────────
+  const BODY_SCALE = 4;
+  const CONT_W = 130, CONT_H = 325;
+  const CW2 = CONT_W * BODY_SCALE;
+  const CH2 = CONT_H * BODY_SCALE;
+
+  const renderBodyCanvas = (imgSrc, zones) => new Promise(resolve => {
+    const drawOnCanvas = (imgEl) => {
+      const el = document.createElement('canvas');
+      el.width = CW2; el.height = CH2;
+      el.style.cssText = 'position:fixed;left:-9999px;top:-9999px;pointer-events:none';
+      document.body.appendChild(el);
+      const ctx2d = el.getContext('2d');
+
+      // Fondo oscuro
+      ctx2d.fillStyle = 'rgba(15,25,50,1)';
+      ctx2d.fillRect(0, 0, CW2, CH2);
+
+      // object-fit:cover — escala para cubrir todo el canvas, centrada
+      const natW = imgEl.naturalWidth || imgEl.width;
+      const natH = imgEl.naturalHeight || imgEl.height;
+      const coverScale = Math.max(CW2 / natW, CH2 / natH);
+      const drawW = natW * coverScale;
+      const drawH = natH * coverScale;
+      ctx2d.drawImage(imgEl, (CW2 - drawW) / 2, (CH2 - drawH) / 2, drawW, drawH);
+
+      // Dibujar puntos: mx/my % del contenedor, igual que en la web
+      zones.forEach(z => {
+        const px = z.mx * CW2;
+        const py = z.my * CH2;
+        const r2 = parseInt(z.col.slice(1,3),16);
+        const g2 = parseInt(z.col.slice(3,5),16);
+        const b2 = parseInt(z.col.slice(5,7),16);
+        ctx2d.beginPath();
+        ctx2d.arc(px, py, 6.5 * BODY_SCALE, 0, Math.PI*2);
+        ctx2d.fillStyle = `rgba(${r2},${g2},${b2},0.25)`;
+        ctx2d.fill();
+        ctx2d.beginPath();
+        ctx2d.arc(px, py, 3.5 * BODY_SCALE, 0, Math.PI*2);
+        ctx2d.fillStyle = `rgba(${r2},${g2},${b2},1)`;
+        ctx2d.fill();
+        ctx2d.strokeStyle = 'rgba(255,255,255,0.95)';
+        ctx2d.lineWidth = 2 * BODY_SCALE;
+        ctx2d.stroke();
+        ctx2d.beginPath();
+        ctx2d.arc(px, py, 1.2 * BODY_SCALE, 0, Math.PI*2);
+        ctx2d.fillStyle = 'white';
+        ctx2d.fill();
+      });
+
+      const dataUrl = el.toDataURL('image/png');
+      document.body.removeChild(el);
+      resolve(dataUrl);
+    };
+
+    fetch(imgSrc)
+      .then(r => r.blob())
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const img2 = new Image();
+        img2.onload = () => { drawOnCanvas(img2); URL.revokeObjectURL(blobUrl); };
+        img2.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+        img2.src = blobUrl;
+      })
+      .catch(() => {
+        const img2 = new Image();
+        img2.onload = () => drawOnCanvas(img2);
+        img2.onerror = () => resolve(null);
+        img2.src = imgSrc;
+      });
+  });
+
+  const frontZonesPDF = [
+    ...BODY_ZONES.filter(z=>z.side==='front'&&v[z.key]!=null),
+    ...PLIEGUES_ZONES.filter(z=>z.side==='front'&&v.pliegues?.[z.key]!=null)
+  ];
+  const backZonesPDF = [
+    ...BODY_ZONES.filter(z=>z.side==='back'&&v[z.key]!=null),
+    ...PLIEGUES_ZONES.filter(z=>z.side==='back'&&v.pliegues?.[z.key]!=null)
+  ];
+
+  const [bodyFrontImg, bodyBackImg] = await Promise.all([
+    renderBodyCanvas('body.png',      frontZonesPDF),
+    renderBodyCanvas('body_back.png', backZonesPDF)
+  ]);
+
+  // ── DATOS ──
+  const addC=(arr,label,key,unit,inv=false)=>{ if(v[key]!=null) arr.push({label,val:`${v[key]}${unit}`,d:delta(v[key],prevVal?.[key]),inv}); };
+  const addM=(arr,label,key,inv=false)=>{ if(v[key]!=null) arr.push({label,val:`${v[key]} cm`,d:delta(v[key],prevVal?.[key]),inv}); };
+
+  const fechaStr = new Date(v.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+  const mesLabel = v.mes ? `Mes ${v.mes}  ·  ` : '';
+
+  // ─────────────────────────────────────────────────────
+  // PÁGINA 1 — PORTADA & DATOS
+  // ─────────────────────────────────────────────────────
+
+  // Header elegante
+  F(...CG1); doc.rect(0,0,W,46,'F');
+  F(...CP); doc.rect(0,0,4,46,'F');
+  T(...CP); FT(22,'bold'); doc.text('SAYKYO', M+3, 19);
+  T(240,248,255); FT(22,'normal'); doc.text(' CLUB', M+40, 19);
+  T(...CMU); FT(7); doc.text('INFORME DE VALORACIÓN FÍSICA — COMPOSICIÓN CORPORAL', M+3, 28);
+  T(...CMU); FT(6.5);
+  doc.text(`${mesLabel}${fechaStr}`, M+3, 34);
+  doc.text(`Generado: ${new Date().toLocaleDateString('es-CO')}`, W-M, 34, {align:'right'});
+  // Atleta
+  F(10,18,38); doc.roundedRect(M, 37, W-2*M, 10, 1.5,1.5,'F');
+  T(...CTX); FT(10,'bold');
+  doc.text(`${user.nombres||''} ${user.apellidos||''}`.trim(), M+3, 43.5);
+  T(...CMU); FT(6.5);
+  const infoArr=[user.usuario?`@${user.usuario}`:'',user.edad?`${user.edad} años`:'',user.altura?`${user.altura} cm`:''].filter(Boolean);
+  doc.text(infoArr.join('  ·  '), W-M, 43.5, {align:'right'});
+  y = 52;
+
+  // KPIs
+  const kpis=[
+    {label:'Peso',      val:v.peso,     prev:prevVal?.peso,     unit:'kg',col:CP,  inv:false},
+    {label:'% Grasa',   val:v.grasa,    prev:prevVal?.grasa,    unit:'%', col:CO,  inv:true},
+    {label:'% Músculo', val:v.muscular, prev:prevVal?.muscular, unit:'%', col:CS,  inv:false},
+    {label:'IMC',       val:v.imc,      prev:prevVal?.imc,      unit:'',  col:CA,  inv:false},
+  ].filter(k=>k.val!=null);
+
+  if(kpis.length){
+    const kW=(W-2*M-(kpis.length-1)*4)/kpis.length;
+    kpis.forEach((k,i)=>{
+      const kx=M+i*(kW+4);
+      F(...CG2); doc.roundedRect(kx,y,kW,28,2,2,'F');
+      F(...k.col); doc.roundedRect(kx,y,kW,1.5,0.5,0.5,'F');
+      T(...CMU); FT(5.5); doc.text(k.label.toUpperCase(), kx+kW/2, y+7, {align:'center'});
+      T(...k.col); FT(14,'bold'); doc.text(`${k.val}${k.unit}`, kx+kW/2, y+18, {align:'center'});
+      if(k.prev!=null){
+        const d=fmtD(k.val-k.prev,k.inv); T(...d.col); FT(5.5,'bold');
+        doc.text(d.txt, kx+kW/2, y+25, {align:'center'});
+      } else { T(...CMU); FT(5); doc.text('Primera', kx+kW/2, y+25, {align:'center'}); }
+    });
+    y+=33;
+  }
+
+  // Banner comparación
+  if(prevVal){
+    const pf=new Date(prevVal.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'2-digit'});
+    F(8,26,52); doc.roundedRect(M,y,W-2*M,8,1.5,1.5,'F');
+    T(...CP); FT(6,'italic');
+    doc.text(`▸ Comparando con valoración anterior${prevVal.mes?` Mes ${prevVal.mes}`:''}: ${pf}`, M+3, y+5.5);
+    y+=12;
+  } else {
+    F(8,32,14); doc.roundedRect(M,y,W-2*M,8,1.5,1.5,'F');
+    T(...CS); FT(6,'italic');
+    doc.text('▸ Primera valoración registrada — sin datos anteriores para comparar', M+3, y+5.5);
+    y+=12;
+  }
+
+  // ── Función para sección + tabla ──
+  const secTitle=(title,col)=>{
+    checkY(14,null);
+    T(...col); FT(7.5,'bold'); doc.text(title.toUpperCase(), M, y);
+    S(...col); LW(0.3); doc.line(M,y+2,W-M,y+2);
+    y+=7;
+  };
+  const dataRows=(rows)=>{
+    const RH=8.5, cW=(W-2*M)/2;
+    rows.forEach((r,i)=>{
+      if(i%2===0){ F(...(Math.floor(i/2)%2===0?CRW1:CRW2)); doc.rect(M,y,W-2*M,RH,'F'); }
+      const rx=M+(i%2)*cW+2;
+      T(...CMU); FT(5.5); doc.text(r.label, rx, y+3.5);
+      T(...CTX); FT(8.5,'bold'); doc.text(r.val, rx, y+8);
+      if(r.d!=null){ const fd=fmtD(r.d,r.inv||false); T(...fd.col); FT(5.5,'bold'); doc.text(fd.txt, rx+cW-18, y+8); }
+      if(i%2===1||i===rows.length-1) y+=RH;
+    });
+    y+=4;
+  };
+
+  const compR=[];
+  addC(compR,'Peso corporal','peso',' kg');
+  addC(compR,'% Grasa','grasa','%',true);
+  addC(compR,'% Masa muscular','muscular','%');
+  if(v.imc!=null) compR.push({label:'IMC',val:`${v.imc}  (${v.imc<18.5?'Bajo peso':v.imc<25?'Normal':v.imc<30?'Sobrepeso':'Obesidad'})`,d:null});
+  addC(compR,'Masa grasa','pesoGraso',' kg',true);
+  addC(compR,'Masa magra','pesoMagro',' kg');
+  addC(compR,'Peso óseo','pesoOseo',' kg');
+  addC(compR,'Metabolismo basal','metabolismo',' kcal');
+  addC(compR,'Índice cintura-cadera','icc','',true);
+  if(compR.length){ secTitle('Composición Corporal',CP); dataRows(compR); }
+
+  const medR=[];
+  addM(medR,'Cuello','cuello'); addM(medR,'Tórax','torax');
+  addM(medR,'Cintura','cintura',true); addM(medR,'Abdomen','abdomen',true);
+  addM(medR,'Cadera','cadera'); addM(medR,'Bícep Rel. Izq','bicepRelIzq');
+  addM(medR,'Bícep Rel. Der','bicepRelDer'); addM(medR,'Bícep Cont. Izq','bicepContIzq');
+  addM(medR,'Bícep Cont. Der','bicepContDer'); addM(medR,'Muslo Izq','musloIzq');
+  addM(medR,'Muslo Der','musloDer'); addM(medR,'Pantorrilla','pantorrilla');
+  if(medR.length){ secTitle('Medidas Corporales (cm)',CS); dataRows(medR); }
+
+  const plR=[];
+  if(v.pliegues) PLIEGUES_KEYS.forEach(k=>{ if(v.pliegues[k]!=null) plR.push({label:`Pliegue ${k}`,val:`${v.pliegues[k]} mm`,d:delta(v.pliegues[k],prevVal?.pliegues?.[k]),inv:true}); });
+  if(plR.length){ secTitle('Pliegues Cutáneos (mm)',CA); dataRows(plR); }
+
+  if(v.notas){
+    const nL=doc.splitTextToSize(v.notas, W-2*M-12);
+    const nH=Math.max(14,nL.length*4+8);
+    checkY(nH+4,null);
+    F(12,24,46); doc.roundedRect(M,y,W-2*M,nH,2,2,'F');
+    S(...CW); LW(0.3); doc.roundedRect(M,y,W-2*M,nH,2,2,'S');
+    T(...CW); FT(6,'bold'); doc.text('OBSERVACIONES:',M+3,y+5);
+    T(200,220,245); FT(7,'italic'); doc.text(nL,M+3,y+11);
+    y+=nH+6;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // PÁGINA 2 — MAPA CORPORAL CON SILUETA SVG
+  // ─────────────────────────────────────────────────────
+  newPage();
+  F(...CG1); doc.rect(0,0,W,16,'F');
+  F(...CS); doc.rect(0,0,4,16,'F');
+  T(...CS); FT(10,'bold'); doc.text('MAPA DE MEDICIONES CORPORALES', M, 11);
+  T(...CMU); FT(6.5); doc.text(`${user.nombres||''} — ${mesLabel}${fechaStr}`, W-M, 11, {align:'right'});
+  y=20;
+
+  // Lado a lado centradas — BW ajustado para que quepan dos en A4
+  const GAP_H = 6; // separación horizontal entre las dos imágenes
+  const BW = (W - 2*M - GAP_H) / 2; // cada imagen ocupa la mitad del ancho útil
+  const BH = Math.round(BW * 325 / 130); // proporción exacta del contenedor web
+  const totalW = BW * 2 + GAP_H;
+  const fX  = (W - totalW) / 2;       // X imagen frontal (izq)
+  const bkX = fX + BW + GAP_H;        // X imagen posterior (der)
+  const bY  = y + 5;
+
+  const hex2rgb = h => { const r=parseInt(h.slice(1),16); return [r>>16&255,(r>>8)&255,r&255]; };
+
+  // Etiquetas centradas sobre cada imagen
+  T(...CP); FT(6,'bold');
+  doc.text('FRONTAL',   fX  + BW/2, bY - 2, {align:'center'});
+  doc.text('POSTERIOR', bkX + BW/2, bY - 2, {align:'center'});
+
+  // Imágenes lado a lado
+  try { if(bodyFrontImg) doc.addImage(bodyFrontImg,'PNG', fX,  bY, BW, BH); } catch(e){}
+  try { if(bodyBackImg)  doc.addImage(bodyBackImg, 'PNG', bkX, bY, BW, BH); } catch(e){}
+
+  // ── Leyenda debajo de las dos imágenes ──
+  const legY = bY + BH + 6;
+
+  const allFrontZ = [
+    ...BODY_ZONES.filter(z=>z.side==='front'&&v[z.key]!=null).map(z=>({...z, val:`${v[z.key]} cm`, col:hex2rgb(z.col)})),
+    ...PLIEGUES_ZONES.filter(z=>z.side==='front'&&v.pliegues?.[z.key]!=null).map(z=>({...z, val:`${v.pliegues[z.key]} mm`, label:`Pl.${z.key}`, col:hex2rgb(z.col)}))
+  ];
+  const allBackZ = [
+    ...BODY_ZONES.filter(z=>z.side==='back'&&v[z.key]!=null).map(z=>({...z, val:`${v[z.key]} cm`, col:hex2rgb(z.col)})),
+    ...PLIEGUES_ZONES.filter(z=>z.side==='back'&&v.pliegues?.[z.key]!=null).map(z=>({...z, val:`${v.pliegues[z.key]} mm`, label:`Pl.${z.key}`, col:hex2rgb(z.col)}))
+  ];
+
+  const drawLeg = (zones, sx, title) => {
+    if (!zones.length) return 0;
+    T(...CMU); FT(5,'bold'); doc.text(title, sx, legY);
+    zones.forEach((z,i) => {
+      const ly = legY + 5 + i * 6;
+      const [r2,g2,b2] = z.col;
+      doc.setFillColor(r2,g2,b2); doc.rect(sx, ly-2.2, 3, 3, 'F');
+      T(...CTX); FT(5,'bold'); doc.text(z.label, sx+4.5, ly);
+      doc.setTextColor(r2,g2,b2); FT(5.5,'bold'); doc.text(z.val, sx+35, ly);
+    });
+    return zones.length * 6 + 8;
+  };
+
+  const legHFront = drawLeg(allFrontZ, M, 'MEDICIONES FRONTALES');
+  const legHBack  = drawLeg(allBackZ,  W/2+2, 'MEDICIONES POSTERIORES');
+  y = legY + Math.max(legHFront, legHBack);
+
+
+
+  // ─────────────────────────────────────────────────────
+  // PÁGINA(S) 3+ — GRÁFICAS, una por página si es necesario
+  // Las gráficas se paginan correctamente: 2 por fila,
+  // nueva página automática cuando no cabe la siguiente fila
+  // ─────────────────────────────────────────────────────
+  const chartsOk=chartDefs.filter(d=>chartImgs[d.id]);
+  if(chartsOk.length>0){
+    newPage();
+    F(...CG1); doc.rect(0,0,W,16,'F');
+    F(...CW); doc.rect(0,0,4,16,'F');
+    T(...CW); FT(10,'bold'); doc.text('GRÁFICAS DE EVOLUCIÓN', M, 11);
+    T(...CMU); FT(6.5); doc.text(`${user.nombres||''} — ${mesLabel}${fechaStr}`, W-M, 11, {align:'right'});
+    y=22;
+
+    const GW=(W-2*M-6)/2; // ancho de cada gráfica
+    const GH=52;           // alto de cada gráfica
+    const GLH=8;           // alto del label encima
+    const GBOX=GH+GLH+4;   // alto total de la caja
+
+    let col2=0;
+    let rowStartY=y;
+
+    chartsOk.forEach((cd,idx)=>{
+      // Al inicio de cada fila izquierda, verificar si cabe la fila completa
+      if(col2===0){
+        if(rowStartY + GBOX > H - 14){
+          newPage();
+          rowStartY=y;
+        }
+      }
+      const cx2=M+col2*(GW+6);
+
+      // Card oscura sutil
+      F(...CG2); doc.roundedRect(cx2, rowStartY, GW, GBOX, 2,2,'F');
+      // Barra de color superior fina
+      F(...cd.col); doc.roundedRect(cx2, rowStartY, GW, 1.5, 0.5,0.5,'F');
+      // Label
+      T(...cd.col); FT(6,'bold');
+      doc.text(cd.label, cx2+3, rowStartY+GLH-1);
+      // Imagen
+      try {
+        doc.addImage(chartImgs[cd.id],'PNG', cx2+1, rowStartY+GLH, GW-2, GH);
+      } catch(e){
+        T(...CMU); FT(6);
+        doc.text('(sin datos)', cx2+GW/2, rowStartY+GLH+GH/2, {align:'center'});
+      }
+
+      col2++;
+      if(col2===2){
+        col2=0;
+        rowStartY+=GBOX+6;
+      }
+    });
+    y=rowStartY+(col2>0?GBOX+6:0);
+  }
+
+  // ── Pie de página todas las páginas ──
+  const totalPg=doc.getNumberOfPages();
+  for(let p=1;p<=totalPg;p++){
+    doc.setPage(p);
+    F(...CG1); doc.rect(0,H-9,W,9,'F');
+    F(...CP); doc.rect(0,H-9,2.5,9,'F');
+    T(...CMU); FT(5.5);
+    doc.text('SAYKYO CLUB  ·  Informe de Composición Corporal  ·  Confidencial', M, H-3.5);
+    doc.text(`Pág. ${p} / ${totalPg}`, W-M, H-3.5, {align:'right'});
+  }
+
+  // ── Descarga ──
+  const blob=doc.output('blob');
+  const url=URL.createObjectURL(blob);
+  const fn=`${(user.nombres||'Atleta').replace(/\s+/g,'_')}_valoracion_${new Date(v.fecha).toLocaleDateString('es-CO').replace(/\//g,'-')}.pdf`;
+  const a=document.createElement('a'); a.href=url; a.download=fn; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },2000);
+  Swal.fire({icon:'success',title:'✅ PDF generado',text:`Descargando ${fn}`,timer:2500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
 };
 
 // ── Selector visual de fatiga (admin) ──
