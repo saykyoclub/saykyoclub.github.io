@@ -1153,33 +1153,49 @@ async function savePendingSession() {
   const ejConfig = ejsDia[state.ejercicioActual];
   const n = ejConfig?.series||0;
   const ejInfo  = state.ejercicios[ejConfig?.ejercicioId]||{};
-  const esBiext = ejInfo.biextremidad === true;
 
-  const currentSeriesSnapshot = Array.from({length:n},(_,i)=>{
-    const base = {
-      reps: +document.getElementById(`reps_${i}`)?.value||0,
-      peso: +document.getElementById(`peso_${i}`)?.value||0,
-      completada: document.getElementById(`done_${i}`)?.classList.contains('checked')||false,
-      comentario: document.getElementById(`comentario_${i}`)?.value?.trim()||''
-    };
-    if(esBiext) {
-      base.rirRpeIzq = +document.getElementById(`rpe_izq_${i}`)?.value||0;
-      base.rirRpeDer = +document.getElementById(`rpe_der_${i}`)?.value||0;
-      const repsIzqEl = document.getElementById(`reps_izq_${i}`);
-      const repsDerEl = document.getElementById(`reps_der_${i}`);
-      if(repsIzqEl) base.repsIzq = +repsIzqEl.value||0;
-      if(repsDerEl) base.repsDer = +repsDerEl.value||0;
-    } else {
-      base.rirRpe = +document.getElementById(`rpe_${i}`)?.value||0;
-    }
-    return base;
-  });
+  // ── Detectar biserie ──
+  const esBiset = ejConfig?.biset === true && state.ejercicioActual + 1 < ejsDia.length;
+  const ejConfigB = esBiset ? ejsDia[state.ejercicioActual + 1] : null;
+  const ejInfoB   = ejConfigB ? (state.ejercicios[ejConfigB.ejercicioId]||{}) : null;
+
+  // Helper: captura series según prefijo e info del ejercicio
+  function _captureSnap(prefix, nSeries, info) {
+    const isBiext = info?.biextremidad === true;
+    return Array.from({length: nSeries}, (_, i) => {
+      const base = {
+        reps: +document.getElementById(`${prefix}reps_${i}`)?.value||0,
+        peso: +document.getElementById(`${prefix}peso_${i}`)?.value||0,
+        completada: document.getElementById(`${prefix}done_${i}`)?.classList.contains('checked')||false,
+        comentario: document.getElementById(`${prefix}comentario_${i}`)?.value?.trim()||''
+      };
+      if(isBiext) {
+        base.rirRpeIzq = +document.getElementById(`${prefix}rpe_izq_${i}`)?.value||0;
+        base.rirRpeDer = +document.getElementById(`${prefix}rpe_der_${i}`)?.value||0;
+        const repsIzqEl = document.getElementById(`${prefix}reps_izq_${i}`);
+        const repsDerEl = document.getElementById(`${prefix}reps_der_${i}`);
+        if(repsIzqEl) base.repsIzq = +repsIzqEl.value||0;
+        if(repsDerEl) base.repsDer = +repsDerEl.value||0;
+      } else {
+        base.rirRpe = +document.getElementById(`${prefix}rpe_${i}`)?.value||0;
+      }
+      return base;
+    });
+  }
+
+  const currentSeriesSnapshot = esBiset
+    ? _captureSnap('ea_', n, ejInfo)
+    : _captureSnap('', n, ejInfo);
+  const currentSeriesSnapshotB = esBiset
+    ? _captureSnap('eb_', ejConfigB?.series||0, ejInfoB)
+    : null;
 
   try {
     await set(PENDING_REF(), {
       sesionActiva: state.sesionActiva,
       ejercicioActual: state.ejercicioActual,
       currentSeriesSnapshot,
+      ...(currentSeriesSnapshotB ? { currentSeriesSnapshotB } : {}),
       savedAt: Date.now()
     });
   } catch(e) { console.warn('savePendingSession error:', e); }
@@ -1341,6 +1357,7 @@ async function init() {
             state.sesionActiva            = pending.sesionActiva;
             state.ejercicioActual         = pending.ejercicioActual || 0;
             state._pendingSeriesSnapshot  = pending.currentSeriesSnapshot;
+            state._pendingSeriesSnapshotB = pending.currentSeriesSnapshotB || null;
             state._pendingSessionData     = null;
             updateSessionDot(true);
             // 🏋️ Notificar al entrenador que retomó el entrenamiento
@@ -1948,7 +1965,8 @@ window.iniciarSesion = async () => {
   if(pending && pending.sesionActiva) {
     state.sesionActiva    = pending.sesionActiva;
     state.ejercicioActual = pending.ejercicioActual;
-    state._pendingSeriesSnapshot = pending.currentSeriesSnapshot;
+    state._pendingSeriesSnapshot  = pending.currentSeriesSnapshot;
+    state._pendingSeriesSnapshotB = pending.currentSeriesSnapshotB || null;
     state._pendingSessionData    = null;
     updateSessionDot(true);
     // Notificar que retomó (no bloquea el render)
@@ -1972,7 +1990,8 @@ window.iniciarSesion = async () => {
   };
   state.ejercicioActual = 0;
   state.seriesData = {};
-  state._pendingSeriesSnapshot = null;
+  state._pendingSeriesSnapshot  = null;
+  state._pendingSeriesSnapshotB = null;
   updateSessionDot(true);
   await savePendingSession();
   renderEjercicioActual();
@@ -2017,6 +2036,144 @@ function getUltimoRegistro(ejercicioId) {
   return lastSesion;
 }
 
+// ── Helper: build series rows for entrenamiento (single exercise) ──
+function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, metodoMax, metodoOverride) {
+  const esBiext = ejInfo.biextremidad === true;
+  const sc = ejConfig.seriesConfig;
+  const sv = (i, field, fb) => (sc && sc[i] && sc[i][field] != null) ? sc[i][field] : (ejConfig[field] ?? fb);
+  const usedMetodo = metodoOverride || currentUser.metodo;
+  const _metodoLabel = usedMetodo === 'RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
+  const _metodoMin  = usedMetodo === 'RPE' ? 1 : -1;
+  const _metodoMax  = usedMetodo === 'RPE' ? 10 : 6;
+  return Array.from({length: ejConfig.series||3}, (_,i) => `
+    <div class="serie-row">
+      <div class="serie-header">
+        <div class="serie-num">${i+1}</div>
+        <div style="flex:1;font-size:0.8rem;color:var(--text-muted);font-weight:600">
+          Serie ${i+1}
+          ${sc?`<span style="font-size:0.7rem;color:rgba(0,229,160,0.6);margin-left:6px">⏱ ${sv(i,'descanso',90)}s descanso</span>`:''}
+        </div>
+        <button class="serie-done" id="${prefix}done_${i}" onclick="toggleSerieP('${prefix}',${i})">✓</button>
+      </div>
+      <div class="serie-inputs">
+        ${esBiext ? `
+        <div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">
+          <div style="grid-column:1/-1;font-size:0.68rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">🦾 Reps por lado</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
+            <input type="number" id="${prefix}reps_izq_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
+              style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
+            <input type="number" id="${prefix}reps_der_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
+              style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
+          </div>
+        </div>
+        <div class="serie-field" style="display:none"><input type="number" id="${prefix}reps_${i}" value="${sv(i,'repsMin',0)}"></div>
+        ` : `
+        <div class="serie-field">
+          <label>Reps</label>
+          <input type="number" id="${prefix}reps_${i}" placeholder="${sv(i,'repsMin',0)}-${sv(i,'repsMax',0)}" min="0" value="${sv(i,'repsMin',0)}">
+        </div>
+        `}
+        <div class="serie-field">
+          <label>Peso (kg)</label>
+          <input type="number" id="${prefix}peso_${i}" placeholder="${sv(i,'peso',0)}" min="0" step="0.5" value="${sv(i,'peso',0)}">
+        </div>
+        ${esBiext ? `
+        <div class="serie-field">
+          <label style="color:#00e5a0">🦾 Izq ${_metodoLabel}</label>
+          <input type="number" id="${prefix}rpe_izq_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${_metodoMin}" max="${_metodoMax}" value="${sv(i,'rirRpe',0)}"
+            style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)">
+        </div>
+        <div class="serie-field">
+          <label style="color:#ff6b35">🦾 Der ${_metodoLabel}</label>
+          <input type="number" id="${prefix}rpe_der_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${_metodoMin}" max="${_metodoMax}" value="${sv(i,'rirRpe',0)}"
+            style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)">
+        </div>
+        ` : `
+        <div class="serie-field">
+          <label style="color:var(--primary)">${_metodoLabel}</label>
+          <input type="number" id="${prefix}rpe_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${_metodoMin}" max="${_metodoMax}" value="${sv(i,'rirRpe',0)}"
+            style="border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06)">
+        </div>
+        `}
+      </div>
+      <input type="text" id="${prefix}comentario_${i}" placeholder="💬 Comentario opcional (sensación, forma, ajuste...)"
+        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.82rem;outline:none;transition:all 0.2s ease"
+        onfocus="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='var(--text)';this.style.background='rgba(0,200,255,0.04)'"
+        onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--text-muted)';this.style.background='rgba(255,255,255,0.04)'">
+    </div>
+  `).join('');
+}
+
+// Toggle serie done for prefixed ids (biserie support)
+window.toggleSerieP = (prefix, i) => {
+  if(!prefix) { toggleSerie(i); return; } // normal path: use full logic
+  const el = document.getElementById(`${prefix}done_${i}`);
+  if(!el) return;
+  const wasChecked = el.classList.contains('checked');
+  el.classList.toggle('checked');
+  const isNowChecked = !wasChecked;
+
+  if(isNowChecked) {
+    if(navigator.vibrate) navigator.vibrate(50);
+    primeVoiceQueue(); // iOS audio unlock
+  }
+
+  // Autosave feedback
+  showAutosaveFeedback(el);
+  savePendingSession();
+
+  // Rest timer — only when marking as done
+  if(isNowChecked) {
+    const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+    const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+    const ejsDia = Object.values(diaData?.ejercicios||{});
+    // For biserie, determine which exercise config to use for rest time
+    const isB = prefix === 'eb_';
+    const ejIdx = isB ? state.ejercicioActual + 1 : state.ejercicioActual;
+    const ejConfig = ejsDia[ejIdx];
+    const sc = ejConfig?.seriesConfig;
+    const restSecs = (sc && sc[i] && sc[i].descanso != null) ? sc[i].descanso : (ejConfig?.descanso || 90);
+    startRestTimer(restSecs);
+
+    updateSessionDot(true);
+  }
+};
+
+// ── Helper: collect series from entrenamiento form ──
+function _collectSeriesData(ejConfig, ejInfo, prefix) {
+  const esBiext = ejInfo.biextremidad === true;
+  const n = ejConfig.series || 3;
+  return Array.from({length:n}, (_,i) => {
+    const base = {
+      reps: +document.getElementById(`${prefix}reps_${i}`)?.value||0,
+      peso: +document.getElementById(`${prefix}peso_${i}`)?.value||0,
+      completada: document.getElementById(`${prefix}done_${i}`)?.classList.contains('checked')||false,
+      comentario: document.getElementById(`${prefix}comentario_${i}`)?.value?.trim()||''
+    };
+    if(esBiext) {
+      base.rirRpeIzq = +document.getElementById(`${prefix}rpe_izq_${i}`)?.value||0;
+      base.rirRpeDer = +document.getElementById(`${prefix}rpe_der_${i}`)?.value||0;
+      base.rirRpe = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
+      const repsIzqVal = +document.getElementById(`${prefix}reps_izq_${i}`)?.value;
+      const repsDerVal = +document.getElementById(`${prefix}reps_der_${i}`)?.value;
+      if(!isNaN(repsIzqVal)) base.repsIzq = repsIzqVal;
+      if(!isNaN(repsDerVal)) base.repsDer = repsDerVal;
+      if(base.repsIzq != null && base.repsDer != null) {
+        base.reps = Math.round((base.repsIzq + base.repsDer) / 2);
+      } else {
+        base.reps = base.repsIzq ?? base.repsDer ?? 0;
+      }
+    } else {
+      base.rirRpe = +document.getElementById(`${prefix}rpe_${i}`)?.value||0;
+    }
+    return base;
+  });
+}
+
 function renderEjercicioActual() {
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
@@ -2031,7 +2188,24 @@ function renderEjercicioActual() {
   const ejInfo = state.ejercicios[ejConfig.ejercicioId]||{};
   const total = ejsDia.length;
   const current = state.ejercicioActual+1;
-  const pct = Math.round(((current-1)/total)*100);
+
+  // ── Biserie detection ──
+  const esBiset = ejConfig.biset === true && state.ejercicioActual + 1 < ejsDia.length;
+  const ejConfigB = esBiset ? ejsDia[state.ejercicioActual + 1] : null;
+  const ejInfoB   = ejConfigB ? (state.ejercicios[ejConfigB.ejercicioId]||{}) : null;
+
+  // Compute display step numbers (biserie pairs count as 1 step)
+  const displayTotal = (() => {
+    let t = 0, i = 0;
+    while(i < ejsDia.length) { t++; i += (ejsDia[i]?.biset === true && i+1 < ejsDia.length) ? 2 : 1; }
+    return t;
+  })();
+  const displayCurrent = (() => {
+    let c = 0, i = 0;
+    while(i <= state.ejercicioActual) { c++; i += (ejsDia[i]?.biset === true && i+1 < ejsDia.length) ? 2 : 1; }
+    return c;
+  })();
+  const pct = Math.round(((displayCurrent-1)/displayTotal)*100);
 
   // Last session data for this exercise
   const ultimoReg = getUltimoRegistro(ejConfig.ejercicioId);
@@ -2093,141 +2267,151 @@ function renderEjercicioActual() {
   const metodoLabel = (currentUser.metodo === 'RPE' || esCardio) ? 'RPE (1-10)' : 'RIR (-1→6)';
   const metodoMin  = (currentUser.metodo === 'RPE' || esCardio) ? 1 : -1;
   const metodoMax  = (currentUser.metodo === 'RPE' || esCardio) ? 10 : 6;
-  const esBiext    = ejInfo.biextremidad === true;
-
-  // Helper: get per-serie value with fallback to global ejConfig
-  const sc = ejConfig.seriesConfig; // may be undefined for legacy exercises
-  const sv = (i, field, fallback) => (sc && sc[i] && sc[i][field] != null) ? sc[i][field] : (ejConfig[field] ?? fallback);
-
-  const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
-    <div class="serie-row">
-      <div class="serie-header">
-        <div class="serie-num">${i+1}</div>
-        <div style="flex:1;font-size:0.8rem;color:var(--text-muted);font-weight:600">
-          Serie ${i+1}
-          ${sc?`<span style="font-size:0.7rem;color:rgba(0,229,160,0.6);margin-left:6px">⏱ ${sv(i,'descanso',90)}s descanso</span>`:''}
-        </div>
-        <button class="serie-done" id="done_${i}" onclick="toggleSerie(${i})">✓</button>
-      </div>
-      <div class="serie-inputs">
-        ${esBiext ? `
-        <div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">
-          <div style="grid-column:1/-1;font-size:0.68rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">🦾 Reps por lado</div>
-          <div style="display:flex;flex-direction:column;gap:3px">
-            <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
-            <input type="number" id="reps_izq_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
-              style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
-          </div>
-          <div style="display:flex;flex-direction:column;gap:3px">
-            <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
-            <input type="number" id="reps_der_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
-              style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
-          </div>
-        </div>
-        <div class="serie-field" style="display:none"><input type="number" id="reps_${i}" value="${sv(i,'repsMin',0)}"></div>
-        ` : `
-        <div class="serie-field">
-          <label>Reps</label>
-          <input type="number" id="reps_${i}" placeholder="${sv(i,'repsMin',0)}-${sv(i,'repsMax',0)}" min="0" value="${sv(i,'repsMin',0)}">
-        </div>
-        `}
-        <div class="serie-field">
-          <label>Peso (kg)</label>
-          <input type="number" id="peso_${i}" placeholder="${sv(i,'peso',0)}" min="0" step="0.5" value="${sv(i,'peso',0)}">
-        </div>
-        ${esBiext ? `
-        <div class="serie-field">
-          <label style="color:#00e5a0">🦾 Izq ${metodoLabel}</label>
-          <input type="number" id="rpe_izq_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" value="${sv(i,'rirRpe',0)}"
-            style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)">
-        </div>
-        <div class="serie-field">
-          <label style="color:#ff6b35">🦾 Der ${metodoLabel}</label>
-          <input type="number" id="rpe_der_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" value="${sv(i,'rirRpe',0)}"
-            style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)">
-        </div>
-        ` : `
-        <div class="serie-field">
-          <label style="color:var(--primary)">${metodoLabel}</label>
-          <input type="number" id="rpe_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" value="${sv(i,'rirRpe',0)}"
-            style="border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.06)">
-        </div>
-        `}
-      </div>
-      <input type="text" id="comentario_${i}" placeholder="💬 Comentario opcional (sensación, forma, ajuste...)"
-        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.82rem;outline:none;transition:all 0.2s ease"
-        onfocus="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='var(--text)';this.style.background='rgba(0,200,255,0.04)'"
-        onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--text-muted)';this.style.background='rgba(255,255,255,0.04)'">
-    </div>
-  `).join('');
 
   const p = document.getElementById('mainPage');
-  p.innerHTML = `
-    <div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:0.8rem;color:var(--text-muted)">Ejercicio ${current} de ${total}</span>
-        <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${pct}% completado</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-    </div>
 
-    <div class="training-card">
-      <div class="training-video" id="trainingVideoWrap">
-        ${ejInfo.urlVideo?`<iframe id="trainingVideoIframe" src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>}`:`<div class="no-video"><div style="font-size:3rem">🏋️</div><div>Sin video disponible</div></div>`}
-      </div>
-      <div class="training-info">
-        <div class="training-title">${ejInfo.nombre||'Ejercicio'}</div>
-        <div class="training-meta">
-          <span class="meta-pill">📦 ${ejConfig.series} series</span>
-          <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
-          <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
-          <span class="meta-pill">${(currentUser.metodo === 'RPE' || esCardio) ? 'RPE' : currentUser.metodo} ${ejConfig.rirRpe}</span>
-          <span class="meta-pill">⏱️ ${ejConfig.seriesConfig ? 'descanso por serie' : ejConfig.descanso+'s descanso'}</span>
-          ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
+  if(esBiset) {
+    // ── BISERIE layout ──
+    const seriesRowsA = _buildSeriesRows(ejConfig,  ejInfo,  'ea_', metodoLabel, metodoMin, metodoMax);
+    const seriesRowsB = _buildSeriesRows(ejConfigB, ejInfoB, 'eb_', metodoLabel, metodoMin, metodoMax);
+
+    p.innerHTML = `
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:0.8rem;color:var(--text-muted)">Paso ${displayCurrent} de ${displayTotal} 🔗 Biserie</span>
+          <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${pct}% completado</span>
         </div>
-        ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
-        ${ejInfo.descripcion?`<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">${ejInfo.descripcion}</div>`:''}
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>
-    </div>
 
-    ${ultimoBanner}
-    <div class="glass-card">
-      <div class="card-title">📊 Registrar series</div>
-      <div class="series-list">${seriesRows}</div>
-      <button class="btn btn-success btn-full" onclick="completarEjercicio()">
-        ✅ Completar ejercicio ${ejConfig.biextremidad?'(Cada lado)':''}
-      </button>
-      ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
-    </div>
-  `;
+      <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:0.78rem;color:#ff6b35;font-weight:600">
+        🔗 BISERIE — Alterna: 1 serie A → 1 serie B → descanso → siguiente serie
+      </div>
+
+      <!-- Ejercicio A -->
+      <div class="training-card" style="border-color:rgba(0,200,255,0.3);margin-bottom:14px">
+        <div class="training-info">
+          <div style="font-size:0.68rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">🅰 Ejercicio A</div>
+          <div class="training-title">${ejInfo.nombre||'Ejercicio A'}</div>
+          <div class="training-meta">
+            <span class="meta-pill">📦 ${ejConfig.series} series</span>
+            <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
+            <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
+            ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
+          </div>
+          ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
+        </div>
+      </div>
+      ${ultimoBanner}
+      <div class="glass-card" style="margin-bottom:16px">
+        <div class="card-title">📊 Series — Ejercicio A</div>
+        <div class="series-list">${seriesRowsA}</div>
+      </div>
+
+      <!-- Ejercicio B -->
+      <div class="training-card" style="border-color:rgba(123,47,255,0.3);margin-bottom:14px">
+        <div class="training-info">
+          <div style="font-size:0.68rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">🅱 Ejercicio B</div>
+          <div class="training-title">${ejInfoB.nombre||'Ejercicio B'}</div>
+          <div class="training-meta">
+            <span class="meta-pill">📦 ${ejConfigB.series} series</span>
+            <span class="meta-pill">🔢 ${ejConfigB.repsMin}-${ejConfigB.repsMax} reps</span>
+            <span class="meta-pill">⚖️ ${ejConfigB.peso}kg</span>
+            ${ejConfigB.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfigB.metodo}</span>`:''}
+          </div>
+          ${ejConfigB.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfigB.anotaciones}</div>`:''}
+        </div>
+      </div>
+      <div class="glass-card">
+        <div class="card-title">📊 Series — Ejercicio B</div>
+        <div class="series-list">${seriesRowsB}</div>
+        <button class="btn btn-success btn-full" onclick="completarEjercicio()">✅ Completar biserie</button>
+        ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
+      </div>
+    `;
+  } else {
+    // ── NORMAL single exercise layout ──
+    const seriesRows = _buildSeriesRows(ejConfig, ejInfo, '', metodoLabel, metodoMin, metodoMax);
+
+    p.innerHTML = `
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:0.8rem;color:var(--text-muted)">Ejercicio ${displayCurrent} de ${displayTotal}</span>
+          <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${pct}% completado</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+
+      <div class="training-card">
+        <div class="training-video" id="trainingVideoWrap">
+          ${ejInfo.urlVideo?`<iframe id="trainingVideoIframe" src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>}`:`<div class="no-video"><div style="font-size:3rem">🏋️</div><div>Sin video disponible</div></div>`}
+        </div>
+        <div class="training-info">
+          <div class="training-title">${ejInfo.nombre||'Ejercicio'}</div>
+          <div class="training-meta">
+            <span class="meta-pill">📦 ${ejConfig.series} series</span>
+            <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
+            <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
+            <span class="meta-pill">${(currentUser.metodo === 'RPE' || esCardio) ? 'RPE' : currentUser.metodo} ${ejConfig.rirRpe}</span>
+            <span class="meta-pill">⏱️ ${ejConfig.seriesConfig ? 'descanso por serie' : ejConfig.descanso+'s descanso'}</span>
+            ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
+          </div>
+          ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
+          ${ejInfo.descripcion?`<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">${ejInfo.descripcion}</div>`:''}
+        </div>
+      </div>
+
+      ${ultimoBanner}
+      <div class="glass-card">
+        <div class="card-title">📊 Registrar series</div>
+        <div class="series-list">${seriesRows}</div>
+        <button class="btn btn-success btn-full" onclick="completarEjercicio()">
+          ✅ Completar ejercicio ${ejConfig.biextremidad?'(Cada lado)':''}
+        </button>
+        ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
+      </div>
+    `;
+  }
 
   // Restaurar snapshot si viene de una sesión pendiente recuperada
-  const snap = state._pendingSeriesSnapshot;
-  if(snap && Array.isArray(snap)) {
+  function _applySnap(prefix, snap, info) {
+    if(!snap || !Array.isArray(snap)) return;
     snap.forEach((s, i) => {
-      const repsEl = document.getElementById(`reps_${i}`);
-      const pesoEl = document.getElementById(`peso_${i}`);
-      const doneEl = document.getElementById(`done_${i}`);
-      const comEl  = document.getElementById(`comentario_${i}`);
+      const repsEl = document.getElementById(`${prefix}reps_${i}`);
+      const pesoEl = document.getElementById(`${prefix}peso_${i}`);
+      const doneEl = document.getElementById(`${prefix}done_${i}`);
+      const comEl  = document.getElementById(`${prefix}comentario_${i}`);
       if(repsEl && s.reps) repsEl.value = s.reps;
       if(pesoEl && s.peso) pesoEl.value = s.peso;
       if(comEl  && s.comentario) comEl.value = s.comentario;
       if(doneEl && s.completada) doneEl.classList.add('checked');
-      if(esBiext) {
-        const izqEl = document.getElementById(`rpe_izq_${i}`);
-        const derEl = document.getElementById(`rpe_der_${i}`);
+      if(info?.biextremidad) {
+        const izqEl = document.getElementById(`${prefix}rpe_izq_${i}`);
+        const derEl = document.getElementById(`${prefix}rpe_der_${i}`);
         if(izqEl && s.rirRpeIzq) izqEl.value = s.rirRpeIzq;
         if(derEl && s.rirRpeDer) derEl.value = s.rirRpeDer;
-        const repsIzqEl = document.getElementById(`reps_izq_${i}`);
-        const repsDerEl = document.getElementById(`reps_der_${i}`);
+        const repsIzqEl = document.getElementById(`${prefix}reps_izq_${i}`);
+        const repsDerEl = document.getElementById(`${prefix}reps_der_${i}`);
         if(repsIzqEl && s.repsIzq != null) repsIzqEl.value = s.repsIzq;
         if(repsDerEl && s.repsDer != null) repsDerEl.value = s.repsDer;
       } else {
-        const rpeEl = document.getElementById(`rpe_${i}`);
+        const rpeEl = document.getElementById(`${prefix}rpe_${i}`);
         if(rpeEl && s.rirRpe != null) rpeEl.value = s.rirRpe;
       }
     });
-    state._pendingSeriesSnapshot = null;
+  }
+
+  const snap  = state._pendingSeriesSnapshot;
+  const snapB = state._pendingSeriesSnapshotB;
+  if(snap && Array.isArray(snap)) {
+    if(esBiset) {
+      _applySnap('ea_', snap,  ejInfo);
+      _applySnap('eb_', snapB, ejInfoB);
+    } else {
+      _applySnap('', snap, ejInfo);
+    }
+    state._pendingSeriesSnapshot  = null;
+    state._pendingSeriesSnapshotB = null;
   }
 
   // Auto-save a Firebase en cada cambio de input
@@ -2673,7 +2857,8 @@ window.completarEjercicio = async () => {
   if(existingOvl) existingOvl.remove();
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
-  const ejConfig = Object.values(diaData?.ejercicios||{})[state.ejercicioActual];
+  const ejsDia = Object.values(diaData?.ejercicios||{});
+  const ejConfig = ejsDia[state.ejercicioActual];
 
   // Guard: if ejConfig lost reference (e.g. after resume), re-render and abort
   if(!ejConfig) {
@@ -2682,72 +2867,67 @@ window.completarEjercicio = async () => {
     return;
   }
 
-  const n = ejConfig?.series||3;
-
-  // Collect series data — RPE/RIR already filled per serie in the table
   const ejInfo2 = state.ejercicios[ejConfig.ejercicioId]||{};
-  const esBiext2 = ejInfo2.biextremidad === true;
-  const series = Array.from({length:n},(_,i)=>{
-    const base = {
-      reps: +document.getElementById(`reps_${i}`)?.value||0,
-      peso: +document.getElementById(`peso_${i}`)?.value||0,
-      completada: document.getElementById(`done_${i}`)?.classList.contains('checked'),
-      comentario: document.getElementById(`comentario_${i}`)?.value?.trim()||''
-    };
-    if(esBiext2) {
-      base.rirRpeIzq = +document.getElementById(`rpe_izq_${i}`)?.value||0;
-      base.rirRpeDer = +document.getElementById(`rpe_der_${i}`)?.value||0;
-      base.rirRpe = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
-      // Reps por lado
-      const repsIzqVal = +document.getElementById(`reps_izq_${i}`)?.value;
-      const repsDerVal = +document.getElementById(`reps_der_${i}`)?.value;
-      if(!isNaN(repsIzqVal)) base.repsIzq = repsIzqVal;
-      if(!isNaN(repsDerVal)) base.repsDer = repsDerVal;
-      // reps general = promedio de ambos lados
-      if(base.repsIzq != null && base.repsDer != null) {
-        base.reps = Math.round((base.repsIzq + base.repsDer) / 2);
-      } else {
-        base.reps = base.repsIzq ?? base.repsDer ?? 0;
-      }
-    } else {
-      base.rirRpe = +document.getElementById(`rpe_${i}`)?.value||0;
+  const esBiset = ejConfig.biset === true && state.ejercicioActual + 1 < ejsDia.length;
+
+  let allSeries = [];
+  if(esBiset) {
+    const ejConfigB = ejsDia[state.ejercicioActual + 1];
+    const ejInfoB   = state.ejercicios[ejConfigB.ejercicioId]||{};
+    const seriesA = _collectSeriesData(ejConfig,  ejInfo2,  'ea_');
+    const seriesB = _collectSeriesData(ejConfigB, ejInfoB,  'eb_');
+    // Validate: at least one serie marked done across both
+    allSeries = [...seriesA, ...seriesB];
+    const alguenCompleta = allSeries.some(s => s.completada);
+    if(!alguenCompleta) {
+      const res = await Swal.fire({
+        icon:'warning', title:'¿Sin series completadas?',
+        text:'No marcaste ninguna serie como hecha. ¿Continuar igual?',
+        showCancelButton:true, confirmButtonText:'Sí, continuar', cancelButtonText:'Volver',
+        background:'rgba(10,20,40,0.95)', color:'#e8f4ff', confirmButtonColor:'#00c8ff'
+      });
+      if(!res.isConfirmed) return;
     }
-    return base;
-  });
-
-  // Validate at least one serie completed
-  const alguenCompleta = series.some(s=>s.completada);
-  if(!alguenCompleta) {
-    const res = await Swal.fire({
-      icon:'warning', title:'¿Sin series completadas?',
-      text:'No marcaste ninguna serie como hecha. ¿Continuar igual?',
-      showCancelButton:true, confirmButtonText:'Sí, continuar', cancelButtonText:'Volver',
-      background:'rgba(10,20,40,0.95)', color:'#e8f4ff', confirmButtonColor:'#00c8ff'
-    });
-    if(!res.isConfirmed) return;
+    if(!state.sesionActiva) { console.error('sesionActiva undefined'); return; }
+    if(!state.sesionActiva.ejerciciosCompletados) state.sesionActiva.ejerciciosCompletados = {};
+    state.sesionActiva.ejerciciosCompletados[state.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA };
+    state.sesionActiva.ejerciciosCompletados[state.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB };
+    state.ejercicioActual += 2;
+  } else {
+    const series = _collectSeriesData(ejConfig, ejInfo2, '');
+    allSeries = series;
+    const alguenCompleta = series.some(s => s.completada);
+    if(!alguenCompleta) {
+      const res = await Swal.fire({
+        icon:'warning', title:'¿Sin series completadas?',
+        text:'No marcaste ninguna serie como hecha. ¿Continuar igual?',
+        showCancelButton:true, confirmButtonText:'Sí, continuar', cancelButtonText:'Volver',
+        background:'rgba(10,20,40,0.95)', color:'#e8f4ff', confirmButtonColor:'#00c8ff'
+      });
+      if(!res.isConfirmed) return;
+    }
+    if(!state.sesionActiva) { console.error('completarEjercicio: sesionActiva is undefined'); return; }
+    if(!state.sesionActiva.ejerciciosCompletados) state.sesionActiva.ejerciciosCompletados = {};
+    state.sesionActiva.ejerciciosCompletados[state.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series };
+    state.ejercicioActual++;
   }
 
-  // Guard: ensure sesionActiva and ejerciciosCompletados are defined (bug fix for resumed sessions)
-  if(!state.sesionActiva) {
-    console.error('completarEjercicio: sesionActiva is undefined');
-    return;
-  }
-  if(!state.sesionActiva.ejerciciosCompletados) {
-    state.sesionActiva.ejerciciosCompletados = {};
-  }
-  state.sesionActiva.ejerciciosCompletados[state.ejercicioActual] = {
-    ejercicioId: ejConfig.ejercicioId,
-    series: series
-  };
-
-  state.ejercicioActual++;
   // Guardar progreso en Firebase tras completar cada ejercicio
   savePendingSession();
   renderEjercicioActual();
 };
 
 window.ejercicioAnterior = () => {
-  state.ejercicioActual = Math.max(0, state.ejercicioActual-1);
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejsDia = Object.values(diaData?.ejercicios||{});
+  // If previous exercise was part of a biserie (i.e. the one before was a biset leader), go back 2
+  const prevIdx = state.ejercicioActual - 1;
+  if(prevIdx >= 1 && ejsDia[prevIdx-1]?.biset === true) {
+    state.ejercicioActual = Math.max(0, state.ejercicioActual - 2);
+  } else {
+    state.ejercicioActual = Math.max(0, state.ejercicioActual - 1);
+  }
   renderEjercicioActual();
 };
 

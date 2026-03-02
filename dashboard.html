@@ -289,7 +289,17 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 .per-page-select { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:5px 8px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.8rem;outline:none;cursor:pointer; }
 .per-page-select option { background:#0d1a35; }
 
-/* SCROLLBAR */
+/* ACCORDION */
+.accordion-item { background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;margin-bottom:0; }
+.accordion-header { display:flex;justify-content:space-between;align-items:center;padding:14px;cursor:pointer;transition:background 0.2s ease;user-select:none;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.06); }
+.accordion-header:hover { background:rgba(0,200,255,0.08);border-bottom-color:rgba(0,200,255,0.2); }
+.accordion-chevron { font-size:0.85rem;color:var(--text-muted);transition:transform 0.3s ease;flex-shrink:0; }
+.accordion-item.open .accordion-chevron { transform:rotate(180deg); }
+.accordion-body { max-height:0;overflow:hidden;transition:max-height 0.35s ease; }
+.accordion-item.open .accordion-body { max-height:2000px; }
+.accordion-inner { padding:0 14px 14px; }
+
+
 .rev-info-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px; }
 .ric-label { font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px; }
 .ric-val { font-size:0.88rem;font-weight:700; }
@@ -484,6 +494,45 @@ textarea.glass-input { resize:vertical; min-height:80px; }
   opacity:0;transition:all .2s
 }
 .help-fab:not(.dragging):hover + .help-fab-tooltip,.help-fab-tooltip.show{opacity:1}
+
+/* ══ REST TIMER OVERLAY (admin) ══ */
+#admRestTimerOverlay {
+  position:fixed; inset:0; z-index:9000;
+  background:rgba(3,7,18,0.88);
+  backdrop-filter:blur(18px) saturate(160%);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  animation:rtFadeIn 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes rtFadeIn { from{opacity:0} to{opacity:1} }
+#admRestTimerOverlay.rt-exit { animation:rtFadeOut 0.3s ease forwards; }
+@keyframes rtFadeOut { from{opacity:1} to{opacity:0} }
+.rt-label { font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:5px;text-transform:uppercase;color:rgba(232,244,255,0.35);margin-bottom:32px; }
+.rt-series-badge { background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:30px;padding:6px 18px;font-size:0.78rem;font-weight:700;color:#00e5a0;letter-spacing:1px;margin-bottom:36px;animation:rtBadgePop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes rtBadgePop { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+.rt-ring-wrap { position:relative;width:220px;height:220px;margin-bottom:36px; }
+.rt-ring-wrap svg { transform:rotate(-90deg);filter:drop-shadow(0 0 18px var(--rt-glow, rgba(0,200,255,0.5)));transition:filter 0.6s ease; }
+.rt-ring-bg { fill:none;stroke:rgba(255,255,255,0.06);stroke-width:10; }
+.rt-ring-fill { fill:none;stroke:var(--rt-color,var(--primary));stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke 0.5s ease; }
+.rt-ring-inner { fill:none;stroke:var(--rt-color,var(--primary));stroke-width:1;opacity:0.25;transition:stroke 0.5s ease; }
+.rt-number { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px; }
+.rt-count { font-family:'Space Mono',monospace;font-size:5.5rem;font-weight:700;line-height:1;color:var(--rt-color,var(--primary));transition:color 0.5s ease;text-shadow:0 0 40px var(--rt-glow,rgba(0,200,255,0.4));animation:rtCountPop 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes rtCountPop { from{transform:scale(1.15)} to{transform:scale(1)} }
+.rt-secs-label { font-size:0.7rem;letter-spacing:3px;color:rgba(232,244,255,0.3);text-transform:uppercase; }
+.rt-msg { font-size:1.15rem;font-weight:700;color:rgba(232,244,255,0.75);letter-spacing:0.5px;margin-bottom:10px;min-height:1.6em;text-align:center;transition:color 0.4s ease; }
+.rt-progress-bar { width:200px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:44px; }
+.rt-progress-fill { height:100%;background:var(--rt-color,var(--primary));border-radius:2px;transition:width 1s linear,background 0.5s ease;box-shadow:0 0 8px var(--rt-glow,rgba(0,200,255,0.6)); }
+.rt-skip { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:50px;padding:12px 36px;color:rgba(232,244,255,0.5);font-family:'Exo 2',sans-serif;font-size:0.88rem;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all 0.25s ease; }
+.rt-skip:hover { background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.25);color:rgba(232,244,255,0.9);transform:scale(1.03); }
+.rt-ring-wrap.rt-urgent svg { animation:rtUrgentPulse 0.8s ease-in-out infinite; }
+@keyframes rtUrgentPulse { 0%,100%{filter:drop-shadow(0 0 18px var(--rt-glow));} 50%{filter:drop-shadow(0 0 36px var(--rt-glow)) drop-shadow(0 0 60px var(--rt-glow));} }
+/* Done checkbox for admin series */
+.adm-serie-done { width:38px;height:38px;border-radius:50%;background:rgba(0,229,160,0.08);border:2px solid rgba(0,229,160,0.25);cursor:pointer;font-size:1.1rem;transition:all 0.2s ease;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(0,229,160,0.5); }
+.adm-serie-done:hover { background:rgba(0,229,160,0.15);border-color:rgba(0,229,160,0.4);transform:scale(1.05); }
+.adm-serie-done.checked { background:#00e5a0;border-color:#00e5a0;color:#000;font-weight:900; }
+/* Autosave badge (admin) */
+.autosave-badge-adm { display:inline-flex;align-items:center;gap:4px;background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:3px 8px;font-size:0.68rem;color:#00e5a0;font-weight:700;animation:fadeInOut 1.5s ease forwards;pointer-events:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:9100; }
+@keyframes fadeInOut { 0%{opacity:0;transform:translateX(-50%) translateY(4px)} 15%{opacity:1;transform:translateX(-50%) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
 
 </style>
 </head>
@@ -866,8 +915,12 @@ function initPagedTable(panel, allRows, theadHtml, renderRow, opts={}) {
   const tbody     = panel.querySelector('tbody');
   const pagination= panel.querySelector('.pagination');
 
+  function normalizeStr(s) {
+    return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+
   function applyFilter() {
-    const q = query.toLowerCase().trim();
+    const q = normalizeStr(query).trim();
     filtered = q ? _allRows.filter(r => opts.filterFn(r, q)) : _allRows;
     page = 1;
     render();
@@ -1091,11 +1144,10 @@ async function renderUsuarios(container, action) {
       perPage: 10,
       emptyIcon: '👤',
       emptyText: 'No hay usuarios. ¡Crea el primero!',
-      filterFn: ([,u], q) =>
-        u.usuario?.toLowerCase().includes(q) ||
-        u.nombres?.toLowerCase().includes(q) ||
-        u.apellidos?.toLowerCase().includes(q) ||
-        u.metodo?.toLowerCase().includes(q)
+      filterFn: ([,u], q) => {
+        const n = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        return n(u.usuario).includes(q) || n(u.nombres).includes(q) || n(u.apellidos).includes(q) || n(u.metodo).includes(q);
+      }
     }
   );
 
@@ -1580,10 +1632,10 @@ async function renderEjercicios(container, action) {
       perPage: 10,
       emptyIcon: '💪',
       emptyText: 'No hay ejercicios',
-      filterFn: ([,e], q) =>
-        e.nombre?.toLowerCase().includes(q) ||
-        e.descripcion?.toLowerCase().includes(q) ||
-        cats[e.categoria]?.nombre?.toLowerCase().includes(q)
+      filterFn: ([,e], q) => {
+        const n = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        return n(e.nombre).includes(q) || n(e.descripcion).includes(q) || n(cats[e.categoria]?.nombre).includes(q);
+      }
     }
   );
 }
@@ -1852,6 +1904,7 @@ async function renderRutinaDetail(rutinaId) {
               <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:var(--primary)">📦 ${ej.series} series</span>
               <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--text-muted)">⏱ ${ej.tiempo||0}s/rep</span>
               ${ej.metodo?`<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#a78bfa">⚡ ${ej.metodo}</span>`:''}
+              ${ej.biset?`<span style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#ff6b35">🔗 Biserie</span>`:''}
             </div>
             <!-- Per-series table -->
             ${(() => {
@@ -1982,6 +2035,12 @@ window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
       <div class="form-group" style="grid-column:1/-1">
         <label>Anotaciones</label>
         <textarea class="glass-input" id="ejAnotaciones" rows="2" placeholder="Instrucciones especiales..."></textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <label class="toggle" style="flex-shrink:0"><input type="checkbox" id="ejBiset"><span class="toggle-slider"></span></label>
+          <span style="font-size:0.85rem;color:var(--text-muted)">🔗 <strong>Biserie</strong> con el siguiente ejercicio <span style="font-size:0.72rem;opacity:0.6">(se alternan series uno tras otro sin descanso)</span></span>
+        </label>
       </div>
     </div>
 
@@ -2151,6 +2210,7 @@ window.saveEjDia = async (rutinaId, mes, semana, dia) => {
     tiempo:   +document.getElementById('ejTiempo').value || 0,
     metodo:   document.getElementById('ejMetodo').value.trim(),
     anotaciones: document.getElementById('ejAnotaciones').value.trim(),
+    biset: document.getElementById('ejBiset')?.checked || false,
   });
 
   closeOverlay();
@@ -2218,6 +2278,12 @@ window.editEjDia = async (rutinaId, mes, semana, dia, idx) => {
       <div class="form-group" style="grid-column:1/-1">
         <label>Anotaciones</label>
         <textarea class="glass-input" id="ejAnotaciones" rows="2">${ej.anotaciones||''}</textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <label class="toggle" style="flex-shrink:0"><input type="checkbox" id="ejBiset" ${ej.biset?'checked':''}><span class="toggle-slider"></span></label>
+          <span style="font-size:0.85rem;color:var(--text-muted)">🔗 <strong>Biserie</strong> con el siguiente ejercicio <span style="font-size:0.72rem;opacity:0.6">(se alternan series uno tras otro sin descanso)</span></span>
+        </label>
       </div>
     </div>
 
@@ -2315,11 +2381,8 @@ window.updateEjDia = async (rutinaId, mes, semana, dia, idx) => {
     tiempo:   +document.getElementById('ejTiempo').value || 0,
     metodo:   document.getElementById('ejMetodo').value.trim(),
     anotaciones: document.getElementById('ejAnotaciones').value.trim(),
+    biset: document.getElementById('ejBiset')?.checked || false,
   });
-
-  closeOverlay();
-  Swal.fire({icon:'success',title:'¡Ejercicio actualizado!',timer:1200,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
-  renderRutinaDetail(rutinaId);
 };
 
 window.showRutinaModal = async () => {
@@ -2669,6 +2732,256 @@ window._iniciarAdminSesionDia = (targetUid, rutinaId, m, s, d) => {
   _renderAdminEjercicio();
 };
 
+// ── Helper: build series input rows for admin session (single exercise) ──
+function _admSeriesRows(ejConfig, ejInfo, prefix, metodo, metodoMin, metodoMax, metodoLabel) {
+  const esBiext = ejInfo.biextremidad === true;
+  const sc = ejConfig.seriesConfig;
+  const sv = (i, field, fb) => (sc && sc[i] && sc[i][field] != null) ? sc[i][field] : (ejConfig[field] ?? fb);
+  return Array.from({length: ejConfig.series||3}, (_,i) => `
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">
+      <div style="width:24px;text-align:center;font-weight:700;color:var(--primary);padding-top:28px">${i+1}</div>
+      <div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">
+        ${esBiext ? `
+        <div style="display:flex;flex-direction:column;gap:3px;width:100%;background:rgba(0,229,160,0.05);border-radius:10px;padding:8px;border:1px solid rgba(0,229,160,0.15)">
+          <div style="font-size:0.65rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">🦾 Reps por lado</div>
+          <div style="display:flex;gap:8px">
+            <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+              <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
+              <input type="number" id="${prefix}_reps_izq_${i}" value="${sv(i,'repsMin',0)}" min="0"
+                style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+              <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
+              <input type="number" id="${prefix}_reps_der_${i}" value="${sv(i,'repsMin',0)}" min="0"
+                style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+            </div>
+          </div>
+        </div>
+        <div style="display:none"><input type="number" id="${prefix}_reps_${i}" value="${sv(i,'repsMin',0)}"></div>
+        ` : `
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:var(--text-muted)">Reps</label>
+          <input type="number" id="${prefix}_reps_${i}" value="${sv(i,'repsMin',0)}" min="0"
+            style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>`}
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:var(--text-muted)">Peso kg</label>
+          <input type="number" id="${prefix}_peso_${i}" value="${sv(i,'peso',0)}" min="0" step="0.5"
+            style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>
+        ${esBiext ? `
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:#00e5a0">Izq ${metodo}</label>
+          <input type="number" id="${prefix}_rpe_izq_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}"
+            style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:#ff6b35">Der ${metodo}</label>
+          <input type="number" id="${prefix}_rpe_der_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}"
+            style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>` : `
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
+          <label style="font-size:0.68rem;color:#a78bfa">${metodoLabel}</label>
+          <input type="number" id="${prefix}_rpe_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}"
+            style="background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
+        </div>`}
+        <!-- Done checkbox -->
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:flex-end;min-width:44px">
+          <label style="font-size:0.65rem;color:var(--text-muted)">Hecho</label>
+          <div class="adm-serie-done" id="${prefix}_done_${i}" onclick="admToggleSerie('${prefix}',${i},${sv(i,'descanso',ejConfig.descanso||90)})">✓</div>
+        </div>
+      </div>
+      <div style="width:100%;padding-left:32px;margin-top:4px">
+        <input type="text" id="${prefix}_comentario_${i}" placeholder="Comentario serie ${i+1} (opcional)..."
+          style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:6px 10px;color:rgba(232,244,255,0.5);font-family:'Exo 2',sans-serif;font-size:0.78rem;outline:none;transition:all 0.2s"
+          onfocus="this.style.borderColor='rgba(123,47,255,0.4)';this.style.color='#e8f4ff';this.style.background='rgba(123,47,255,0.05)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(232,244,255,0.5)';this.style.background='rgba(255,255,255,0.03)'">
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Helper: collect series data from admin form ──
+function _admCollectSeries(ejConfig, ejInfo, prefix) {
+  const esBiext = ejInfo.biextremidad === true;
+  const n = ejConfig.series || 3;
+  return Array.from({length:n}, (_,i) => {
+    const doneEl = document.getElementById(`${prefix}_done_${i}`);
+    const base = {
+      reps: +document.getElementById(`${prefix}_reps_${i}`)?.value||0,
+      peso: +document.getElementById(`${prefix}_peso_${i}`)?.value||0,
+      completada: doneEl ? doneEl.classList.contains('checked') : true,
+      comentario: document.getElementById(`${prefix}_comentario_${i}`)?.value?.trim()||''
+    };
+    if(esBiext) {
+      base.rirRpeIzq = +document.getElementById(`${prefix}_rpe_izq_${i}`)?.value||0;
+      base.rirRpeDer = +document.getElementById(`${prefix}_rpe_der_${i}`)?.value||0;
+      base.rirRpe = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
+      const repsIzqVal = +document.getElementById(`${prefix}_reps_izq_${i}`)?.value;
+      const repsDerVal = +document.getElementById(`${prefix}_reps_der_${i}`)?.value;
+      if(!isNaN(repsIzqVal)) base.repsIzq = repsIzqVal;
+      if(!isNaN(repsDerVal)) base.repsDer = repsDerVal;
+      if(base.repsIzq != null && base.repsDer != null) {
+        base.reps = Math.round((base.repsIzq + base.repsDer) / 2);
+      } else {
+        base.reps = base.repsIzq ?? base.repsDer ?? 0;
+      }
+    } else {
+      base.rirRpe = +document.getElementById(`${prefix}_rpe_${i}`)?.value||0;
+    }
+    return base;
+  });
+}
+
+// ── Admin: toggle serie done + rest timer ──
+let _admRestInterval = null;
+let _admAudioCtx = null;
+
+function _admGetAudioCtx() {
+  if(!_admAudioCtx) {
+    try { _admAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return _admAudioCtx;
+}
+
+function _admPlayTick(freq, gain, duration, attack, decay) {
+  const ctx = _admGetAudioCtx(); if(!ctx) return;
+  if(ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator(); osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, now);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.85, now + duration);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(gain, now + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(now); osc.stop(now + duration + 0.01);
+}
+
+function _admStartRestTimer(totalSecs) {
+  if(_admRestInterval) { clearInterval(_admRestInterval); _admRestInterval = null; }
+  const existing = document.getElementById('admRestTimerOverlay');
+  if(existing) existing.remove();
+
+  let remaining = totalSecs;
+  const R = 95, C = 2 * Math.PI * R;
+
+  const getColors = (rem, tot) => {
+    const pct = rem / tot;
+    if(pct > 0.5) return { color:'#00c8ff', glow:'rgba(0,200,255,0.55)' };
+    if(pct > 0.25) return { color:'#ffd60a', glow:'rgba(255,214,10,0.55)' };
+    return { color:'#ff4d6d', glow:'rgba(255,77,109,0.6)' };
+  };
+  const getMsg = (rem, tot) => {
+    const pct = rem / tot;
+    if(pct > 0.75) return 'Atleta recuperando 💨';
+    if(pct > 0.45) return 'Descansando 🧘';
+    if(pct > 0.15) return 'Casi listo... 💪';
+    if(rem > 0) return '¡Prepárate! 🔥';
+    return '¡Siguiente serie! 🚀';
+  };
+
+  const { color, glow } = getColors(remaining, totalSecs);
+  const offset = C * (1 - remaining / totalSecs);
+
+  const ovl = document.createElement('div');
+  ovl.id = 'admRestTimerOverlay';
+  ovl.innerHTML = `
+    <div class="rt-label">Tiempo de descanso</div>
+    <div class="rt-series-badge">✅ Serie completada</div>
+    <div class="rt-ring-wrap" id="admRtRingWrap">
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <circle class="rt-ring-bg" cx="110" cy="110" r="${R}"/>
+        <circle class="rt-ring-inner" id="admRtRingInner" cx="110" cy="110" r="${R-18}"
+          stroke-dasharray="${2*Math.PI*(R-18)}" stroke-dashoffset="${2*Math.PI*(R-18)*(1-remaining/totalSecs)}"/>
+        <circle class="rt-ring-fill" id="admRtRingFill" cx="110" cy="110" r="${R}"
+          stroke-dasharray="${C}" stroke-dashoffset="${offset}"/>
+      </svg>
+      <div class="rt-number">
+        <span class="rt-count" id="admRtCount">${remaining}</span>
+        <span class="rt-secs-label">segundos</span>
+      </div>
+    </div>
+    <div class="rt-msg" id="admRtMsg">${getMsg(remaining, totalSecs)}</div>
+    <div class="rt-progress-bar">
+      <div class="rt-progress-fill" id="admRtProgressFill" style="width:${(remaining/totalSecs)*100}%"></div>
+    </div>
+    <button class="rt-skip" onclick="window._admSkipRest()">Saltar descanso</button>
+  `;
+  ovl.style.setProperty('--rt-color', color);
+  ovl.style.setProperty('--rt-glow', glow);
+  document.body.appendChild(ovl);
+
+  _admRestInterval = setInterval(() => {
+    remaining--;
+    if(remaining > 0) {
+      if(remaining <= 5) _admPlayTick(880 + (5-remaining)*100, 0.22, 0.07, 0.003, 0.055);
+      else _admPlayTick(528, 0.12, 0.09, 0.005, 0.07);
+    }
+    const countEl = document.getElementById('admRtCount');
+    const ringFill = document.getElementById('admRtRingFill');
+    const ringInner = document.getElementById('admRtRingInner');
+    const msgEl = document.getElementById('admRtMsg');
+    const progressEl = document.getElementById('admRtProgressFill');
+    const ringWrap = document.getElementById('admRtRingWrap');
+    const overlay = document.getElementById('admRestTimerOverlay');
+    if(!countEl || !overlay) { clearInterval(_admRestInterval); return; }
+    countEl.textContent = remaining > 0 ? remaining : '✓';
+    countEl.style.animation = 'none'; void countEl.offsetWidth;
+    countEl.style.animation = 'rtCountPop 0.25s cubic-bezier(0.34,1.56,0.64,1)';
+    const newOffset = C * (1 - remaining / totalSecs);
+    if(ringFill) ringFill.style.strokeDashoffset = newOffset;
+    if(ringInner) ringInner.style.strokeDashoffset = 2*Math.PI*(R-18) * (1 - remaining/totalSecs);
+    if(progressEl) progressEl.style.width = `${Math.max(0, (remaining/totalSecs)*100)}%`;
+    if(msgEl) msgEl.textContent = getMsg(remaining, totalSecs);
+    const { color: c, glow: g } = getColors(remaining, totalSecs);
+    overlay.style.setProperty('--rt-color', c);
+    overlay.style.setProperty('--rt-glow', g);
+    if(ringWrap) ringWrap.classList.toggle('rt-urgent', remaining <= 10 && remaining > 0);
+    if(remaining <= 0) {
+      clearInterval(_admRestInterval); _admRestInterval = null;
+      if(navigator.vibrate) navigator.vibrate([100, 50, 150]);
+      overlay.style.setProperty('--rt-color', '#00e5a0');
+      overlay.style.setProperty('--rt-glow', 'rgba(0,229,160,0.6)');
+      if(ringWrap) ringWrap.classList.remove('rt-urgent');
+      if(progressEl) progressEl.style.width = '0%';
+      setTimeout(() => {
+        const o = document.getElementById('admRestTimerOverlay');
+        if(o) { o.style.animation = 'rtFadeOut 0.3s ease forwards'; setTimeout(() => o.remove(), 320); }
+      }, 1200);
+    }
+  }, 1000);
+}
+
+window._admSkipRest = () => {
+  if(_admRestInterval) { clearInterval(_admRestInterval); _admRestInterval = null; }
+  const o = document.getElementById('admRestTimerOverlay');
+  if(o) { o.style.animation = 'rtFadeOut 0.3s ease forwards'; setTimeout(() => o.remove(), 300); }
+};
+
+window.admToggleSerie = (prefix, i, restSecs) => {
+  const el = document.getElementById(`${prefix}_done_${i}`);
+  if(!el) return;
+  const wasChecked = el.classList.contains('checked');
+  el.classList.toggle('checked');
+  const isNowChecked = !wasChecked;
+  if(isNowChecked) {
+    if(navigator.vibrate) navigator.vibrate(50);
+    // Show autosave badge
+    const old = document.getElementById('admAutosaveBadge');
+    if(old) old.remove();
+    const badge = document.createElement('div');
+    badge.id = 'admAutosaveBadge';
+    badge.className = 'autosave-badge-adm';
+    badge.textContent = '☁️ Serie marcada';
+    document.body.appendChild(badge);
+    setTimeout(() => badge.remove(), 1600);
+    // Start rest timer
+    _admStartRestTimer(restSecs || 90);
+  }
+};
+
 window._renderAdminEjercicio = function _renderAdminEjercicio() {
   const s = window._adminSesion;
   const { ejsDia, ejs, user, ejercicioActual, mesActual, semanaActual, diaActual, hist } = s;
@@ -2679,127 +2992,111 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
   const total    = ejsDia.length;
   const current  = ejercicioActual + 1;
   const metodo   = user.metodo||'RPE';
-  const esBiext  = ejInfo.biextremidad === true;
   const metodoLabel = metodo==='RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
   const metodoMin   = metodo==='RPE' ? 1 : -1;
   const metodoMax   = metodo==='RPE' ? 10 : 6;
+
+  // ── Biserie: is this exercise paired with the next? ──
+  const esBiset = ejConfig.biset === true && ejercicioActual + 1 < ejsDia.length;
+  const ejConfigB = esBiset ? ejsDia[ejercicioActual + 1] : null;
+  const ejInfoB   = ejConfigB ? (ejs[ejConfigB.ejercicioId]||{}) : null;
 
   // ── Estilos compartidos para tablas ──
   const thSt = 'padding:4px 6px;font-size:0.65rem;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:0.5px;color:rgba(167,139,250,0.6);';
   const tdSt = 'padding:5px 6px;font-size:0.82rem;font-weight:700;color:#e8f4ff;';
 
-  // ── Banner "última vez" ──
-  let ultimoBanner = '';
-  if(hist) {
+  // ── Helper: build "última vez" banner ──
+  const buildUltimoBanner = (cfg, info, suffix) => {
+    if(!hist) return '';
     const sesiones = Object.values(hist).sort((a,b) => (b.fechaFin||b.fechaInicio||b.fecha||0) - (a.fechaFin||a.fechaInicio||a.fecha||0));
     const ultimoReg = sesiones.reduce((found, ses) => {
       if(found) return found;
       const completados = Object.values(ses.ejerciciosCompletados||{});
-      const match = completados.find(ec => ec.ejercicioId === ejConfig.ejercicioId);
+      const match = completados.find(ec => ec.ejercicioId === cfg.ejercicioId);
       const sesDate = ses.fechaFin||ses.fechaInicio||ses.fecha||0;
       return match ? { series: match.series||[], fecha: sesDate, mes: ses.mes, semana: ses.semana, dia: ses.dia } : null;
     }, null);
+    if(!ultimoReg) return '';
+    const { series, fecha, mes, semana, dia } = ultimoReg;
+    const esBiextUlt = series.some(s => s.rirRpeIzq != null);
+    const fechaStr = new Date(fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
+    const thRpe = esBiextUlt
+      ? `<th style="${thSt}color:#00e5a0">Izq reps</th><th style="${thSt}color:#ff6b35">Der reps</th><th style="${thSt}color:#00e5a0">Izq ${metodo}</th><th style="${thSt}color:#ff6b35">Der ${metodo}</th>`
+      : `<th style="${thSt}color:#a78bfa">${metodo}</th>`;
+    const filas = series.map((s,i) => {
+      const rpeCell = esBiextUlt
+        ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.repsIzq??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.repsDer??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
+        : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+        <td style="${tdSt};color:#a78bfa">${i+1}</td>
+        ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
+        <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
+        ${rpeCell}
+        <td style="padding:5px 6px;font-size:0.7rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
+      </tr>`;
+    }).join('');
+    return `<div style="background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px">
+      <div style="font-size:0.65rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <span>📖</span> Última vez — M${mes}·S${semana}·D${dia} · ${fechaStr}
+      </div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid rgba(123,47,255,0.3)">
+          <th style="${thSt}">#</th>${esBiextUlt ? '' : `<th style="${thSt}">Reps</th>`}
+          <th style="${thSt}">Peso</th>${thRpe}<th style="${thSt}">Nota</th>
+        </tr></thead><tbody>${filas}</tbody>
+      </table></div>
+    </div>`;
+  };
 
-    if(ultimoReg) {
-      const { series, fecha, mes, semana, dia } = ultimoReg;
-      const esBiextUlt = series.some(s => s.rirRpeIzq != null);
-      const fechaStr   = new Date(fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
-      const thRpe = esBiextUlt
-        ? `<th style="${thSt}color:#00e5a0">Izq reps</th><th style="${thSt}color:#ff6b35">Der reps</th><th style="${thSt}color:#00e5a0">Izq ${metodo}</th><th style="${thSt}color:#ff6b35">Der ${metodo}</th>`
-        : `<th style="${thSt}color:#a78bfa">${metodo}</th>`;
-
-      const filas = series.map((s,i) => {
-        const rpeCell = esBiextUlt
-          ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.repsIzq??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.repsDer??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
-          : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
-        return `
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-            <td style="${tdSt};color:#a78bfa">${i+1}</td>
-            ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
-            <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
-            ${rpeCell}
-            <td style="padding:5px 6px;font-size:0.7rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
-          </tr>`;
-      }).join('');
-
-      ultimoBanner = `
-        <div style="background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px">
-          <div style="font-size:0.65rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
-            <span>📖</span> Última vez — M${mes}·S${semana}·D${dia} · ${fechaStr}
-          </div>
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse">
-              <thead><tr style="border-bottom:1px solid rgba(123,47,255,0.3)">
-                <th style="${thSt}">#</th>
-                ${esBiextUlt ? '' : `<th style="${thSt}">Reps</th>`}
-                <th style="${thSt}">Peso</th>
-                ${thRpe}
-                <th style="${thSt}">Nota</th>
-              </tr></thead>
-              <tbody>${filas}</tbody>
-            </table>
-          </div>
-        </div>`;
-    }
+  // ── Build content ──
+  let bodyHtml = '';
+  if(esBiset) {
+    // BISERIE: show both exercises interleaved
+    const seriesA = _admSeriesRows(ejConfig, ejInfo, 'admA', metodo, metodoMin, metodoMax, metodoLabel);
+    const seriesB = _admSeriesRows(ejConfigB, ejInfoB, 'admB', metodo, metodoMin, metodoMax, metodoLabel);
+    bodyHtml = `
+      <div style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.25);border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="font-size:0.68rem;color:#ff6b35;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">🔗 BISERIE — Alterna: 1 serie A → 1 serie B → descanso → siguiente</div>
+      </div>
+      <!-- Ejercicio A -->
+      <div style="background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.2);border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="font-size:0.72rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">🅰 ${ejInfo.nombre||'Ejercicio A'}</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ${metodo} ${ejConfig.rirRpe}</div>
+        ${buildUltimoBanner(ejConfig, ejInfo, 'A')}
+        ${seriesA}
+      </div>
+      <!-- Ejercicio B -->
+      <div style="background:rgba(123,47,255,0.05);border:1px solid rgba(123,47,255,0.2);border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="font-size:0.72rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">🅱 ${ejInfoB.nombre||'Ejercicio B'}</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">${ejConfigB.series} series · ${ejConfigB.repsMin}-${ejConfigB.repsMax} reps · ${ejConfigB.peso}kg · ${metodo} ${ejConfigB.rirRpe}</div>
+        ${buildUltimoBanner(ejConfigB, ejInfoB, 'B')}
+        ${seriesB}
+      </div>`;
+  } else {
+    // NORMAL: single exercise
+    const seriesRows = _admSeriesRows(ejConfig, ejInfo, 'adm', metodo, metodoMin, metodoMax, metodoLabel);
+    bodyHtml = `
+      <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px">${ejInfo.nombre||'Ejercicio'}</div>
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">
+        ${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ${metodo} ${ejConfig.rirRpe} · ⏱ ${ejConfig.descanso}s
+      </div>
+      ${buildUltimoBanner(ejConfig, ejInfo, '')}
+      <div>${seriesRows}</div>`;
   }
 
-  const seriesRows = Array.from({length:ejConfig.series||3},(_,i)=>`
-    <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap">
-      <div style="width:24px;text-align:center;font-weight:700;color:var(--primary);padding-top:28px">${i+1}</div>
-      <div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">
-        ${esBiext ? `
-        <div style="display:flex;flex-direction:column;gap:3px;width:100%;background:rgba(0,229,160,0.05);border-radius:10px;padding:8px;border:1px solid rgba(0,229,160,0.15)">
-          <div style="font-size:0.65rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">🦾 Reps por lado</div>
-          <div style="display:flex;gap:8px">
-            <div style="display:flex;flex-direction:column;gap:3px;flex:1">
-              <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
-              <input type="number" id="adm_reps_izq_${i}" value="${ejConfig.repsMin||0}" min="0"
-                style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-            </div>
-            <div style="display:flex;flex-direction:column;gap:3px;flex:1">
-              <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
-              <input type="number" id="adm_reps_der_${i}" value="${ejConfig.repsMin||0}" min="0"
-                style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-            </div>
-          </div>
-        </div>
-        <div style="display:none"><input type="number" id="adm_reps_${i}" value="${ejConfig.repsMin||0}"></div>
-        ` : `
-        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
-          <label style="font-size:0.68rem;color:var(--text-muted)">Reps</label>
-          <input type="number" id="adm_reps_${i}" value="${ejConfig.repsMin||0}" min="0"
-            style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-        </div>`}
-        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
-          <label style="font-size:0.68rem;color:var(--text-muted)">Peso kg</label>
-          <input type="number" id="adm_peso_${i}" value="${ejConfig.peso||0}" min="0" step="0.5"
-            style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-        </div>
-        ${esBiext ? `
-        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
-          <label style="font-size:0.68rem;color:#00e5a0">Izq ${metodo}</label>
-          <input type="number" id="adm_rpe_izq_${i}" value="${ejConfig.rirRpe||0}" min="${metodoMin}" max="${metodoMax}"
-            style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
-          <label style="font-size:0.68rem;color:#ff6b35">Der ${metodo}</label>
-          <input type="number" id="adm_rpe_der_${i}" value="${ejConfig.rirRpe||0}" min="${metodoMin}" max="${metodoMax}"
-            style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-        </div>` : `
-        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
-          <label style="font-size:0.68rem;color:#a78bfa">${metodoLabel}</label>
-          <input type="number" id="adm_rpe_${i}" value="${ejConfig.rirRpe||0}" min="${metodoMin}" max="${metodoMax}"
-            style="background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
-        </div>`}
-      </div>
-      <div style="width:100%;padding-left:32px;margin-top:4px">
-        <input type="text" id="adm_comentario_${i}" placeholder="Comentario serie ${i+1} (opcional)..."
-          style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:6px 10px;color:rgba(232,244,255,0.5);font-family:'Exo 2',sans-serif;font-size:0.78rem;outline:none;transition:all 0.2s"
-          onfocus="this.style.borderColor='rgba(123,47,255,0.4)';this.style.color='#e8f4ff';this.style.background='rgba(123,47,255,0.05)'"
-          onblur="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(232,244,255,0.5)';this.style.background='rgba(255,255,255,0.03)'">
-      </div>
-    </div>
-  `).join('');
+  // ── Label for progress ──
+  // When biserie, this step covers 2 exercises visually but advances by 2 in index
+  const displayTotal = (() => {
+    let t = 0, i = 0;
+    while(i < ejsDia.length) { t++; i += (ejsDia[i]?.biset === true && i+1 < ejsDia.length) ? 2 : 1; }
+    return t;
+  })();
+  const displayCurrent = (() => {
+    let c = 0, i = 0;
+    while(i <= ejercicioActual) { c++; i += (ejsDia[i]?.biset === true && i+1 < ejsDia.length) ? 2 : 1; }
+    return c;
+  })();
+  const pct = Math.round(((displayCurrent-1)/displayTotal)*100);
 
   showOverlay(`
     <div class="overlay-header">
@@ -2808,23 +3105,18 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
     </div>
     <div style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:0.8rem;color:var(--text-muted)">Ejercicio ${current} de ${total}</span>
-        <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${Math.round(((current-1)/total)*100)}%</span>
+        <span style="font-size:0.8rem;color:var(--text-muted)">Paso ${displayCurrent} de ${displayTotal}${esBiset?' 🔗':''}</span>
+        <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${pct}%</span>
       </div>
       <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px">
-        <div style="height:100%;background:var(--primary);border-radius:2px;width:${Math.round(((current-1)/total)*100)}%"></div>
+        <div style="height:100%;background:var(--primary);border-radius:2px;width:${pct}%"></div>
       </div>
     </div>
-    <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px">${ejInfo.nombre||'Ejercicio'}</div>
-    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">
-      ${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ${metodo} ${ejConfig.rirRpe} · ⏱ ${ejConfig.descanso}s
-    </div>
-    ${ultimoBanner}
-    <div>${seriesRows}</div>
+    ${bodyHtml}
     <div style="display:flex;gap:10px;margin-top:18px">
-      ${ejercicioActual>0?`<button class="btn btn-secondary" onclick="window._adminSesion.ejercicioActual--;_renderAdminEjercicio()">← Anterior</button>`:''}
+      ${ejercicioActual>0?`<button class="btn btn-secondary" onclick="window._adminSesion.ejercicioActual-=${ejsDia[Math.max(0,ejercicioActual-1)]?.biset&&ejercicioActual>=2?2:1};_renderAdminEjercicio()">← Anterior</button>`:''}
       <button class="btn btn-primary" style="flex:1" onclick="_completarAdminEj()">
-        ${current<total?'Siguiente ejercicio →':'✅ Finalizar sesión'}
+        ${displayCurrent<displayTotal?'Siguiente →':'✅ Finalizar sesión'}
       </button>
     </div>
   `);
@@ -2834,35 +3126,22 @@ window._completarAdminEj = () => {
   const s = window._adminSesion;
   const ejConfig = s.ejsDia[s.ejercicioActual];
   const ejInfo   = s.ejs[ejConfig.ejercicioId]||{};
-  const n        = ejConfig.series||3;
-  const esBiext  = ejInfo.biextremidad === true;
-  const series   = Array.from({length:n},(_,i)=>{
-    const base = {
-      reps: +document.getElementById(`adm_reps_${i}`)?.value||0,
-      peso: +document.getElementById(`adm_peso_${i}`)?.value||0,
-      completada: true,
-      comentario: document.getElementById(`adm_comentario_${i}`)?.value?.trim()||''
-    };
-    if(esBiext) {
-      base.rirRpeIzq = +document.getElementById(`adm_rpe_izq_${i}`)?.value||0;
-      base.rirRpeDer = +document.getElementById(`adm_rpe_der_${i}`)?.value||0;
-      base.rirRpe    = Math.round(((base.rirRpeIzq||0)+(base.rirRpeDer||0))/2);
-      const repsIzqVal = +document.getElementById(`adm_reps_izq_${i}`)?.value;
-      const repsDerVal = +document.getElementById(`adm_reps_der_${i}`)?.value;
-      if(!isNaN(repsIzqVal)) base.repsIzq = repsIzqVal;
-      if(!isNaN(repsDerVal)) base.repsDer = repsDerVal;
-      if(base.repsIzq != null && base.repsDer != null) {
-        base.reps = Math.round((base.repsIzq + base.repsDer) / 2);
-      } else {
-        base.reps = base.repsIzq ?? base.repsDer ?? 0;
-      }
-    } else {
-      base.rirRpe = +document.getElementById(`adm_rpe_${i}`)?.value||0;
-    }
-    return base;
-  });
-  s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series };
-  s.ejercicioActual++;
+  const esBiset  = ejConfig.biset === true && s.ejercicioActual + 1 < s.ejsDia.length;
+
+  if(esBiset) {
+    // Collect data for both A and B
+    const ejConfigB = s.ejsDia[s.ejercicioActual + 1];
+    const ejInfoB   = s.ejs[ejConfigB.ejercicioId]||{};
+    const seriesA = _admCollectSeries(ejConfig,  ejInfo,  'admA');
+    const seriesB = _admCollectSeries(ejConfigB, ejInfoB, 'admB');
+    s.ejerciciosCompletados[s.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA };
+    s.ejerciciosCompletados[s.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB };
+    s.ejercicioActual += 2;
+  } else {
+    const series = _admCollectSeries(ejConfig, ejInfo, 'adm');
+    s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series };
+    s.ejercicioActual++;
+  }
   _renderAdminEjercicio();
 };
 
@@ -4725,18 +5004,23 @@ async function renderValoraciones(container, action) {
           ${vals.length===0?'<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin valoraciones aún</div></div>':
             [...vals].reverse().map((v,i)=>{
               const vid = Object.entries(valoraciones[uid]||{}).find(([,val])=>val.fecha===v.fecha)?.[0];
+              const isFirst = i===0;
               return `
-              <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:14px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+              <div class="accordion-item${isFirst?' open':''}">
+                <div class="accordion-header" onclick="this.closest('.accordion-item').classList.toggle('open')">
                   <div style="font-weight:700;color:var(--primary)">
-                    ${v.mes?`Mes ${v.mes}`:''} 
+                    ${v.mes?`Mes ${v.mes} · `:''}
                     <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400">${new Date(v.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})}</span>
+                    <span style="font-size:0.75rem;margin-left:8px;color:var(--text-muted);font-weight:400">⚖️ ${v.peso}kg · 🔥 ${v.grasa}% grasa · 💪 ${v.muscular}% musc.</span>
                   </div>
-                  <div style="display:flex;gap:6px">
-                    <button class="btn btn-secondary btn-sm" onclick="exportValoracionPDF('${uid}','${vid}')">📄</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteValoracion('${uid}','${vid}')">🗑️</button>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();exportValoracionPDF('${uid}','${vid}')">📄</button>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteValoracion('${uid}','${vid}')">🗑️</button>
+                    <span class="accordion-chevron">▼</span>
                   </div>
                 </div>
+                <div class="accordion-body">
+                  <div class="accordion-inner">
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
                   <div class="rev-info-card"><div class="ric-label">🔥 % Grasa</div><div class="ric-val" style="color:#ff6b35">${v.grasa}%</div></div>
                   <div class="rev-info-card"><div class="ric-label">💪 % Muscular</div><div class="ric-val" style="color:var(--success)">${v.muscular}%</div></div>
@@ -4762,6 +5046,8 @@ async function renderValoraciones(container, action) {
                 </div>
                 ${v.pliegues && Object.keys(v.pliegues).length ? `<div style="margin-top:8px"><div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Pliegues cutáneos (mm)</div><div style="display:flex;flex-wrap:wrap;gap:6px">${Object.entries(v.pliegues).map(([k,val])=>`<span style="background:rgba(123,47,255,0.12);border:1px solid rgba(123,47,255,0.25);border-radius:8px;padding:3px 8px;font-size:0.78rem">${k}: <strong>${val}</strong></span>`).join('')}</div></div>` : ''}
                 ${v.notas?`<div style="margin-top:8px;font-size:0.82rem;color:var(--text-muted);padding:8px;background:rgba(255,255,255,0.03);border-radius:8px">💬 ${v.notas}</div>`:''}
+                  </div>
+                </div>
               </div>`;
             }).join('')}
         </div>
