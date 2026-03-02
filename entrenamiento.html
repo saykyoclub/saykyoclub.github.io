@@ -2126,18 +2126,23 @@ window.toggleSerieP = (prefix, i) => {
   showAutosaveFeedback(el);
   savePendingSession();
 
-  // Rest timer — only when marking as done
+  // Rest timer — solo al marcar como hecha, y en biserie SOLO al completar el ejercicio B
+  // prefix 'ea_' = ejercicio A de biserie → NO mostrar timer todavía
+  // prefix 'eb_' = ejercicio B de biserie → SÍ mostrar timer
   if(isNowChecked) {
-    const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
-    const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
-    const ejsDia = Object.values(diaData?.ejercicios||{});
-    // For biserie, determine which exercise config to use for rest time
-    const isB = prefix === 'eb_';
-    const ejIdx = isB ? state.ejercicioActual + 1 : state.ejercicioActual;
-    const ejConfig = ejsDia[ejIdx];
-    const sc = ejConfig?.seriesConfig;
-    const restSecs = (sc && sc[i] && sc[i].descanso != null) ? sc[i].descanso : (ejConfig?.descanso || 90);
-    startRestTimer(restSecs);
+    const isBisetA = prefix === 'ea_';
+    if(!isBisetA) {
+      const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+      const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+      const ejsDia = Object.values(diaData?.ejercicios||{});
+      // For biserie, use exercise B config for rest time
+      const isB = prefix === 'eb_';
+      const ejIdx = isB ? state.ejercicioActual + 1 : state.ejercicioActual;
+      const ejConfig = ejsDia[ejIdx];
+      const sc = ejConfig?.seriesConfig;
+      const restSecs = (sc && sc[i] && sc[i].descanso != null) ? sc[i].descanso : (ejConfig?.descanso || 90);
+      startRestTimer(restSecs);
+    }
 
     updateSessionDot(true);
   }

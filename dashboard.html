@@ -2369,20 +2369,27 @@ window.updateEjDia = async (rutinaId, mes, semana, dia, idx) => {
   }));
 
   const path = `rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios/${idx}`;
-  await set(ref(db, path), {
-    ejercicioId:  ejId,
-    series:       n,
-    seriesConfig,
-    repsMin:  seriesConfig[0].repsMin,
-    repsMax:  seriesConfig[0].repsMax,
-    peso:     seriesConfig[0].peso,
-    rirRpe:   seriesConfig[0].rirRpe,
-    descanso: seriesConfig[0].descanso,
-    tiempo:   +document.getElementById('ejTiempo').value || 0,
-    metodo:   document.getElementById('ejMetodo').value.trim(),
-    anotaciones: document.getElementById('ejAnotaciones').value.trim(),
-    biset: document.getElementById('ejBiset')?.checked || false,
-  });
+  try {
+    await set(ref(db, path), {
+      ejercicioId:  ejId,
+      series:       n,
+      seriesConfig,
+      repsMin:  seriesConfig[0].repsMin,
+      repsMax:  seriesConfig[0].repsMax,
+      peso:     seriesConfig[0].peso,
+      rirRpe:   seriesConfig[0].rirRpe,
+      descanso: seriesConfig[0].descanso,
+      tiempo:   +document.getElementById('ejTiempo').value || 0,
+      metodo:   document.getElementById('ejMetodo').value.trim(),
+      anotaciones: document.getElementById('ejAnotaciones').value.trim(),
+      biset: document.getElementById('ejBiset')?.checked || false,
+    });
+    closeOverlay();
+    Swal.fire({icon:'success',title:'✅ Ejercicio actualizado',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+    renderRutinaDetail(rutinaId);
+  } catch(e) {
+    Swal.fire({icon:'error',title:'Error al guardar',text:e.message,background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#ff4d6d'});
+  }
 };
 
 window.showRutinaModal = async () => {
@@ -2977,8 +2984,14 @@ window.admToggleSerie = (prefix, i, restSecs) => {
     badge.textContent = '☁️ Serie marcada';
     document.body.appendChild(badge);
     setTimeout(() => badge.remove(), 1600);
-    // Start rest timer
-    _admStartRestTimer(restSecs || 90);
+    // En biserie: el timer solo se muestra al completar el ejercicio B (ambas partes hechas)
+    // prefix 'admA' = ejercicio A de biserie → no mostrar timer aún
+    // prefix 'admB' = ejercicio B de biserie → mostrar timer
+    // prefix 'adm'  = ejercicio normal (no biserie) → mostrar timer
+    const isBisetA = prefix === 'admA';
+    if(!isBisetA) {
+      _admStartRestTimer(restSecs || 90);
+    }
   }
 };
 
