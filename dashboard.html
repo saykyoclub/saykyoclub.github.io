@@ -5816,8 +5816,6 @@ window.exportValoracionPDF = async (uid, specificVid) => {
       F(12, 20, 42); doc.roundedRect(kx,y,kW,30,2.5,2.5,'F');
       const [kr,kg2,kb] = k.col;
       S(kr,kg2,kb); LW(0.5); doc.roundedRect(kx,y,kW,30,2.5,2.5,'S');
-      // Barra superior
-      F(...k.col); doc.roundedRect(kx,y,kW,2,1,1,'F');
       // Label
       T(...CMU); FT(5.5,'bold'); doc.text(k.label.toUpperCase(), kx+kW/2, y+9, {align:'center'});
       // Valor
@@ -5914,10 +5912,10 @@ window.exportValoracionPDF = async (uid, specificVid) => {
   T(...CMU); FT(5.5); doc.text(`${user.nombres||''} — ${mesLabel}${fechaStr}`, W-M, 9, {align:'right'});
   y=17;
 
-  // Lado a lado centradas — BW ajustado para que quepan dos en A4
-  const GAP_H = 6; // separación horizontal entre las dos imágenes
-  const BW = (W - 2*M - GAP_H) / 2; // cada imagen ocupa la mitad del ancho útil
-  const BH = Math.round(BW * 325 / 130); // proporción exacta del contenedor web
+  // Lado a lado centradas — reducidas para dejar espacio a la leyenda completa
+  const GAP_H = 6;
+  const BW = (W - 2*M - GAP_H) / 2 * 0.68; // 68% del ancho para dejar margen y leyenda
+  const BH = Math.round(BW * 325 / 130);    // proporción original exacta 130x325
   const totalW = BW * 2 + GAP_H;
   const fX  = (W - totalW) / 2;       // X imagen frontal (izq)
   const bkX = fX + BW + GAP_H;        // X imagen posterior (der)
@@ -5950,13 +5948,13 @@ window.exportValoracionPDF = async (uid, specificVid) => {
     if (!zones.length) return 0;
     T(...CMU); FT(5,'bold'); doc.text(title, sx, legY);
     zones.forEach((z,i) => {
-      const ly = legY + 5 + i * 6;
+      const ly = legY + 5 + i * 5;
       const [r2,g2,b2] = z.col;
       doc.setFillColor(r2,g2,b2); doc.rect(sx, ly-2.2, 3, 3, 'F');
-      T(...CTX); FT(5,'bold'); doc.text(z.label, sx+4.5, ly);
-      doc.setTextColor(r2,g2,b2); FT(5.5,'bold'); doc.text(z.val, sx+35, ly);
+      T(...CTX); FT(4.5,'bold'); doc.text(z.label, sx+4.5, ly);
+      doc.setTextColor(r2,g2,b2); FT(5,'bold'); doc.text(z.val, sx+35, ly);
     });
-    return zones.length * 6 + 8;
+    return zones.length * 5 + 8;
   };
 
   const legHFront = drawLeg(allFrontZ, M, 'MEDICIONES FRONTALES');
@@ -6005,8 +6003,6 @@ window.exportValoracionPDF = async (uid, specificVid) => {
       // Borde sutil del color de la gráfica
       const [cr,cg2,cb2] = cd.col;
       S(cr,cg2,cb2); LW(0.4); doc.roundedRect(cx2, rowStartY, GW, GBOX, 2.5, 2.5, 'S');
-      // Barra de color superior más prominente
-      F(...cd.col); doc.roundedRect(cx2, rowStartY, GW, 2, 1, 1, 'F');
       // Label con color
       T(...cd.col); FT(6.5,'bold');
       doc.text(cd.label, cx2+3, rowStartY + GLH - 1.5);
