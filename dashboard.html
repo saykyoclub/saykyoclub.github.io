@@ -4804,7 +4804,7 @@ async function renderValoraciones(container, action) {
       // Composición integral (multi-line)
       const cc = document.getElementById('chartComp');
       if(cc) new Chart(cc,{type:'line',data:{labels,datasets:[
-        {label:'% Grasa',data:vals.map(v=>v.grasa),borderColor:'#ff6b35',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
+        {label:'% Grasa',data:vals.map(v=>v.grasa),borderColor:'#ff6b35',tension:0.4,fill:true,pointRadius:4,spanGaps:true},
         {label:'% Muscular',data:vals.map(v=>v.muscular),borderColor:'#00e5a0',tension:0.4,fill:false,pointRadius:4,spanGaps:true},
       ]},options:chartOptsLegend});
       mkLine(document.getElementById('chartMetab'), 'Kcal', vals.map(v=>v.metabolismo||null), '#ffd60a');
@@ -5036,8 +5036,9 @@ window.exportValoracionPDF = async (uid, specificVid) => {
   if (!v) { Swal.close(); return Swal.fire({icon:'warning', title:'Valoración no encontrada', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'}); }
 
   const allValsEntries = Object.entries(allValsSnap.val() || {}).sort((a,b) => a[1].fecha - b[1].fecha);
-  const allValsArr     = allValsEntries.map(([,vv]) => vv);
   const thisIdx        = allValsEntries.findIndex(([id]) => id === specificVid);
+  // Solo incluir valoraciones HASTA la que se está descargando (inclusive)
+  const allValsArr     = allValsEntries.slice(0, thisIdx + 1).map(([,vv]) => vv);
   const prevVal        = thisIdx > 0 ? allValsEntries[thisIdx - 1][1] : null;
 
   const PLIEGUES_KEYS = ['Tríceps','Subescapular','Supraespinal','Abdominal','Muslo','Pantorrilla'];
@@ -5537,14 +5538,48 @@ window.exportValoracionPDF = async (uid, specificVid) => {
     doc.text(`Pág. ${p} / ${totalPg}`, W-M, H-3.5, {align:'right'});
   }
 
-  // ── Descarga ──
-  const blob=doc.output('blob');
-  const url=URL.createObjectURL(blob);
-  const fn=`${(user.nombres||'Atleta').replace(/\s+/g,'_')}_valoracion_${new Date(v.fecha).toLocaleDateString('es-CO').replace(/\//g,'-')}.pdf`;
-  const a=document.createElement('a'); a.href=url; a.download=fn; a.style.display='none';
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },2000);
-  Swal.fire({icon:'success',title:'✅ PDF generado',text:`Descargando ${fn}`,timer:2500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+ // ── Descarga — compatible web + iOS/Android ──
+  const fn = `${(user.nombres||'Atleta').replace(/\s+/g,'_')}_valoracion_${new Date(v.fecha).toLocaleDateString('es-CO').replace(/\//g,'-')}.pdf`;
+
+  // ── Descarga universal: PC, Android e iOS ──
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  try {
+    const blob = doc.output('blob');
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fn; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch(_){} }, 3000);
+    Swal.fire({icon:'success', title:'✅ PDF generado',
+      text: isMobile ? 'Revisa tus descargas o la carpeta de archivos' : `Descargando ${fn}`,
+      timer:2800, showConfirmButton:false, background:'rgba(10,20,40,0.95)', color:'#e8f4ff'});
+  } catch(dlErr) {
+    // Fallback para iOS Safari: abrir como data URI
+    try {
+      const dataUri = doc.output('datauristring');
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.write(
+          `<html><head><title>${fn}</title></head><body style="margin:0;background:#000">` +
+          `<p style="font-family:sans-serif;color:#aaa;padding:12px;font-size:13px">` +
+          `Mantén presionado el PDF y elige "Guardar en Archivos".</p>` +
+          `<iframe src="${dataUri}" style="width:100%;height:calc(100vh - 50px);border:none"></iframe>` +
+          `</body></html>`);
+        w.document.close();
+      } else {
+        Swal.fire({
+          icon:'info', title:'Abre el PDF',
+          html:`<p style="font-family:Exo 2,sans-serif;font-size:0.85rem;color:rgba(232,244,255,0.8)">
+            Presiona <strong style="color:#00c8ff">Ver PDF</strong> para abrirlo.</p>`,
+          confirmButtonText:'📄 Ver PDF', confirmButtonColor:'#00c8ff',
+          background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+        }).then(() => { window.location.href = dataUri; });
+      }
+    } catch(e2) {
+      Swal.fire({icon:'error', title:'Error al generar PDF', text:e2.message,
+        background:'rgba(10,20,40,0.95)', color:'#e8f4ff'});
+    }
+  }
 };
 
 // ── Selector visual de fatiga (admin) ──
