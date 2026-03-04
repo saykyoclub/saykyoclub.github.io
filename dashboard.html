@@ -1874,21 +1874,45 @@ async function renderRutinaDetail(rutinaId) {
       ${mesActual&&semActual?`
         <div style="min-width:70px">
           <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Día</div>
-          ${[1,2,3,4,5].map(d=>`
-            <div class="rb-item ${diaActual==d?'active':''}" style="padding:6px 12px;margin-bottom:4px;position:relative;${nextMes==mesActual&&nextSem==semActual&&nextDia==d&&diaActual!=d?'border-color:rgba(0,200,255,0.5);background:rgba(0,200,255,0.06);':''}" onclick="selDia('${rutinaId}',${mesActual},${semActual},${d})">
-              D${d}
-              ${nextMes==mesActual&&nextSem==semActual&&nextDia==d?'<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;background:rgba(0,229,160,0.25);color:var(--success);border-radius:10px;padding:1px 6px;font-weight:700">HOY</span>':''}
-            </div>
-          `).join('')}
+          ${(() => {
+            // Días existentes en Firebase (con o sin ejercicios)
+            const diasExistentes = Object.keys(meses[mesActual]?.semanas?.[semActual]?.dias||{}).map(Number);
+            // Mostrar siempre mínimo 5 días, más cualquier día ya creado, más el día activo
+            const maxExistente = diasExistentes.length ? Math.max(...diasExistentes) : 0;
+            const daysToShow = Math.max(5, maxExistente, diaActual||1);
+            return Array.from({length: Math.min(daysToShow, 7)}, (_,idx) => idx+1).map(d=>`
+              <div class="rb-item ${diaActual==d?'active':''}" style="padding:6px 12px;margin-bottom:4px;position:relative;${nextMes==mesActual&&nextSem==semActual&&nextDia==d&&diaActual!=d?'border-color:rgba(0,200,255,0.5);background:rgba(0,200,255,0.06);':''}" onclick="selDia('${rutinaId}',${mesActual},${semActual},${d})">
+                D${d}
+                ${nextMes==mesActual&&nextSem==semActual&&nextDia==d?'<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;background:rgba(0,229,160,0.25);color:var(--success);border-radius:10px;padding:1px 6px;font-weight:700">HOY</span>':''}
+              </div>
+            `).join('');
+          })()}
+          ${(() => {
+            // Botón + solo si hay menos de 7 días visibles
+            const diasExistentes = Object.keys(meses[mesActual]?.semanas?.[semActual]?.dias||{}).map(Number);
+            const maxExistente = diasExistentes.length ? Math.max(...diasExistentes) : 0;
+            const daysShown = Math.min(Math.max(5, maxExistente, diaActual||1), 7);
+            if(daysShown >= 7) return '';
+            const nextDay = daysShown + 1;
+            return `<div onclick="addDia('${rutinaId}',${mesActual},${semActual},${nextDay})"
+              style="padding:5px 8px;margin-bottom:4px;border:1px dashed rgba(0,200,255,0.3);border-radius:10px;
+                     font-size:0.75rem;color:rgba(0,200,255,0.6);cursor:pointer;text-align:center;
+                     transition:all 0.2s ease;display:flex;align-items:center;justify-content:center;gap:4px"
+              onmouseenter="this.style.borderColor='rgba(0,200,255,0.7)';this.style.color='var(--primary)';this.style.background='rgba(0,200,255,0.06)'"
+              onmouseleave="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='rgba(0,200,255,0.6)';this.style.background='transparent'">
+              <span style="font-size:1rem;line-height:1">+</span> D${nextDay}
+            </div>`;
+          })()}
         </div>
       `:''}
     </div>
     <!-- EJERCICIOS DEL DÍA -->
     <div style="padding:16px">
       ${diaActual?`
-        <div style="font-weight:700;margin-bottom:16px;font-size:1rem">
-          Mes ${mesActual} · Semana ${semActual} · Día ${diaActual}
-          <button class="btn btn-primary btn-sm" style="margin-left:12px" onclick="addEjercicioDia('${rutinaId}',${mesActual},${semActual},${diaActual})">+ Agregar ejercicio</button>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <span style="font-weight:700;font-size:1rem">Mes ${mesActual} · Semana ${semActual} · Día ${diaActual}</span>
+          <button class="btn btn-primary btn-sm" onclick="addEjercicioDia('${rutinaId}',${mesActual},${semActual},${diaActual})">+ Agregar ejercicio</button>
+          ${diaActual > 5 ? `<button class="btn btn-danger btn-sm" onclick="removeDia('${rutinaId}',${mesActual},${semActual},${diaActual})" style="opacity:0.8">🗑️ Eliminar día ${diaActual}</button>` : ''}
         </div>
         ${Object.entries(ejsDia).map(([i,ej])=>`
           <div class="exercise-slot">
@@ -1945,6 +1969,39 @@ async function renderRutinaDetail(rutinaId) {
 window.selMes = (rid,m) => { rutinaState.selectedMes=m; rutinaState.selectedSemana=null; rutinaState.selectedDia=null; renderRutinaDetail(rid); };
 window.selSemana = (rid,m,s) => { rutinaState.selectedSemana=s; rutinaState.selectedDia=null; renderRutinaDetail(rid); };
 window.selDia = (rid,m,s,d) => { rutinaState.selectedDia=d; renderRutinaDetail(rid); };
+
+window.addDia = async (rid, m, s, d) => {
+  // Crear el nodo del día en Firebase con un placeholder para que no se borre como nodo vacío
+  const diaPath = `rutinas/${rid}/meses/${m}/semanas/${s}/dias/${d}`;
+  const snap = await get(ref(db, diaPath));
+  if(!snap.exists()) {
+    // Firebase elimina nodos vacíos — usar _creado como placeholder
+    await set(ref(db, `${diaPath}/_creado`), Date.now());
+  }
+  rutinaState.selectedMes    = m;
+  rutinaState.selectedSemana = s;
+  rutinaState.selectedDia    = d;
+  renderRutinaDetail(rid);
+};
+
+window.removeDia = async (rid, m, s, d) => {
+  if(d <= 5) return; // Solo se pueden eliminar días extra (D6, D7)
+  const r = await Swal.fire({
+    icon: 'warning',
+    title: `¿Eliminar Día ${d}?`,
+    html: `<div style="color:#e8f4ff">Se eliminarán todos los ejercicios configurados en <strong>M${m}·S${s}·D${d}</strong>.<br><br>Esta acción no se puede deshacer.</div>`,
+    showCancelButton: true,
+    confirmButtonText: '🗑️ Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    background: 'rgba(10,20,40,0.95)',
+    color: '#e8f4ff'
+  });
+  if(!r.isConfirmed) return;
+  await remove(ref(db, `rutinas/${rid}/meses/${m}/semanas/${s}/dias/${d}`));
+  rutinaState.selectedDia = d - 1; // volver al día anterior
+  renderRutinaDetail(rid);
+};
 
 // ── Duplicar semana → semana siguiente ──
 window.duplicarSemana = async (rutinaId, mes, semOrigen, semDestino) => {
@@ -2195,7 +2252,9 @@ window.saveEjDia = async (rutinaId, mes, semana, dia) => {
   // Keep top-level defaults for backwards compatibility display
   const path = `rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios`;
   const snap = await get(ref(db, path));
-  const idx = Object.keys(snap.val()||{}).length;
+  // Usar max(keys)+1 en lugar de length para no sobreescribir si hubo eliminaciones previas
+  const existingKeys = Object.keys(snap.val()||{}).map(Number).filter(k => !isNaN(k));
+  const idx = existingKeys.length > 0 ? Math.max(...existingKeys) + 1 : 0;
 
   await set(ref(db, `${path}/${idx}`), {
     ejercicioId:  ejId,
@@ -2221,7 +2280,21 @@ window.saveEjDia = async (rutinaId, mes, semana, dia) => {
 window.removeEjDia = async (rutinaId, mes, semana, dia, idx) => {
   const r = await Swal.fire({icon:'warning',title:'¿Quitar ejercicio?',showCancelButton:true,confirmButtonColor:'#ff4d6d',background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
   if(r.isConfirmed) {
-    await remove(ref(db,`rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios/${idx}`));
+    const path = `rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios`;
+    await remove(ref(db, `${path}/${idx}`));
+    // Reindexar: leer los ejercicios restantes y reescribirlos con keys 0,1,2...
+    // Esto evita huecos que causan sobreescritura al agregar nuevos ejercicios
+    const snap = await get(ref(db, path));
+    const restantes = snap.val()||{};
+    const ordenados = Object.keys(restantes)
+      .filter(k => !isNaN(Number(k)))
+      .sort((a,b) => Number(a)-Number(b))
+      .map(k => restantes[k]);
+    // Limpiar y reescribir secuencialmente
+    await set(ref(db, path), {});
+    for(let i = 0; i < ordenados.length; i++) {
+      await set(ref(db, `${path}/${i}`), ordenados[i]);
+    }
     renderRutinaDetail(rutinaId);
   }
 };
@@ -2598,6 +2671,25 @@ async function renderAtletas(container, action) {
         </div>`;
     }
 
+    // Check for pending admin session for this athlete (Fix 3)
+    const admPendSnap = await get(_ADMIN_PENDING_REF(uid)).catch(()=>null);
+    const admPendCard = (admPendSnap && admPendSnap.exists()) ? (() => {
+      const p = admPendSnap.val();
+      const age = Date.now() - (p.savedAt||0);
+      if(age > 24*60*60*1000) return '';
+      const ejsHechos = Object.keys(p.ejerciciosCompletados||{}).length;
+      const minutos = Math.round(age / 60000);
+      const tiempoStr = minutos < 2 ? 'hace un momento' : minutos < 60 ? `hace ${minutos} min` : `hace ${Math.round(minutos/60)}h`;
+      return `<div onclick="window._registrarComoAdmin('${uid}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(0,200,255,0.12),rgba(0,229,160,0.08));border:1px solid rgba(0,200,255,0.4);border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:#00c8ff;box-shadow:0 0 10px #00c8ff;flex-shrink:0;animation:pulse-dot 1.4s infinite"></div>
+        <div style="flex:1">
+          <div style="font-size:0.78rem;font-weight:800;color:#00c8ff">⚡ Sesión en progreso — M${p.mesActual}·S${p.semanaActual}·D${p.diaActual}</div>
+          <div style="font-size:0.72rem;color:rgba(232,244,255,0.5);margin-top:2px">${ejsHechos} ejercicio${ejsHechos!==1?'s':''} registrado${ejsHechos!==1?'s':''} · ${tiempoStr}</div>
+        </div>
+        <span style="font-size:0.78rem;color:#00c8ff;font-weight:700">Continuar →</span>
+      </div>`;
+    })() : '';
+
     container.innerHTML = `
       <div style="margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -2613,6 +2705,7 @@ async function renderAtletas(container, action) {
           </button>
         </div>
       </div>
+      ${admPendCard}
       ${posCard}
       <div class="glass-panel" style="padding:16px;margin-bottom:16px">
         <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📅 Sesiones recientes (toca para ver detalle)</div>
@@ -2626,13 +2719,69 @@ async function renderAtletas(container, action) {
   await renderVista();
 }
 
+// ── Admin session autosave helpers (Fix 1 + Fix 3) ──
+const _ADMIN_PENDING_REF = (targetUid) => ref(db, `sesiones_admin_pendientes/${currentUser.id}/${targetUid}`);
+
+window._admSavePendingSession = async function _admSavePendingSession() {
+  const s = window._adminSesion;
+  if(!s) return;
+
+  // Leer el DOM AHORA para capturar lo que hay en pantalla,
+  // independiente de si el admin presionó "Siguiente" o no
+  try {
+    const ejConfig  = s.ejsDia[s.ejercicioActual];
+    const ejInfo    = s.ejs[ejConfig?.ejercicioId]||{};
+    const esBiset   = ejConfig?.biset === true && s.ejercicioActual + 1 < s.ejsDia.length;
+
+    if(ejConfig) {
+      // Snapshot del ejercicio visible actualmente
+      if(esBiset) {
+        const ejConfigB = s.ejsDia[s.ejercicioActual + 1];
+        const ejInfoB   = s.ejs[ejConfigB.ejercicioId]||{};
+        const seriesA = _admCollectSeries(ejConfig,  ejInfo,  'admA');
+        const seriesB = _admCollectSeries(ejConfigB, ejInfoB, 'admB');
+        // Solo sobreescribir si hay algo en el DOM (al menos un input visible)
+        if(document.getElementById(`admA_done_0`) || document.getElementById(`admB_done_0`)) {
+          s.ejerciciosCompletados[s.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA, _draft: true };
+          s.ejerciciosCompletados[s.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB, _draft: true };
+        }
+      } else {
+        if(document.getElementById(`adm_done_0`)) {
+          const series = _admCollectSeries(ejConfig, ejInfo, 'adm');
+          s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series, _draft: true };
+        }
+      }
+    }
+  } catch(domErr) { /* DOM puede no estar listo aún, se reintentará */ }
+
+  try {
+    await set(_ADMIN_PENDING_REF(s.targetUid), {
+      targetUid:    s.targetUid,
+      rutinaId:     s.rutinaId,
+      mesActual:    s.mesActual,
+      semanaActual: s.semanaActual,
+      diaActual:    s.diaActual,
+      ejercicioActual: s.ejercicioActual,
+      ejerciciosCompletados: s.ejerciciosCompletados,
+      fechaInicio:  s.fechaInicio,
+      nivelCansancioInicio: s.nivelCansancioInicio || 0,
+      savedAt: Date.now()
+    });
+  } catch(e) { console.warn('_admSavePendingSession error:', e); }
+}
+
+async function _admClearPendingSession(targetUid) {
+  try { await remove(_ADMIN_PENDING_REF(targetUid)); } catch(e) {}
+}
+
 // ── Abrir modal de registro de sesión como admin ──
 window._registrarComoAdmin = async (targetUid) => {
-  const [usSnap, rutSnap, ejSnap, histSnap] = await Promise.all([
+  const [usSnap, rutSnap, ejSnap, histSnap, pendSnap] = await Promise.all([
     get(ref(db,`usuarios/${targetUid}`)),
     get(ref(db,'rutinas')),
     get(ref(db,'ejercicios')),
-    get(ref(db,`sesiones/${targetUid}/historial`))
+    get(ref(db,`sesiones/${targetUid}/historial`)),
+    get(_ADMIN_PENDING_REF(targetUid))
   ]);
   const user    = usSnap.val()||{};
   const ruts    = rutSnap.val()||{};
@@ -2644,6 +2793,64 @@ window._registrarComoAdmin = async (targetUid) => {
   const [rutinaId, rutina] = rutEntry;
   const progSnap = await get(ref(db,`sesiones/${targetUid}/progreso`));
   const progreso = progSnap.val()||{mesActual:1,semanaActual:1,diaActual:1};
+
+  // ── Fix 3: Check for a pending admin session for this athlete ──
+  if(pendSnap.exists()) {
+    const pend = pendSnap.val();
+    const MAX_AGE = 24*60*60*1000;
+    const tooOld = Date.now() - (pend.savedAt||0) > MAX_AGE;
+    if(!tooOld) {
+      const ejsHechos = Object.keys(pend.ejerciciosCompletados||{}).length;
+      const minutos = Math.round((Date.now() - pend.savedAt) / 60000);
+      const tiempoStr = minutos < 2 ? 'hace un momento' : minutos < 60 ? `hace ${minutos} min` : `hace ${Math.round(minutos/60)}h ${minutos%60}min`;
+      const r = await Swal.fire({
+        icon: 'info',
+        background: 'rgba(8,16,36,0.98)',
+        color: '#e8f4ff',
+        title: '⚡ Sesión en progreso',
+        html: `<div style="text-align:left;color:#e8f4ff;font-family:'Exo 2',sans-serif">
+          <div style="background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.2);border-radius:12px;padding:12px;margin-bottom:14px">
+            <div style="font-size:0.78rem;color:rgba(232,244,255,0.5);margin-bottom:6px">Sesión incompleta para <strong style="color:#e8f4ff">${user.nombres}</strong></div>
+            <div style="font-size:1.1rem;font-weight:800;color:#00c8ff">M${pend.mesActual}·S${pend.semanaActual}·D${pend.diaActual}</div>
+            <div style="font-size:0.8rem;margin-top:6px;color:rgba(232,244,255,0.5)">${ejsHechos} ejercicio${ejsHechos!==1?'s':''} registrado${ejsHechos!==1?'s':''} · ${tiempoStr}</div>
+          </div>
+          <div style="font-size:0.85rem;color:rgba(232,244,255,0.7)">¿Deseas continuar esa sesión o iniciar una nueva?</div>
+        </div>`,
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: '▶️ Continuar',
+        denyButtonText: '🔄 Nueva sesión',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#00c8ff',
+        denyButtonColor: '#ff6b35'
+      });
+      if(r.isDismissed) return;
+      if(r.isConfirmed) {
+        // Resume the pending session
+        const diaData = rutina.meses?.[pend.mesActual]?.semanas?.[pend.semanaActual]?.dias?.[pend.diaActual];
+        const ejsDia  = Object.values(diaData?.ejercicios||{});
+        if(!ejsDia.length) { await _admClearPendingSession(targetUid); } else {
+          window._adminSesion = {
+            targetUid, rutinaId,
+            mesActual: pend.mesActual, semanaActual: pend.semanaActual, diaActual: pend.diaActual,
+            ejsDia, ejs, user, rutina, progreso, hist,
+            ejercicioActual: pend.ejercicioActual||0,
+            ejerciciosCompletados: pend.ejerciciosCompletados||{},
+            fechaInicio: pend.fechaInicio||Date.now(),
+            nivelCansancioInicio: pend.nivelCansancioInicio||0
+          };
+          _renderAdminEjercicio();
+          return;
+        }
+      } else {
+        // Start new session — discard pending
+        await _admClearPendingSession(targetUid);
+      }
+    } else {
+      await _admClearPendingSession(targetUid);
+    }
+  }
+
   const { mesActual=1, semanaActual=1, diaActual=1 } = progreso;
 
   // Construir lista de todos los días de la rutina con su estado
@@ -2657,7 +2864,7 @@ window._registrarComoAdmin = async (targetUid) => {
     const semanas = meses[m]?.semanas||{};
     Object.keys(semanas).sort((a,b)=>a-b).forEach(s => {
       const dias = semanas[s]?.dias||{};
-      [1,2,3,4,5].forEach(d => {
+      [1,2,3,4,5,6,7].forEach(d => {
         const ejsCount = Object.keys(dias[d]?.ejercicios||{}).length;
         if(ejsCount > 0) {
           const key = `${m}-${s}-${d}`;
@@ -2722,7 +2929,7 @@ window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, user, progreso, 
   // (contexto ya guardado al inicio de esta función)
 };
 
-window._iniciarAdminSesionDia = (targetUid, rutinaId, m, s, d) => {
+window._iniciarAdminSesionDia = async (targetUid, rutinaId, m, s, d) => {
   closeOverlay();
   const { rutina, ejs, user, progreso, hist } = window._adminSesionCtx;
   const diaData = rutina.meses?.[m]?.semanas?.[s]?.dias?.[d];
@@ -2730,13 +2937,67 @@ window._iniciarAdminSesionDia = (targetUid, rutinaId, m, s, d) => {
 
   if(!ejsDia.length) return Swal.fire({icon:'info',title:'Día sin ejercicios',text:`M${m}·S${s}·D${d} no tiene ejercicios configurados.`,background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
 
+  // ── Pedir nivel de descanso/energía con el que LLEGÓ el atleta (Fix 2) ──
+  const nivelInicio = await _admShowPreFatigueModal(user.nombres);
+  if(nivelInicio === null) return; // El admin canceló
+
   window._adminSesion = {
     targetUid, rutinaId,
     mesActual: m, semanaActual: s, diaActual: d,
     ejsDia, ejs, user, rutina, progreso, hist,
-    ejercicioActual: 0, ejerciciosCompletados: {}, fechaInicio: Date.now()
+    ejercicioActual: 0, ejerciciosCompletados: {}, fechaInicio: Date.now(),
+    nivelCansancioInicio: nivelInicio
   };
+  // Guardar inmediatamente al iniciar — así el indicador aparece aunque no complete ningún ejercicio
+  _admSavePendingSession();
   _renderAdminEjercicio();
+};
+
+// ── Modal de fatiga PRE-sesión para admin (caritas cómo llegó el atleta) ──
+window._admShowPreFatigueModal = (nombreAtleta) => {
+  return new Promise(resolve => {
+    const colorsPre  = ['#b91c1c','#dc2626','#ef4444','#f97316','#ff6b35','#ffd60a','#a3e635','#4ade80','#00e5a0','#00c8ff'];
+    const emojisPre  = ['💀','😵','🥵','😓','😰','😔','😑','😐','🙂','🔥'];
+    const labelsPre  = ['1 - Sin energía','2 - Agotado','3 - Muy cansado','4 - Bastante cansado','5 - Cansado','6 - Regular','7 - Bien','8 - Muy bien','9 - Excelente','10 - Súper descansado'];
+    let selected = null;
+
+    const dotsHtml = emojisPre.map((e,i) =>
+      `<div data-preval="${i+1}" onclick="window._admPreFatigaSelect(${i+1})" style="flex:1;height:54px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.3rem;transition:all 0.15s ease;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)" title="${labelsPre[i]}">${e}</div>`
+    ).join('');
+
+    showOverlay(`
+      <div class="overlay-header">
+        <span class="overlay-title">🔥 ¿Cómo llegó ${nombreAtleta}?</span>
+        <button class="btn-close" onclick="window._admPreFatigaCancel()">✕</button>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;text-align:center">Nivel de energía/descanso con el que llegó el atleta a esta sesión</div>
+      <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin-bottom:8px">
+        <span>💀 Sin energía</span><span>Súper descansado 🔥</span>
+      </div>
+      <div id="admPreFatigueScale" style="display:flex;gap:4px;margin-bottom:10px">${dotsHtml}</div>
+      <div style="text-align:center;font-size:0.85rem;font-weight:600;color:var(--text-muted);margin-bottom:18px" id="admPreFatigueLabel">Selecciona una opción</div>
+      <button class="btn btn-primary btn-full" id="admPreFatigueConfirm" disabled style="opacity:0.5" onclick="window._admPreFatigaConfirm()">⚡ Empezar sesión</button>
+    `);
+
+    window._admPreFatigaSelect = (val) => {
+      selected = val;
+      document.querySelectorAll('#admPreFatigueScale [data-preval]').forEach((d,i) => {
+        const isSel = (i+1) === val;
+        d.style.background = isSel ? colorsPre[i] : 'rgba(255,255,255,0.04)';
+        d.style.border = isSel ? `2px solid ${colorsPre[i]}` : '1px solid rgba(255,255,255,0.08)';
+        d.style.transform = isSel ? 'scale(1.12)' : 'scale(1)';
+        d.style.boxShadow = isSel ? `0 0 12px ${colorsPre[i]}88` : 'none';
+      });
+      const lbl = document.getElementById('admPreFatigueLabel');
+      if(lbl) { lbl.textContent = labelsPre[val-1]; lbl.style.color = colorsPre[val-1]; }
+      const btn = document.getElementById('admPreFatigueConfirm');
+      if(btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    };
+    window._admPreFatigaConfirm = () => {
+      if(selected !== null) { closeOverlay(); resolve(selected); }
+    };
+    window._admPreFatigaCancel = () => { closeOverlay(); resolve(null); };
+  });
 };
 
 // ── Helper: build series input rows for admin session (single exercise) ──
@@ -2754,12 +3015,12 @@ function _admSeriesRows(ejConfig, ejInfo, prefix, metodo, metodoMin, metodoMax, 
           <div style="display:flex;gap:8px">
             <div style="display:flex;flex-direction:column;gap:3px;flex:1">
               <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
-              <input type="number" id="${prefix}_reps_izq_${i}" value="${sv(i,'repsMin',0)}" min="0"
+              <input type="number" id="${prefix}_reps_izq_${i}" value="${sv(i,'repsMin',0)}" min="0" oninput="_admSavePendingSession()"
                 style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
             </div>
             <div style="display:flex;flex-direction:column;gap:3px;flex:1">
               <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
-              <input type="number" id="${prefix}_reps_der_${i}" value="${sv(i,'repsMin',0)}" min="0"
+              <input type="number" id="${prefix}_reps_der_${i}" value="${sv(i,'repsMin',0)}" min="0" oninput="_admSavePendingSession()"
                 style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
             </div>
           </div>
@@ -2768,28 +3029,28 @@ function _admSeriesRows(ejConfig, ejInfo, prefix, metodo, metodoMin, metodoMax, 
         ` : `
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
           <label style="font-size:0.68rem;color:var(--text-muted)">Reps</label>
-          <input type="number" id="${prefix}_reps_${i}" value="${sv(i,'repsMin',0)}" min="0"
+          <input type="number" id="${prefix}_reps_${i}" value="${sv(i,'repsMin',0)}" min="0" oninput="_admSavePendingSession()"
             style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
         </div>`}
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
           <label style="font-size:0.68rem;color:var(--text-muted)">Peso kg</label>
-          <input type="number" id="${prefix}_peso_${i}" value="${sv(i,'peso',0)}" min="0" step="0.5"
+          <input type="number" id="${prefix}_peso_${i}" value="${sv(i,'peso',0)}" min="0" step="0.5" oninput="_admSavePendingSession()"
             style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
         </div>
         ${esBiext ? `
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
           <label style="font-size:0.68rem;color:#00e5a0">Izq ${metodo}</label>
-          <input type="number" id="${prefix}_rpe_izq_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}"
+          <input type="number" id="${prefix}_rpe_izq_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" oninput="_admSavePendingSession()"
             style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
         </div>
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
           <label style="font-size:0.68rem;color:#ff6b35">Der ${metodo}</label>
-          <input type="number" id="${prefix}_rpe_der_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}"
+          <input type="number" id="${prefix}_rpe_der_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" oninput="_admSavePendingSession()"
             style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
         </div>` : `
         <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px">
           <label style="font-size:0.68rem;color:#a78bfa">${metodoLabel}</label>
-          <input type="number" id="${prefix}_rpe_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}"
+          <input type="number" id="${prefix}_rpe_${i}" value="${sv(i,'rirRpe',0)}" min="${metodoMin}" max="${metodoMax}" oninput="_admSavePendingSession()"
             style="background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;width:100%">
         </div>`}
         <!-- Done checkbox -->
@@ -2799,7 +3060,7 @@ function _admSeriesRows(ejConfig, ejInfo, prefix, metodo, metodoMin, metodoMax, 
         </div>
       </div>
       <div style="width:100%;padding-left:32px;margin-top:4px">
-        <input type="text" id="${prefix}_comentario_${i}" placeholder="Comentario serie ${i+1} (opcional)..."
+        <input type="text" id="${prefix}_comentario_${i}" placeholder="Comentario serie ${i+1} (opcional)..." oninput="_admSavePendingSession()"
           style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:6px 10px;color:rgba(232,244,255,0.5);font-family:'Exo 2',sans-serif;font-size:0.78rem;outline:none;transition:all 0.2s"
           onfocus="this.style.borderColor='rgba(123,47,255,0.4)';this.style.color='#e8f4ff';this.style.background='rgba(123,47,255,0.05)'"
           onblur="this.style.borderColor='rgba(255,255,255,0.07)';this.style.color='rgba(232,244,255,0.5)';this.style.background='rgba(255,255,255,0.03)'">
@@ -2817,7 +3078,7 @@ function _admCollectSeries(ejConfig, ejInfo, prefix) {
     const base = {
       reps: +document.getElementById(`${prefix}_reps_${i}`)?.value||0,
       peso: +document.getElementById(`${prefix}_peso_${i}`)?.value||0,
-      completada: doneEl ? doneEl.classList.contains('checked') : true,
+      completada: doneEl ? doneEl.classList.contains('checked') : false,
       comentario: document.getElementById(`${prefix}_comentario_${i}`)?.value?.trim()||''
     };
     if(esBiext) {
@@ -2993,12 +3254,16 @@ window.admToggleSerie = (prefix, i, restSecs) => {
       _admStartRestTimer(restSecs || 90);
     }
   }
+  // Guardar siempre al marcar/desmarcar tick
+  _admSavePendingSession();
 };
 
 window._renderAdminEjercicio = function _renderAdminEjercicio() {
   const s = window._adminSesion;
   const { ejsDia, ejs, user, ejercicioActual, mesActual, semanaActual, diaActual, hist } = s;
   if(ejercicioActual >= ejsDia.length) { _finalizarAdminSesion(); return; }
+  // Autosave en cada render — garantiza que el indicador aparezca aunque el admin cierre el overlay
+  _admSavePendingSession();
 
   const ejConfig = ejsDia[ejercicioActual];
   const ejInfo   = ejs[ejConfig.ejercicioId]||{};
@@ -3013,6 +3278,12 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
   const esBiset = ejConfig.biset === true && ejercicioActual + 1 < ejsDia.length;
   const ejConfigB = esBiset ? ejsDia[ejercicioActual + 1] : null;
   const ejInfoB   = ejConfigB ? (ejs[ejConfigB.ejercicioId]||{}) : null;
+
+  // ── Restore previously saved draft data for this exercise (Fix 4) ──
+  const savedA = s.ejerciciosCompletados[ejercicioActual];
+  const savedB = esBiset ? s.ejerciciosCompletados[ejercicioActual + 1] : null;
+  const ejConfigRestored  = savedA ? { ...ejConfig,  seriesConfig: savedA.series  } : ejConfig;
+  const ejConfigBRestored = savedB ? { ...ejConfigB, seriesConfig: savedB.series  } : ejConfigB;
 
   // ── Estilos compartidos para tablas ──
   const thSt = 'padding:4px 6px;font-size:0.65rem;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:0.5px;color:rgba(167,139,250,0.6);';
@@ -3065,8 +3336,8 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
   let bodyHtml = '';
   if(esBiset) {
     // BISERIE: show both exercises interleaved
-    const seriesA = _admSeriesRows(ejConfig, ejInfo, 'admA', metodo, metodoMin, metodoMax, metodoLabel);
-    const seriesB = _admSeriesRows(ejConfigB, ejInfoB, 'admB', metodo, metodoMin, metodoMax, metodoLabel);
+    const seriesA = _admSeriesRows(ejConfigRestored, ejInfo, 'admA', metodo, metodoMin, metodoMax, metodoLabel);
+    const seriesB = _admSeriesRows(ejConfigBRestored, ejInfoB, 'admB', metodo, metodoMin, metodoMax, metodoLabel);
     bodyHtml = `
       <div style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.25);border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="font-size:0.68rem;color:#ff6b35;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">🔗 BISERIE — Alterna: 1 serie A → 1 serie B → descanso → siguiente</div>
@@ -3074,25 +3345,38 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
       <!-- Ejercicio A -->
       <div style="background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.2);border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="font-size:0.72rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">🅰 ${ejInfo.nombre||'Ejercicio A'}</div>
-        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ${metodo} ${ejConfig.rirRpe}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+          <span style="font-size:0.7rem;color:var(--text-muted)">${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ⏱${ejConfig.descanso}s</span>
+          ${ejConfig.metodo?`<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:2px 8px;font-size:0.68rem;font-weight:700;color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
+        </div>
+        ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:8px;font-size:0.78rem;color:#ffd60a;margin-bottom:10px">📝 ${ejConfig.anotaciones}</div>`:''}
         ${buildUltimoBanner(ejConfig, ejInfo, 'A')}
         ${seriesA}
       </div>
       <!-- Ejercicio B -->
       <div style="background:rgba(123,47,255,0.05);border:1px solid rgba(123,47,255,0.2);border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="font-size:0.72rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">🅱 ${ejInfoB.nombre||'Ejercicio B'}</div>
-        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">${ejConfigB.series} series · ${ejConfigB.repsMin}-${ejConfigB.repsMax} reps · ${ejConfigB.peso}kg · ${metodo} ${ejConfigB.rirRpe}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+          <span style="font-size:0.7rem;color:var(--text-muted)">${ejConfigB.series} series · ${ejConfigB.repsMin}-${ejConfigB.repsMax} reps · ${ejConfigB.peso}kg · ⏱${ejConfigB.descanso}s</span>
+          ${ejConfigB.metodo?`<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:2px 8px;font-size:0.68rem;font-weight:700;color:#c084fc">⚡ ${ejConfigB.metodo}</span>`:''}
+        </div>
+        ${ejConfigB.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:8px;font-size:0.78rem;color:#ffd60a;margin-bottom:10px">📝 ${ejConfigB.anotaciones}</div>`:''}
         ${buildUltimoBanner(ejConfigB, ejInfoB, 'B')}
         ${seriesB}
       </div>`;
   } else {
     // NORMAL: single exercise
-    const seriesRows = _admSeriesRows(ejConfig, ejInfo, 'adm', metodo, metodoMin, metodoMax, metodoLabel);
+    const seriesRows = _admSeriesRows(ejConfigRestored, ejInfo, 'adm', metodo, metodoMin, metodoMax, metodoLabel);
     bodyHtml = `
       <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px">${ejInfo.nombre||'Ejercicio'}</div>
-      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">
-        ${ejConfig.series} series · ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ${ejConfig.peso}kg · ${metodo} ${ejConfig.rirRpe} · ⏱ ${ejConfig.descanso}s
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:var(--primary)">📦 ${ejConfig.series} series</span>
+        <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--text-muted)">🔁 ${ejConfig.repsMin}-${ejConfig.repsMax} reps · ⚖️ ${ejConfig.peso}kg</span>
+        <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--text-muted)">⏱ ${ejConfig.descanso}s</span>
+        ${ejConfig.metodo?`<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
+        ${ejConfig.biset?`<span style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#ff6b35">🔗 Biserie</span>`:''}
       </div>
+      ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
       ${buildUltimoBanner(ejConfig, ejInfo, '')}
       <div>${seriesRows}</div>`;
   }
@@ -3127,19 +3411,79 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
     </div>
     ${bodyHtml}
     <div style="display:flex;gap:10px;margin-top:18px">
-      ${ejercicioActual>0?`<button class="btn btn-secondary" onclick="window._adminSesion.ejercicioActual-=${ejsDia[Math.max(0,ejercicioActual-1)]?.biset&&ejercicioActual>=2?2:1};_renderAdminEjercicio()">← Anterior</button>`:''}
+      ${ejercicioActual>0?`<button class="btn btn-secondary" onclick="window._adminGoBack()">← Anterior</button>`:''}
       <button class="btn btn-primary" style="flex:1" onclick="_completarAdminEj()">
         ${displayCurrent<displayTotal?'Siguiente →':'✅ Finalizar sesión'}
       </button>
     </div>
   `);
+
+  // ── Restore ALL field values from saved draft ──
+  const _admRestoreFields = (saved, prefix, info) => {
+    if(!saved || !Array.isArray(saved.series)) return;
+    const esBiext = info?.biextremidad === true;
+    saved.series.forEach((sr, i) => {
+      const set = (id, val) => { const el = document.getElementById(id); if(el && val != null && val !== '') el.value = val; };
+      const setStr = (id, val) => { const el = document.getElementById(id); if(el && val != null) el.value = val; };
+      if(esBiext) {
+        set(`${prefix}_reps_izq_${i}`, sr.repsIzq);
+        set(`${prefix}_reps_der_${i}`, sr.repsDer);
+        set(`${prefix}_rpe_izq_${i}`,  sr.rirRpeIzq);
+        set(`${prefix}_rpe_der_${i}`,  sr.rirRpeDer);
+      } else {
+        set(`${prefix}_reps_${i}`, sr.reps);
+        set(`${prefix}_rpe_${i}`,  sr.rirRpe);
+      }
+      set(`${prefix}_peso_${i}`,       sr.peso);
+      setStr(`${prefix}_comentario_${i}`, sr.comentario);
+      if(sr.completada) {
+        const el = document.getElementById(`${prefix}_done_${i}`);
+        if(el) el.classList.add('checked');
+      }
+    });
+  };
+  if(esBiset) {
+    _admRestoreFields(savedA, 'admA', ejInfo);
+    _admRestoreFields(savedB, 'admB', ejInfoB);
+  } else {
+    _admRestoreFields(savedA, 'adm', ejInfo);
+  }
+
+  // ── Autosave on every input change (reps, peso, RPE, comentarios) ──
+  setTimeout(() => {
+    document.querySelectorAll('[id^="adm_"], [id^="admA_"], [id^="admB_"]').forEach(el => {
+      if(el.tagName === 'INPUT') {
+        el.addEventListener('input',  () => _admSavePendingSession(), { passive: true });
+        el.addEventListener('change', () => _admSavePendingSession(), { passive: true });
+      }
+    });
+  }, 100);
 }
 
-window._completarAdminEj = () => {
+window._completarAdminEj = async () => {
   const s = window._adminSesion;
   const ejConfig = s.ejsDia[s.ejercicioActual];
   const ejInfo   = s.ejs[ejConfig.ejercicioId]||{};
   const esBiset  = ejConfig.biset === true && s.ejercicioActual + 1 < s.ejsDia.length;
+
+  // ── Check for unmarked series (alert if none checked) ──
+  if(esBiset) {
+    const ejConfigB = s.ejsDia[s.ejercicioActual + 1];
+    const nA = ejConfig.series||3, nB = ejConfigB.series||3;
+    const anyDoneA = Array.from({length:nA},(_,i)=>document.getElementById(`admA_done_${i}`)?.classList.contains('checked')).some(Boolean);
+    const anyDoneB = Array.from({length:nB},(_,i)=>document.getElementById(`admB_done_${i}`)?.classList.contains('checked')).some(Boolean);
+    if(!anyDoneA && !anyDoneB) {
+      const r = await Swal.fire({icon:'warning',title:'⚠️ Sin series marcadas',html:`<div style="color:#e8f4ff">No marcaste ninguna serie como completada.<br>¿Continuar de todas formas?</div>`,showCancelButton:true,confirmButtonText:'Sí, continuar',cancelButtonText:'Volver',confirmButtonColor:'#ff6b35',background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+      if(!r.isConfirmed) return;
+    }
+  } else {
+    const n = ejConfig.series||3;
+    const anyDone = Array.from({length:n},(_,i)=>document.getElementById(`adm_done_${i}`)?.classList.contains('checked')).some(Boolean);
+    if(!anyDone) {
+      const r = await Swal.fire({icon:'warning',title:'⚠️ Sin series marcadas',html:`<div style="color:#e8f4ff">No marcaste ninguna serie como completada.<br>¿Continuar de todas formas?</div>`,showCancelButton:true,confirmButtonText:'Sí, continuar',cancelButtonText:'Volver',confirmButtonColor:'#ff6b35',background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+      if(!r.isConfirmed) return;
+    }
+  }
 
   if(esBiset) {
     // Collect data for both A and B
@@ -3155,6 +3499,32 @@ window._completarAdminEj = () => {
     s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series };
     s.ejercicioActual++;
   }
+  // ── Autosave to Firebase so admin can resume if needed ──
+  _admSavePendingSession();
+  _renderAdminEjercicio();
+};
+
+// Fix 4: Going back also saves current exercise data before going back
+window._adminGoBack = () => {
+  const s = window._adminSesion;
+  const ejConfig = s.ejsDia[s.ejercicioActual];
+  const ejInfo   = s.ejs[ejConfig.ejercicioId]||{};
+  const esBiset  = ejConfig.biset === true && s.ejercicioActual + 1 < s.ejsDia.length;
+  // Save current form data before going back so it's preserved when navigating forward again
+  if(esBiset) {
+    const ejConfigB = s.ejsDia[s.ejercicioActual + 1];
+    const ejInfoB   = s.ejs[ejConfigB.ejercicioId]||{};
+    const seriesA = _admCollectSeries(ejConfig,  ejInfo,  'admA');
+    const seriesB = _admCollectSeries(ejConfigB, ejInfoB, 'admB');
+    s.ejerciciosCompletados[s.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA, _draft: true };
+    s.ejerciciosCompletados[s.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB, _draft: true };
+  } else {
+    const series = _admCollectSeries(ejConfig, ejInfo, 'adm');
+    s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series, _draft: true };
+  }
+  const prevEj = s.ejsDia[Math.max(0, s.ejercicioActual - 1)];
+  s.ejercicioActual -= (prevEj?.biset && s.ejercicioActual >= 2) ? 2 : 1;
+  _admSavePendingSession();
   _renderAdminEjercicio();
 };
 
@@ -3212,11 +3582,13 @@ async function _finalizarAdminSesion() {
     mes: mesActual, semana: semanaActual, dia: diaActual,
     rutinaActiva: rutinaId,
     fechaInicio, fechaFin: now, fecha: now,
-    nivelCansancioInicio: 0, nivelCansancioFin: nivelCansancio,
+    nivelCansancioInicio: s.nivelCansancioInicio || 0, nivelCansancioFin: nivelCansancio,
     ejerciciosCompletados,
     registradoPorAdmin: true
   };
   await set(ref(db,`sesiones/${targetUid}/historial/${sesId}`), sesData);
+  // Clear pending admin session now that it's been saved
+  await _admClearPendingSession(targetUid);
 
   // Avanzar progreso: solo si el día registrado ES el día del progreso actual,
   // o si el día registrado está DESPUÉS del progreso actual (para no retroceder).
@@ -3227,9 +3599,12 @@ async function _finalizarAdminSesion() {
   if(regKey >= progKey) {
     // Avanzar desde el día que se registró, no desde el progreso guardado
     let m = mesActual, sem = semanaActual, dia = diaActual;
-    dia++; if(dia>5){dia=1;sem++;} if(sem>4){sem=1;m++;}
     const maxMes = Math.max(...Object.keys(s.rutina.meses||{1:{}}).map(Number));
-    if(m>maxMes){m=maxMes;sem=4;dia=5;}
+    // Find the max day in the current week (support up to 7 days)
+    const diasSem = Object.keys(s.rutina.meses?.[m]?.semanas?.[sem]?.dias||{}).map(Number).filter(d=>Object.keys(s.rutina.meses[m].semanas[sem].dias[d]?.ejercicios||{}).length>0);
+    const maxDiaSem = diasSem.length ? Math.max(...diasSem) : 5;
+    dia++; if(dia>maxDiaSem){dia=1;sem++;} if(sem>4){sem=1;m++;}
+    if(m>maxMes){m=maxMes;sem=4;dia=maxDiaSem;}
     await set(ref(db,`sesiones/${targetUid}/progreso`), { rutinaActiva:rutinaId, mesActual:m, semanaActual:sem, diaActual:dia });
   }
   // Si registró un día ANTERIOR al progreso actual, no tocamos el progreso

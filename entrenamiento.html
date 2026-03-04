@@ -1614,12 +1614,29 @@ async function checkRevisionesPendientes() {
   const { mesActual=1, semanaActual=1 } = progreso;
   if(mesActual === 1 && semanaActual === 1) return false;
 
+  // Helper: verificar si una semana fue completada realmente
+  // (todos sus días con ejercicios aparecen en el historial)
+  const semanaTotalmenteCompletada = (mes, sem) => {
+    const diasSem = Object.keys(state.rutinaData?.meses?.[mes]?.semanas?.[sem]?.dias||{}).map(Number);
+    const diasConEj = diasSem.filter(d => {
+      const diaData = state.rutinaData?.meses?.[mes]?.semanas?.[sem]?.dias?.[d];
+      return Object.keys(diaData?.ejercicios||{}).length > 0;
+    });
+    if(diasConEj.length === 0) return false; // semana sin ejercicios, no pedir revisión
+    return diasConEj.every(d => sesionCompletada(state.historial, mes, sem, d));
+  };
+
   // Revisión mensual pendiente (inicio de mes nuevo)
   if(semanaActual === 1 && mesActual > 1) {
-    const revMes = await get(ref(db, `revisiones_mes/${currentUser.id}/m${mesActual-1}`));
-    if(!revMes.exists()) {
-      await showRevisionMes(mesActual - 1);
-      return true;
+    const mesPrev = mesActual - 1;
+    // Solo pedir si las 4 semanas del mes anterior fueron completadas
+    const mesCompleto = [1,2,3,4].every(s => semanaTotalmenteCompletada(mesPrev, s));
+    if(mesCompleto) {
+      const revMes = await get(ref(db, `revisiones_mes/${currentUser.id}/m${mesPrev}`));
+      if(!revMes.exists()) {
+        await showRevisionMes(mesPrev);
+        return true;
+      }
     }
   }
 
@@ -1627,10 +1644,13 @@ async function checkRevisionesPendientes() {
   let mesPend = mesActual, semPend = semanaActual - 1;
   if(semPend < 1) { mesPend = mesActual - 1; semPend = 4; }
   if(mesPend >= 1) {
-    const revSem = await get(ref(db, `revisiones_semana/${currentUser.id}/m${mesPend}s${semPend}`));
-    if(!revSem.exists()) {
-      await showRevisionSemana(mesPend, semPend);
-      return true;
+    // Solo pedir si esa semana fue completada realmente
+    if(semanaTotalmenteCompletada(mesPend, semPend)) {
+      const revSem = await get(ref(db, `revisiones_semana/${currentUser.id}/m${mesPend}s${semPend}`));
+      if(!revSem.exists()) {
+        await showRevisionSemana(mesPend, semPend);
+        return true;
+      }
     }
   }
   return false;
@@ -1723,8 +1743,11 @@ async function renderEntrenar() {
   const ejsDia  = Object.values(diaData?.ejercicios||{});
   const yaCompletado = sesionCompletada(state.historial, mesActual, semanaActual, diaActual);
 
-  // Build semana day pills for navigation
-  const dayPills = [1,2,3,4,5].map(d => {
+  // Build semana day pills — dynamic: show all days that exist in Firebase + current day, min 5
+  const _diasEnSem = Object.keys(rutina.meses?.[mesActual]?.semanas?.[semanaActual]?.dias||{}).map(Number);
+  const _maxDia    = Math.max(5, diaActual||1, _diasEnSem.length ? Math.max(..._diasEnSem) : 0);
+  const _daysRange = Array.from({length: Math.min(_maxDia, 7)}, (_,i) => i+1);
+  const dayPills = _daysRange.map(d => {
     const dd   = rutina.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[d];
     const hasEj = Object.keys(dd?.ejercicios||{}).length > 0;
     const done  = sesionCompletada(state.historial, mesActual, semanaActual, d);
@@ -2378,7 +2401,7 @@ function renderEjercicioActual() {
     `;
   }
 
-  // Restaurar snapshot si viene de una sesión pendiente recuperada
+  // Restaurar snapshot si viene de una sesión pendiente recuperada (retomar sesión)
   function _applySnap(prefix, snap, info) {
     if(!snap || !Array.isArray(snap)) return;
     snap.forEach((s, i) => {
@@ -2406,6 +2429,7 @@ function renderEjercicioActual() {
     });
   }
 
+  // Prioridad 1: snapshot de sesión pendiente recuperada (retomar sesión)
   const snap  = state._pendingSeriesSnapshot;
   const snapB = state._pendingSeriesSnapshotB;
   if(snap && Array.isArray(snap)) {
@@ -2417,6 +2441,22 @@ function renderEjercicioActual() {
     }
     state._pendingSeriesSnapshot  = null;
     state._pendingSeriesSnapshotB = null;
+  } else {
+    // Prioridad 2: datos guardados al navegar entre ejercicios (ir atrás/adelante)
+    // Esto preserva el avance cuando el usuario se salta un ejercicio y luego regresa
+    const savedComp = state.sesionActiva?.ejerciciosCompletados;
+    if(savedComp) {
+      const savedA = savedComp[state.ejercicioActual];
+      if(savedA && savedA.series) {
+        if(esBiset) {
+          _applySnap('ea_', savedA.series, ejInfo);
+          const savedB = savedComp[state.ejercicioActual + 1];
+          if(savedB && savedB.series) _applySnap('eb_', savedB.series, ejInfoB);
+        } else {
+          _applySnap('', savedA.series, ejInfo);
+        }
+      }
+    }
   }
 
   // Auto-save a Firebase en cada cambio de input
@@ -2926,6 +2966,30 @@ window.ejercicioAnterior = () => {
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
   const ejsDia = Object.values(diaData?.ejercicios||{});
+
+  // ── Guardar datos del formulario actual ANTES de retroceder ──
+  // (para que al volver a este ejercicio se restauren los valores)
+  const ejConfig = ejsDia[state.ejercicioActual];
+  if(ejConfig) {
+    const ejInfo = state.ejercicios[ejConfig.ejercicioId]||{};
+    const esBisetActual = ejConfig.biset === true && state.ejercicioActual + 1 < ejsDia.length;
+    if(!state.sesionActiva) state.sesionActiva = { ejerciciosCompletados: {} };
+    if(!state.sesionActiva.ejerciciosCompletados) state.sesionActiva.ejerciciosCompletados = {};
+
+    if(esBisetActual) {
+      const ejConfigB = ejsDia[state.ejercicioActual + 1];
+      const ejInfoB   = state.ejercicios[ejConfigB.ejercicioId]||{};
+      const seriesA = _collectSeriesData(ejConfig,  ejInfo,  'ea_');
+      const seriesB = _collectSeriesData(ejConfigB, ejInfoB, 'eb_');
+      state.sesionActiva.ejerciciosCompletados[state.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA, _draft: true };
+      state.sesionActiva.ejerciciosCompletados[state.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB, _draft: true };
+    } else {
+      const series = _collectSeriesData(ejConfig, ejInfo, '');
+      state.sesionActiva.ejerciciosCompletados[state.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series, _draft: true };
+    }
+    savePendingSession();
+  }
+
   // If previous exercise was part of a biserie (i.e. the one before was a biset leader), go back 2
   const prevIdx = state.ejercicioActual - 1;
   if(prevIdx >= 1 && ejsDia[prevIdx-1]?.biset === true) {
@@ -2963,14 +3027,25 @@ async function finalizarSesion() {
   // Advance progress
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   let newMes = mesActual, newSem = semanaActual, newDia = diaActual+1;
-  const semanaTerminada = diaActual === 5; // last day of week
-  const mesTerminado    = diaActual === 5 && semanaActual === 4; // last day of last week
+  // Calcular dinámicamente cuántos días tiene esta semana
+  const _diasSemActual = Object.keys(state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias||{}).map(Number);
+  const maxDiaSem = _diasSemActual.length ? Math.max(..._diasSemActual) : 5;
 
-  if(newDia>5) { newDia=1; newSem++; }
+  // La semana está terminada SOLO si todos los días con ejercicios han sido completados
+  // (incluyendo la sesión que acaba de guardarse, que ya está en state.historial)
+  const _diasConEj = _diasSemActual.filter(d => {
+    const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[d];
+    return Object.keys(diaData?.ejercicios||{}).length > 0;
+  });
+  const semanaTerminada = _diasConEj.length > 0 &&
+    _diasConEj.every(d => sesionCompletada(state.historial, mesActual, semanaActual, d));
+  const mesTerminado = semanaTerminada && semanaActual === 4;
+
+  if(newDia > maxDiaSem) { newDia=1; newSem++; }
   if(newSem>4) { newSem=1; newMes++; }
 
   const maxMes = Math.max(...Object.keys(state.rutinaData?.meses||{1:{}}).map(Number));
-  if(newMes>maxMes) { newMes=maxMes; newSem=4; newDia=5; }
+  if(newMes>maxMes) { newMes=maxMes; newSem=4; newDia=maxDiaSem; }
 
   const newProgreso = { rutinaActiva:state.rutinaId, mesActual:newMes, semanaActual:newSem, diaActual:newDia };
   await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
