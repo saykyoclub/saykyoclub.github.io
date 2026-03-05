@@ -268,6 +268,61 @@ textarea.glass-input { resize:vertical; min-height:80px; }
 .stats-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px; }
 .stats-card { background:var(--glass-bg);backdrop-filter:blur(20px);border:1px solid var(--glass-border);border-radius:16px;padding:18px; }
 
+/* ── PRO CHARTS ── */
+.pro-charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:900px){ .pro-charts-grid { grid-template-columns:1fr; } }
+.pro-chart-card {
+  background:rgba(8,16,36,0.88); backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.08); border-radius:20px;
+  overflow:hidden; transition:box-shadow 0.3s ease;
+}
+.pro-chart-card:hover { box-shadow:0 8px 40px rgba(0,200,255,0.1); }
+.pro-chart-card.full-width { grid-column: 1 / -1; }
+.pro-chart-header {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  padding:16px 20px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.pro-chart-title { font-size:0.95rem; font-weight:700; display:flex;align-items:center;gap:8px; }
+.pro-chart-badge {
+  font-size:0.65rem; letter-spacing:1.5px; text-transform:uppercase;
+  padding:3px 8px; border-radius:20px; font-weight:600;
+  background:rgba(0,200,255,0.12); color:var(--primary); border:1px solid rgba(0,200,255,0.2);
+}
+.pro-chart-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.pro-chart-select {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+  border-radius:8px; padding:5px 10px; color:var(--text-muted); font-family:'Exo 2',sans-serif;
+  font-size:0.75rem; outline:none; cursor:pointer; transition:all 0.2s;
+}
+.pro-chart-select:focus, .pro-chart-select:hover { border-color:rgba(0,200,255,0.4); color:var(--text); }
+.pro-chart-select option { background:#0d1a35; }
+.pro-chart-type-btn {
+  display:flex; align-items:center;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; overflow:hidden;
+}
+.pro-chart-type-btn button {
+  background:none; border:none; color:var(--text-muted); cursor:pointer;
+  padding:5px 11px; font-size:0.78rem; transition:all 0.2s; font-family:'Exo 2',sans-serif;
+}
+.pro-chart-type-btn button.active { background:rgba(0,200,255,0.18); color:var(--primary); }
+.pro-chart-filter-tags { display:flex; gap:6px; flex-wrap:wrap; padding:8px 20px 0; min-height:26px; }
+.pro-filter-tag {
+  font-size:0.65rem; letter-spacing:0.5px; padding:2px 9px; border-radius:20px;
+  background:rgba(123,47,255,0.13); color:#b090ff; border:1px solid rgba(123,47,255,0.22);
+}
+.pro-chart-body { padding:14px 14px 12px; }
+.pro-chart-canvas-wrap { position:relative; height:260px; }
+.pro-chart-empty { display:flex;flex-direction:column;align-items:center;justify-content:center; height:200px; gap:10px; color:var(--text-muted); font-size:0.85rem; }
+.pro-chart-empty .ico { font-size:2.2rem; opacity:0.4; }
+.pro-summary-row { display:flex; gap:14px; flex-wrap:wrap; padding:0 20px 16px; }
+.pro-summary-chip {
+  background:rgba(0,200,255,0.07); border:1px solid rgba(0,200,255,0.15);
+  border-radius:12px; padding:10px 16px; display:flex; flex-direction:column; gap:2px; min-width:110px;
+}
+.pro-summary-chip .val { font-size:1.4rem; font-weight:900; color:var(--primary); }
+.pro-summary-chip .lbl { font-size:0.65rem; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; }
+
 /* ANAMNESIS */
 .anamnesis-card { background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.15);border-radius:12px;padding:14px;margin-bottom:10px; }
 .anamnesis-q { font-size:0.8rem;color:var(--text-muted);margin-bottom:4px; }
@@ -2726,33 +2781,36 @@ window._admSavePendingSession = async function _admSavePendingSession() {
   const s = window._adminSesion;
   if(!s) return;
 
-  // Leer el DOM AHORA para capturar lo que hay en pantalla,
-  // independiente de si el admin presionó "Siguiente" o no
+  // Capturar DOM solo si el overlay activo corresponde al ejercicio actual.
+  // Usamos data-adm-ej-idx en el overlay para verificarlo y evitar que al avanzar
+  // de ejercicio (índice ya incrementado pero DOM sin actualizar) se guarden los
+  // datos del ejercicio anterior bajo el índice del nuevo ejercicio.
   try {
     const ejConfig  = s.ejsDia[s.ejercicioActual];
     const ejInfo    = s.ejs[ejConfig?.ejercicioId]||{};
     const esBiset   = ejConfig?.biset === true && s.ejercicioActual + 1 < s.ejsDia.length;
 
     if(ejConfig) {
-      // Snapshot del ejercicio visible actualmente
-      if(esBiset) {
+      // Verificar que el overlay renderizado es del ejercicio actual
+      const overlay = document.getElementById('overlayBackdrop');
+      const overlayEjIdx = overlay ? parseInt(overlay.dataset.admEjIdx ?? '-1') : -1;
+      const domMatchesCurrent = overlayEjIdx === s.ejercicioActual;
+
+      if(!domMatchesCurrent) {
+        // DOM desactualizado — no capturar para no contaminar datos del siguiente ejercicio
+      } else if(esBiset) {
         const ejConfigB = s.ejsDia[s.ejercicioActual + 1];
         const ejInfoB   = s.ejs[ejConfigB.ejercicioId]||{};
         const seriesA = _admCollectSeries(ejConfig,  ejInfo,  'admA');
         const seriesB = _admCollectSeries(ejConfigB, ejInfoB, 'admB');
-        // Solo sobreescribir si hay algo en el DOM (al menos un input visible)
-        if(document.getElementById(`admA_done_0`) || document.getElementById(`admB_done_0`)) {
-          s.ejerciciosCompletados[s.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA, _draft: true };
-          s.ejerciciosCompletados[s.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB, _draft: true };
-        }
+        s.ejerciciosCompletados[s.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA, _draft: true };
+        s.ejerciciosCompletados[s.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB, _draft: true };
       } else {
-        if(document.getElementById(`adm_done_0`)) {
-          const series = _admCollectSeries(ejConfig, ejInfo, 'adm');
-          s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series, _draft: true };
-        }
+        const series = _admCollectSeries(ejConfig, ejInfo, 'adm');
+        s.ejerciciosCompletados[s.ejercicioActual] = { ejercicioId: ejConfig.ejercicioId, series, _draft: true };
       }
     }
-  } catch(domErr) { /* DOM puede no estar listo aún, se reintentará */ }
+  } catch(domErr) { /* DOM puede no estar listo aún */ }
 
   try {
     await set(_ADMIN_PENDING_REF(s.targetUid), {
@@ -2776,16 +2834,18 @@ async function _admClearPendingSession(targetUid) {
 
 // ── Abrir modal de registro de sesión como admin ──
 window._registrarComoAdmin = async (targetUid) => {
-  const [usSnap, rutSnap, ejSnap, histSnap, pendSnap] = await Promise.all([
+  const [usSnap, rutSnap, ejSnap, catSnap, histSnap, pendSnap] = await Promise.all([
     get(ref(db,`usuarios/${targetUid}`)),
     get(ref(db,'rutinas')),
     get(ref(db,'ejercicios')),
+    get(ref(db,'categorias')),
     get(ref(db,`sesiones/${targetUid}/historial`)),
     get(_ADMIN_PENDING_REF(targetUid))
   ]);
   const user    = usSnap.val()||{};
   const ruts    = rutSnap.val()||{};
   const ejs     = ejSnap.val()||{};
+  const cats    = catSnap.val()||{};
   const hist    = histSnap.val()||{};
   const rutEntry = Object.entries(ruts).find(([,r])=>r.usuario===targetUid && r.activa);
   if(!rutEntry) return Swal.fire({icon:'warning',title:'Sin rutina activa',text:'Este atleta no tiene una rutina activa asignada.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
@@ -2833,7 +2893,7 @@ window._registrarComoAdmin = async (targetUid) => {
           window._adminSesion = {
             targetUid, rutinaId,
             mesActual: pend.mesActual, semanaActual: pend.semanaActual, diaActual: pend.diaActual,
-            ejsDia, ejs, user, rutina, progreso, hist,
+            ejsDia, ejs, cats, user, rutina, progreso, hist,
             ejercicioActual: pend.ejercicioActual||0,
             ejerciciosCompletados: pend.ejerciciosCompletados||{},
             fechaInicio: pend.fechaInicio||Date.now(),
@@ -2879,15 +2939,15 @@ window._registrarComoAdmin = async (targetUid) => {
   if(!diasDisponibles.length) return Swal.fire({icon:'info',title:'Sin días configurados',text:'La rutina no tiene días con ejercicios.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
 
   // Mostrar selector de día antes de abrir el formulario
-  _mostrarSelectorDia(targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles, hist);
+  _mostrarSelectorDia(targetUid, rutinaId, rutina, ejs, cats, user, progreso, diasDisponibles, hist);
 };
 
 // ── Selector de día ──
-window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, user, progreso, diasDisponibles, hist) => {
+window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, cats, user, progreso, diasDisponibles, hist) => {
   const { mesActual, semanaActual, diaActual } = progreso;
 
   // Guardar contexto ANTES de mostrar el overlay, para que _iniciarAdminSesionDia lo encuentre
-  window._adminSesionCtx = { targetUid, rutinaId, rutina, ejs, user, progreso, hist };
+  window._adminSesionCtx = { targetUid, rutinaId, rutina, ejs, cats, user, progreso, hist };
 
   const filas = [...diasDisponibles].reverse().map(({m,s,d,ejsCount,hecho,esSiguiente}) => {
     let badge = '';
@@ -2931,7 +2991,7 @@ window._mostrarSelectorDia = (targetUid, rutinaId, rutina, ejs, user, progreso, 
 
 window._iniciarAdminSesionDia = async (targetUid, rutinaId, m, s, d) => {
   closeOverlay();
-  const { rutina, ejs, user, progreso, hist } = window._adminSesionCtx;
+  const { rutina, ejs, cats, user, progreso, hist } = window._adminSesionCtx;
   const diaData = rutina.meses?.[m]?.semanas?.[s]?.dias?.[d];
   const ejsDia  = Object.values(diaData?.ejercicios||{});
 
@@ -2944,7 +3004,7 @@ window._iniciarAdminSesionDia = async (targetUid, rutinaId, m, s, d) => {
   window._adminSesion = {
     targetUid, rutinaId,
     mesActual: m, semanaActual: s, diaActual: d,
-    ejsDia, ejs, user, rutina, progreso, hist,
+    ejsDia, ejs, cats, user, rutina, progreso, hist,
     ejercicioActual: 0, ejerciciosCompletados: {}, fechaInicio: Date.now(),
     nivelCansancioInicio: nivelInicio
   };
@@ -3260,16 +3320,28 @@ window.admToggleSerie = (prefix, i, restSecs) => {
 
 window._renderAdminEjercicio = function _renderAdminEjercicio() {
   const s = window._adminSesion;
-  const { ejsDia, ejs, user, ejercicioActual, mesActual, semanaActual, diaActual, hist } = s;
+  const { ejsDia, ejs, cats, user, ejercicioActual, mesActual, semanaActual, diaActual, hist } = s;
   if(ejercicioActual >= ejsDia.length) { _finalizarAdminSesion(); return; }
-  // Autosave en cada render — garantiza que el indicador aparezca aunque el admin cierre el overlay
-  _admSavePendingSession();
+  // NOTE: We do NOT call _admSavePendingSession() here because the DOM still contains the
+  // PREVIOUS exercise's content. Saving now would capture stale data and store it under the
+  // new ejercicioActual index → causing values/ticks from exercise N to appear in exercise N+1.
+  // The save is done correctly in _completarAdminEj and _adminGoBack before advancing the index.
 
   const ejConfig = ejsDia[ejercicioActual];
   const ejInfo   = ejs[ejConfig.ejercicioId]||{};
   const total    = ejsDia.length;
   const current  = ejercicioActual + 1;
-  const metodo   = user.metodo||'RPE';
+
+  // Cardiovascular exercises always use RPE regardless of user method
+  const ejCatNombre = (() => {
+    const catId = ejInfo.categoria;
+    if(!catId || !cats) return '';
+    const cat = cats[catId];
+    return (cat?.nombre || cat?.name || '').toLowerCase();
+  })();
+  const esCardio = ejCatNombre.includes('cardiovascular') || ejCatNombre.includes('cardio');
+
+  const metodo   = (esCardio || user.metodo === 'RPE') ? 'RPE' : (user.metodo||'RPE');
   const metodoLabel = metodo==='RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
   const metodoMin   = metodo==='RPE' ? 1 : -1;
   const metodoMax   = metodo==='RPE' ? 10 : 6;
@@ -3280,10 +3352,20 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
   const ejInfoB   = ejConfigB ? (ejs[ejConfigB.ejercicioId]||{}) : null;
 
   // ── Restore previously saved draft data for this exercise (Fix 4) ──
+  // IMPORTANT: We intentionally do NOT merge savedA.series into ejConfig.seriesConfig here.
+  // The draft series have a different shape ({reps,peso,rirRpe,completada,comentario}) than
+  // the routine's seriesConfig ({repsMin,repsMax,peso,rirRpe,descanso}). Mixing them causes:
+  //   Bug 1: reps/peso/RPE from wrong exercise appear in inputs (sv can't find repsMin in draft)
+  //   Bug 2: checked state of series is incorrectly restored via HTML (completada field)
+  //   Bug 3: per-serie descanso is lost because draft has no descanso field → all series use the
+  //          top-level default (e.g. 90s) instead of their individual values (e.g. 20s)
+  // The correct pattern is: render inputs from ejConfig (original routine), then let
+  // _admRestoreFields() below apply draft values to the already-rendered DOM.
   const savedA = s.ejerciciosCompletados[ejercicioActual];
   const savedB = esBiset ? s.ejerciciosCompletados[ejercicioActual + 1] : null;
-  const ejConfigRestored  = savedA ? { ...ejConfig,  seriesConfig: savedA.series  } : ejConfig;
-  const ejConfigBRestored = savedB ? { ...ejConfigB, seriesConfig: savedB.series  } : ejConfigB;
+  // Always use the original ejConfig (with proper seriesConfig) for rendering
+  const ejConfigRestored  = ejConfig;
+  const ejConfigBRestored = ejConfigB;
 
   // ── Estilos compartidos para tablas ──
   const thSt = 'padding:4px 6px;font-size:0.65rem;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:0.5px;color:rgba(167,139,250,0.6);';
@@ -3449,6 +3531,11 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
     _admRestoreFields(savedA, 'adm', ejInfo);
   }
 
+  // Marcar el overlay con el índice del ejercicio actual para que _admSavePendingSession
+  // pueda verificar que el DOM es del ejercicio correcto antes de capturar valores.
+  const _admBackdrop = document.getElementById('overlayBackdrop');
+  if(_admBackdrop) _admBackdrop.dataset.admEjIdx = String(ejercicioActual);
+
   // ── Autosave on every input change (reps, peso, RPE, comentarios) ──
   setTimeout(() => {
     document.querySelectorAll('[id^="adm_"], [id^="admA_"], [id^="admB_"]').forEach(el => {
@@ -3457,7 +3544,9 @@ window._renderAdminEjercicio = function _renderAdminEjercicio() {
         el.addEventListener('change', () => _admSavePendingSession(), { passive: true });
       }
     });
-  }, 100);
+    // First clean autosave now that DOM is fully populated with correct data
+    _admSavePendingSession();
+  }, 150);
 }
 
 window._completarAdminEj = async () => {
@@ -3627,17 +3716,13 @@ async function renderEstadisticas(container) {
   const ejs = ejSnap.val()||{};
   const cats = catSnap.val()||{};
   const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''}</option>`).join('');
-  const ejOpts = Object.entries(ejs).map(([id,e])=>`<option value="${id}">${e.nombre}</option>`).join('');
-  const catOpts = Object.entries(cats).map(([id,c])=>`<option value="${id}">${c.nombre}</option>`).join('');
 
   container.innerHTML = `
     <div class="glass-panel" style="margin-bottom:16px">
-      <div class="panel-header"><span class="panel-title">📊 Filtros</span></div>
+      <div class="panel-header"><span class="panel-title">📊 Reportes</span></div>
       <div class="panel-body">
-        <div class="form-grid">
+        <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
           <div class="form-group"><label>Usuario</label><select class="glass-input" id="statsUser"><option value="">Todos</option>${userOpts}</select></div>
-          <div class="form-group"><label>Ejercicio</label><select class="glass-input" id="statsEj"><option value="">Todos</option>${ejOpts}</select></div>
-          <div class="form-group"><label>Categoría</label><select class="glass-input" id="statsCat"><option value="">Todas</option>${catOpts}</select></div>
           <div class="form-group"><label>Semana inicio</label><input class="glass-input" type="number" id="semIni" min="1" value="1"></div>
           <div class="form-group"><label>Semana fin</label><input class="glass-input" type="number" id="semFin" min="1" value="8"></div>
         </div>
@@ -3646,154 +3731,442 @@ async function renderEstadisticas(container) {
         </div>
       </div>
     </div>
-    <div id="chartsArea" class="stats-grid">
-      <div class="stats-card"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Configura los filtros y presiona "Generar Reportes"</div></div></div>
+    <div id="chartsArea">
+      <div class="stats-card"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Selecciona un usuario y rango de semanas, luego presiona "Generar Reportes"</div></div></div>
     </div>
   `;
 }
 
+// ── Paleta de colores pro para charts ──
+const PRO_PALETTE = [
+  '#00c8ff','#7b2fff','#00e5a0','#ff6b35','#ffd60a',
+  '#ff4d6d','#4ade80','#818cf8','#f472b6','#38bdf8',
+  '#fb923c','#a3e635','#e879f9','#2dd4bf','#facc15'
+];
+
+function proChartOptions(extraY={}) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{
+      legend:{
+        position:'bottom',
+        labels:{
+          color:'rgba(232,244,255,0.7)', font:{family:'Exo 2',size:10},
+          boxWidth:12, padding:14, usePointStyle:true, pointStyle:'circle'
+        }
+      },
+      tooltip:{
+        backgroundColor:'rgba(6,12,28,0.95)',
+        borderColor:'rgba(0,200,255,0.25)', borderWidth:1,
+        titleColor:'#e8f4ff', bodyColor:'rgba(232,244,255,0.75)',
+        titleFont:{family:'Exo 2',weight:'700',size:12},
+        bodyFont:{family:'Exo 2',size:11},
+        padding:10, cornerRadius:10
+      }
+    },
+    scales:{
+      x:{
+        grid:{color:'rgba(255,255,255,0.04)', drawBorder:false},
+        ticks:{color:'rgba(232,244,255,0.5)', font:{family:'Exo 2',size:10}}
+      },
+      y:{
+        grid:{color:'rgba(255,255,255,0.04)', drawBorder:false},
+        ticks:{color:'rgba(232,244,255,0.5)', font:{family:'Exo 2',size:10}},
+        min: extraY.min, max: extraY.max
+      }
+    }
+  };
+}
+
+function makeProDataset(name, data, i, type='line') {
+  const color = PRO_PALETTE[i % PRO_PALETTE.length];
+  if(type==='bar') return {
+    label:name, data,
+    backgroundColor: color+'55', borderColor:color, borderWidth:2,
+    borderRadius:6, borderSkipped:false
+  };
+  return {
+    label:name, data,
+    borderColor:color, backgroundColor:color+'20',
+    pointBackgroundColor:color, pointBorderColor:'#060c18',
+    pointRadius:4, pointHoverRadius:7, pointBorderWidth:2,
+    tension:0.4, fill:false, spanGaps:true, borderWidth:2.5
+  };
+}
+
+// Crea una card pro con header, tags de filtro, selector de ejercicio/cat, toggle línea/barra
+function buildProCard(id, icon, title, badge, filterTags, controlsHTML, canvasHTML) {
+  return `
+  <div class="pro-chart-card" id="card_${id}">
+    <div class="pro-chart-header">
+      <div class="pro-chart-title">${icon} ${title} <span class="pro-chart-badge">${badge}</span></div>
+      <div class="pro-chart-controls">${controlsHTML}</div>
+    </div>
+    <div class="pro-chart-filter-tags">${filterTags}</div>
+    <div class="pro-chart-body">${canvasHTML}</div>
+  </div>`;
+}
+
+// Renderiza o re-renderiza un chart pro dentro de su wrapper
+function renderProChart(canvasId, type, labels, datasets, extraY={}) {
+  let canvas = document.getElementById(canvasId);
+  if(!canvas) {
+    const wrap = document.querySelector(`[data-canvas="${canvasId}"]`);
+    if(wrap) { wrap.innerHTML=`<canvas id="${canvasId}"></canvas>`; canvas=document.getElementById(canvasId); }
+  }
+  if(!canvas) return;
+  if(canvas._proChart) { canvas._proChart.destroy(); canvas._proChart=null; }
+  const hasData = datasets.length>0 && datasets.some(d=>d.data&&d.data.some(v=>v!=null&&!isNaN(v)&&v!==0));
+  if(!hasData){
+    const wrap=canvas.parentElement;
+    if(wrap){ wrap.setAttribute('data-canvas',canvasId); wrap.innerHTML=`<div class="pro-chart-empty"><div class="ico">📭</div><span>Sin datos para este período</span></div>`; }
+    return;
+  }
+  const opts = proChartOptions(extraY);
+  canvas._proChart = new Chart(canvas, { type, data:{labels, datasets}, options:opts });
+}
+
 window.cargarEstadisticas = async () => {
   const userId = document.getElementById('statsUser').value;
-  const ejId = document.getElementById('statsEj').value;
-  const catId = document.getElementById('statsCat').value;
   const semIni = +document.getElementById('semIni').value;
   const semFin = +document.getElementById('semFin').value;
 
   const area = document.getElementById('chartsArea');
   area.innerHTML = '<div class="page-loading"><div class="spinner-lg"></div><span>Cargando datos...</span></div>';
 
-  const [sesSnap, ejSnap, catSnap, usSnap, rutSnap] = await Promise.all([
+  const [sesSnap, ejSnap, catSnap, usSnap] = await Promise.all([
     get(ref(db,'sesiones')), get(ref(db,'ejercicios')),
-    get(ref(db,'categorias')), get(ref(db,'usuarios')),
-    get(ref(db,'rutinas'))
+    get(ref(db,'categorias')), get(ref(db,'usuarios'))
   ]);
   const sesiones = sesSnap.val()||{};
-  const ejs = ejSnap.val()||{};
-  const cats = catSnap.val()||{};
-  const users = usSnap.val()||{};
+  const ejs      = ejSnap.val()||{};
+  const cats     = catSnap.val()||{};
+  const users    = usSnap.val()||{};
 
-  // Build week-based data
-  const buildWeekLabels = () => Array.from({length:semFin-semIni+1},(_,i)=>`Sem ${semIni+i}`);
-  const labels = buildWeekLabels();
+  const userName = userId ? (users[userId]?.nombres+' '+(users[userId]?.apellidos||'')).trim() : null;
+  const labels   = Array.from({length:semFin-semIni+1},(_,i)=>`Sem ${semIni+i}`);
+  const nSem     = labels.length;
 
-  // Collect all sessions in range
+  function ftag(txt){ return `<span class="pro-filter-tag">${txt}</span>`; }
+  function baseTags(extra=''){
+    return ftag(`Sem ${semIni}–${semFin}`) + (userName?ftag('👤 '+userName):'') + extra;
+  }
+
+  // ── Recoger sesiones del rango ──
   const allSessions = [];
-  Object.entries(sesiones).forEach(([uid, userData]) => {
+  Object.entries(sesiones).forEach(([uid,uData])=>{
     if(userId && uid!==userId) return;
-    Object.entries(userData.historial||{}).forEach(([sid, ses]) => {
-      const semAbs = (ses.mes-1)*4 + ses.semana;
-      if(semAbs>=semIni && semAbs<=semFin) allSessions.push({...ses, userId:uid});
+    Object.entries(uData.historial||{}).forEach(([,ses])=>{
+      const sAbs=(ses.mes-1)*4+ses.semana;
+      if(sAbs>=semIni && sAbs<=semFin) allSessions.push({...ses, userId:uid});
     });
   });
 
-  // Chart 1: Carga (peso por ejercicio)
-  const pesoData = {};
-  allSessions.forEach(ses => {
-    Object.values(ses.ejerciciosCompletados||{}).forEach(ec => {
-      if(ejId && ec.ejercicioId!==ejId) return;
-      const ejName = ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
-      if(!pesoData[ejName]) pesoData[ejName] = Array(labels.length).fill(null).map(()=>[]);
-      const semAbs = (ses.mes-1)*4+ses.semana;
-      const idx = semAbs-semIni;
-      if(idx>=0&&idx<labels.length) {
-        (ec.series||[]).forEach(s=>pesoData[ejName][idx].push(s.peso));
-      }
-    });
-  });
-  const pesoDatasets = Object.entries(pesoData).map(([name,weeks],i) => ({
-    label:name, data:weeks.map(w=>w.length?w.reduce((a,b)=>a+b,0)/w.length:null),
-    borderColor:`hsl(${i*60},70%,60%)`, tension:0.4, fill:false, spanGaps:true
-  }));
-
-  // Chart 2: Intensidad RPE/RIR
-  const intData = {};
-  allSessions.forEach(ses => {
-    Object.values(ses.ejerciciosCompletados||{}).forEach(ec => {
-      if(ejId && ec.ejercicioId!==ejId) return;
-      const ejName = ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
-      if(!intData[ejName]) intData[ejName] = Array(labels.length).fill(null).map(()=>[]);
-      const idx = (ses.mes-1)*4+ses.semana-semIni;
-      if(idx>=0&&idx<labels.length) {
-        (ec.series||[]).forEach(s=>{ if(s.rirRpe!=null) intData[ejName][idx].push(s.rirRpe); });
-      }
-    });
-  });
-  const intDatasets = Object.entries(intData).map(([name,weeks],i)=>({
-    label:name, data:weeks.map(w=>w.length?w.reduce((a,b)=>a+b,0)/w.length:null),
-    borderColor:`hsl(${i*60+120},70%,60%)`, tension:0.4, fill:false, spanGaps:true
-  }));
-
-  // Chart 3: Volumen (series por semana por categoria)
-  const volData = {};
-  allSessions.forEach(ses => {
-    Object.values(ses.ejerciciosCompletados||{}).forEach(ec => {
-      const ejCat = ejs[ec.ejercicioId]?.categoria;
-      if(catId && ejCat!==catId) return;
-      const catName = cats[ejCat]?.nombre||'Sin cat';
-      if(!volData[catName]) volData[catName] = Array(labels.length).fill(0);
-      const idx = (ses.mes-1)*4+ses.semana-semIni;
-      if(idx>=0&&idx<labels.length) volData[catName][idx]+=(ec.series||[]).length;
-    });
-  });
-  const volDatasets = Object.entries(volData).map(([name,data],i)=>({
-    label:name, data, borderColor:`hsl(${i*60+240},70%,60%)`, tension:0.4, fill:false
-  }));
-
-  // Chart 4: Intensidad por sesión (dias de semana especifica)
-  const sesIntData = {};
-  const semAnalizar = semIni;
-  allSessions.filter(s=>(s.mes-1)*4+s.semana===semAnalizar).forEach(ses => {
-    const dayKey = `Día ${ses.dia}`;
-    if(!sesIntData[dayKey]) sesIntData[dayKey] = [];
+  // ── Opciones de filtros locales (sólo los ejercicios/cats que hay en los datos) ──
+  const ejsEnData={}, catsEnData={};
+  allSessions.forEach(ses=>{
     Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
-      (ec.series||[]).forEach(s=>{ if(s.rirRpe!=null) sesIntData[dayKey].push(s.rirRpe); });
+      if(ejs[ec.ejercicioId]) ejsEnData[ec.ejercicioId]=ejs[ec.ejercicioId].nombre;
+      const cat=ejs[ec.ejercicioId]?.categoria;
+      if(cat&&cats[cat]) catsEnData[cat]=cats[cat].nombre;
     });
   });
-  const sesIntLabels = Object.keys(sesIntData).sort();
-  const sesIntVals = sesIntLabels.map(k=>sesIntData[k].length?sesIntData[k].reduce((a,b)=>a+b,0)/sesIntData[k].length:null);
+  const ejOL=`<option value="">Todos</option>`+Object.entries(ejsEnData).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+  const catOL=`<option value="">Todas</option>`+Object.entries(catsEnData).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+  const semOL=Array.from({length:nSem},(_,i)=>{const s=semIni+i;return`<option value="${s}">Sem ${s}</option>`;}).join('');
 
-  // Chart 5: Frecuencia (veces entrenado por grupo muscular por dia)
-  const freqData = {};
-  allSessions.forEach(ses => {
-    Object.values(ses.ejerciciosCompletados||{}).forEach(ec => {
-      const ejCat = ejs[ec.ejercicioId]?.categoria;
-      if(catId && ejCat!==catId) return;
-      const catName = cats[ejCat]?.nombre||'Sin cat';
-      const dayKey = `M${ses.mes}S${ses.semana}D${ses.dia}`;
-      if(!freqData[catName]) freqData[catName] = {};
-      freqData[catName][dayKey] = (freqData[catName][dayKey]||0)+1;
+  // ════════════════════════════════
+  //  DATA BUILDERS
+  // ════════════════════════════════
+
+  // 1. CARGA — peso promedio por ejercicio por semana
+  function buildCarga(ejFil, chartType) {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        if(ejFil && ec.ejercicioId!==ejFil) return;
+        const n=ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
+        if(!map[n]) map[n]=Array(nSem).fill(null).map(()=>[]);
+        const idx=(ses.mes-1)*4+ses.semana-semIni;
+        if(idx>=0&&idx<nSem)(ec.series||[]).forEach(s=>{if(+s.peso>0)map[n][idx].push(+s.peso);});
+      });
     });
-  });
+    return Object.entries(map).map(([name,wks],i)=>
+      makeProDataset(name, wks.map(w=>w.length?+(w.reduce((a,b)=>a+b)/w.length).toFixed(1):null), i, chartType)
+    );
+  }
 
-  const chartOptions = {
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:'#e8f4ff',font:{family:'Exo 2',size:11}}}},
-    scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.6)'}},
-            y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.6)'}}}
+  // 2. RPE/RIR — promedio por ejercicio por semana
+  function buildRPE(ejFil, chartType) {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        if(ejFil && ec.ejercicioId!==ejFil) return;
+        const n=ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
+        if(!map[n]) map[n]=Array(nSem).fill(null).map(()=>[]);
+        const idx=(ses.mes-1)*4+ses.semana-semIni;
+        if(idx>=0&&idx<nSem)(ec.series||[]).forEach(s=>{if(s.rirRpe!=null)map[n][idx].push(s.rirRpe);});
+      });
+    });
+    return Object.entries(map).map(([name,wks],i)=>
+      makeProDataset(name, wks.map(w=>w.length?+(w.reduce((a,b)=>a+b)/w.length).toFixed(2):null), i, chartType)
+    );
+  }
+
+  // 3. VOLUMEN — series por categoría por semana
+  function buildVol(catFil, chartType) {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        const ejCat=ejs[ec.ejercicioId]?.categoria;
+        if(catFil && ejCat!==catFil) return;
+        const cN=cats[ejCat]?.nombre||'Sin cat';
+        if(!map[cN]) map[cN]=Array(nSem).fill(0);
+        const idx=(ses.mes-1)*4+ses.semana-semIni;
+        if(idx>=0&&idx<nSem) map[cN][idx]+=(ec.series||[]).length;
+      });
+    });
+    return Object.entries(map).map(([name,data],i)=>makeProDataset(name,data,i,chartType));
+  }
+
+  // 4. INTENSIDAD PERCIBIDA — nivelCansancioFin día a día dentro de una semana
+  function buildIntSesion(semA) {
+    const map={};
+    allSessions.filter(s=>(s.mes-1)*4+s.semana===semA).forEach(ses=>{
+      const k=`Día ${ses.dia}`;
+      if(ses.nivelCansancioFin!=null) map[k]=ses.nivelCansancioFin;
+    });
+    const lbs=Object.keys(map).sort((a,b)=>+a.replace('Día ','')-+b.replace('Día ',''));
+    return { lbs, vals:lbs.map(k=>map[k]) };
+  }
+
+  // 5. DURACIÓN DE SESIÓN — minutos promedio por semana
+  function buildDuracion() {
+    const bySem=Array(nSem).fill(null).map(()=>[]);
+    allSessions.forEach(ses=>{
+      if(!ses.fechaInicio||!ses.fechaFin) return;
+      const mins=Math.round((ses.fechaFin-ses.fechaInicio)/60000);
+      if(mins<5||mins>300) return;
+      const idx=(ses.mes-1)*4+ses.semana-semIni;
+      if(idx>=0&&idx<nSem) bySem[idx].push(mins);
+    });
+    const vals=bySem.map(w=>w.length?Math.round(w.reduce((a,b)=>a+b)/w.length):null);
+    return [makeProDataset('Duración promedio (min)', vals, 5, 'line')];
+  }
+
+  // 6. SESIONES POR SEMANA — frecuencia de entrenamiento
+  function buildFrecuencia() {
+    const bySem=Array(nSem).fill(0);
+    allSessions.forEach(ses=>{
+      const idx=(ses.mes-1)*4+ses.semana-semIni;
+      if(idx>=0&&idx<nSem) bySem[idx]++;
+    });
+    return [makeProDataset('Sesiones', bySem, 3, 'bar')];
+  }
+
+  // 7. TOP EJERCICIOS — los más entrenados (total series en el rango)
+  function buildTopEjercicios() {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        const n=ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
+        map[n]=(map[n]||0)+(ec.series||[]).length;
+      });
+    });
+    const sorted=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    return {
+      lbs: sorted.map(([n])=>n.length>22?n.slice(0,20)+'…':n),
+      vals: sorted.map(([,v])=>v)
+    };
+  }
+
+  // 8. DESCANSO AL INICIAR — nivelCansancioInicio promedio por semana
+  //    (es lo que el atleta reporta como su nivel de descanso antes de entrenar)
+  function buildDescanso() {
+    const bySem=Array(nSem).fill(null).map(()=>[]);
+    allSessions.forEach(ses=>{
+      if(ses.nivelCansancioInicio==null) return;
+      const idx=(ses.mes-1)*4+ses.semana-semIni;
+      if(idx>=0&&idx<nSem) bySem[idx].push(ses.nivelCansancioInicio);
+    });
+    const vals=bySem.map(w=>w.length?+(w.reduce((a,b)=>a+b)/w.length).toFixed(1):null);
+    return [makeProDataset('Nivel de descanso al llegar', vals, 2, 'line')];
+  }
+
+  // ── Resumen numérico ──
+  const totalSeries=allSessions.reduce((a,s)=>a+Object.values(s.ejerciciosCompletados||{}).reduce((b,ec)=>b+(ec.series||[]).length,0),0);
+  const withDur=allSessions.filter(s=>s.fechaInicio&&s.fechaFin&&(s.fechaFin-s.fechaInicio)/60000>5);
+  const avgDur=withDur.length?Math.round(withDur.reduce((a,s)=>a+(s.fechaFin-s.fechaInicio)/60000,0)/withDur.length):'-';
+
+  // ── Render HTML ──
+  area.innerHTML = `
+  <div class="pro-charts-grid">
+
+    ${buildProCard('carga','📈','Carga','Peso promedio / semana', baseTags(),
+      `<select class="pro-chart-select" id="pc_ej_carga" onchange="pcRefresh('carga')">${ejOL}</select>
+       <div class="pro-chart-type-btn">
+         <button class="active" id="pct_carga_line" onclick="pcType('carga','line')">〜</button>
+         <button id="pct_carga_bar" onclick="pcType('carga','bar')">▮</button>
+       </div>`,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartCarga"></canvas></div>`
+    )}
+
+    ${buildProCard('rpe','🔥','Esfuerzo RPE/RIR','Promedio por ejercicio / semana', baseTags(),
+      `<select class="pro-chart-select" id="pc_ej_rpe" onchange="pcRefresh('rpe')">${ejOL}</select>
+       <div class="pro-chart-type-btn">
+         <button class="active" id="pct_rpe_line" onclick="pcType('rpe','line')">〜</button>
+         <button id="pct_rpe_bar" onclick="pcType('rpe','bar')">▮</button>
+       </div>`,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartRpe"></canvas></div>`
+    )}
+
+    ${buildProCard('vol','📦','Volumen','Series por categoría / semana', baseTags(),
+      `<select class="pro-chart-select" id="pc_cat_vol" onchange="pcRefresh('vol')">${catOL}</select>
+       <div class="pro-chart-type-btn">
+         <button class="active" id="pct_vol_bar" onclick="pcType('vol','bar')">▮</button>
+         <button id="pct_vol_line" onclick="pcType('vol','line')">〜</button>
+       </div>`,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartVol"></canvas></div>`
+    )}
+
+    ${buildProCard('sesint','⚡','Intensidad percibida / día','Reportada al finalizar cada sesión', baseTags(),
+      `<select class="pro-chart-select" id="pc_sem_sesint" onchange="pcRefresh('sesint')">${semOL}</select>
+       <div class="pro-chart-type-btn">
+         <button class="active" id="pct_sesint_line" onclick="pcType('sesint','line')">〜</button>
+         <button id="pct_sesint_bar" onclick="pcType('sesint','bar')">▮</button>
+       </div>`,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartSesInt"></canvas></div>`
+    )}
+
+    ${buildProCard('dur','⏱️','Duración de sesión','Minutos promedio por semana', baseTags(),
+      ``,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartDur"></canvas></div>`
+    )}
+
+    ${buildProCard('frec','🗓️','Frecuencia de entrenamiento','Sesiones completadas por semana', baseTags(),
+      ``,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartFrec"></canvas></div>`
+    )}
+
+    ${buildProCard('topej','🏆','Top Ejercicios','Los más entrenados en el período', baseTags(),
+      ``,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartTopEj"></canvas></div>`
+    )}
+
+    ${buildProCard('desc','😴','Nivel de descanso al llegar','1 = Sin energía · 10 = Súper descansado', baseTags(),
+      ``,
+      `<div class="pro-chart-canvas-wrap"><canvas id="chartDesc"></canvas></div>`
+    )}
+
+    <div class="pro-chart-card full-width">
+      <div class="pro-chart-header">
+        <div class="pro-chart-title">📊 Resumen del período <span class="pro-chart-badge">Sem ${semIni}–${semFin}${userName?' · '+userName:''}</span></div>
+      </div>
+      <div class="pro-summary-row">
+        <div class="pro-summary-chip"><span class="val">${allSessions.length}</span><span class="lbl">Sesiones</span></div>
+        <div class="pro-summary-chip"><span class="val">${[...new Set(allSessions.map(s=>s.userId))].length}</span><span class="lbl">Atletas</span></div>
+        <div class="pro-summary-chip"><span class="val">${nSem}</span><span class="lbl">Semanas</span></div>
+        <div class="pro-summary-chip"><span class="val">${totalSeries}</span><span class="lbl">Series totales</span></div>
+        <div class="pro-summary-chip"><span class="val">${avgDur} min</span><span class="lbl">Duración prom.</span></div>
+        <div class="pro-summary-chip"><span class="val">${allSessions.filter(s=>s.nivelCansancioFin!=null).length}</span><span class="lbl">Sesiones con percepción registrada</span></div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── State & handlers ──
+  window._pcTypes = { carga:'line', rpe:'line', vol:'bar', sesint:'line', dur:'line', frec:'bar', topej:'bar', desc:'line' };
+
+  window.pcType = (chartId, type) => {
+    window._pcTypes[chartId] = type;
+    ['line','bar'].forEach(t=>{
+      const b=document.getElementById(`pct_${chartId}_${t}`);
+      if(b) b.classList.toggle('active', t===type);
+    });
+    pcRefresh(chartId);
   };
 
-  area.innerHTML = `
-    <div class="stats-card"><div style="font-weight:700;margin-bottom:12px">📈 Carga (Peso promedio por semana)</div><div class="chart-container"><canvas id="chartPeso"></canvas></div></div>
-    <div class="stats-card"><div style="font-weight:700;margin-bottom:12px">🔥 Intensidad RPE/RIR promedio</div><div class="chart-container"><canvas id="chartInt"></canvas></div></div>
-    <div class="stats-card"><div style="font-weight:700;margin-bottom:12px">📦 Volumen (Series por categoría)</div><div class="chart-container"><canvas id="chartVol"></canvas></div></div>
-    <div class="stats-card"><div style="font-weight:700;margin-bottom:12px">⚡ Intensidad por sesión (Sem ${semAnalizar})</div><div class="chart-container"><canvas id="chartSesInt"></canvas></div></div>
-    <div class="stats-card" style="grid-column:1/-1"><div style="font-weight:700;margin-bottom:12px">📊 Resumen de sesiones</div>
-      <div style="font-size:0.9rem;color:var(--text-muted)">Total sesiones analizadas: <strong style="color:var(--primary)">${allSessions.length}</strong></div>
-    </div>
-  `;
+  window.pcRefresh = (chartId) => {
+    const type = window._pcTypes[chartId]||'line';
+    if(chartId==='carga'){
+      renderProChart('chartCarga', type, labels, buildCarga(document.getElementById('pc_ej_carga')?.value||'', type));
+    } else if(chartId==='rpe'){
+      renderProChart('chartRpe', type, labels, buildRPE(document.getElementById('pc_ej_rpe')?.value||'', type));
+    } else if(chartId==='vol'){
+      renderProChart('chartVol', type, labels, buildVol(document.getElementById('pc_cat_vol')?.value||'', type));
+    } else if(chartId==='sesint'){
+      const sem=+document.getElementById('pc_sem_sesint')?.value||semIni;
+      const {lbs,vals}=buildIntSesion(sem);
+      renderProChart('chartSesInt', type, lbs, vals.length?[makeProDataset('Intensidad percibida',vals,0,type)]:[],
+        {min:0,max:10});
+    } else if(chartId==='dur'){
+      renderProChart('chartDur', 'line', labels, buildDuracion());
+    } else if(chartId==='frec'){
+      renderProChart('chartFrec', 'bar', labels, buildFrecuencia());
+    } else if(chartId==='topej'){
+      const {lbs,vals}=buildTopEjercicios();
+      renderProChart('chartTopEj','bar',lbs,
+        vals.length?[{label:'Series totales',data:vals,
+          backgroundColor:PRO_PALETTE.map(c=>c+'88'),
+          borderColor:PRO_PALETTE, borderWidth:2, borderRadius:6}]:[]
+      );
+    } else if(chartId==='desc'){
+      let canvas2=document.getElementById('chartDesc');
+      if(!canvas2){
+        const wrap=document.querySelector('[data-canvas="chartDesc"]');
+        if(wrap){ wrap.innerHTML=`<canvas id="chartDesc"></canvas>`; canvas2=document.getElementById('chartDesc'); }
+      }
+      if(!canvas2) return;
+      if(canvas2._proChart){ canvas2._proChart.destroy(); canvas2._proChart=null; }
+      const ds2=buildDescanso();
+      const hasData2=ds2.some(d=>d.data&&d.data.some(v=>v!=null&&v>0));
+      if(!hasData2){
+        const wrap=canvas2.parentElement;
+        if(wrap){ wrap.setAttribute('data-canvas','chartDesc'); wrap.innerHTML=`<div class="pro-chart-empty"><div class="ico">📭</div><span>Sin datos para este período</span></div>`; }
+        return;
+      }
+      const optsDesc=proChartOptions({min:0,max:10});
+      optsDesc.scales.y.ticks = {
+        color:'rgba(232,244,255,0.5)', font:{family:'Exo 2',size:10},
+        callback: v => v===0?'0':v===5?'5 — Regular':v===10?'10 — Descansado':v
+      };
+      canvas2._proChart=new Chart(canvas2,{type:'line',data:{labels,datasets:ds2},options:optsDesc});
+    }
+  };
 
-  // Render charts
-  if(pesoDatasets.length) new Chart(document.getElementById('chartPeso'), {type:'line',data:{labels,datasets:pesoDatasets},options:chartOptions});
-  else document.getElementById('chartPeso').parentElement.innerHTML += '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin datos</div></div>';
+  // ── renderProChart con opciones extra — versión que nunca destruye el canvas del DOM ──
+  const _origRender = renderProChart;
+  window.renderProChart = function(canvasId, type, labels, datasets, extraY={}) {
+    // Buscar el wrap (padre del canvas)
+    let canvas = document.getElementById(canvasId);
+    // Si el canvas fue destruido (reemplazado por mensaje vacío), recrearlo
+    if(!canvas) {
+      // Buscar el wrap por convención: el canvas siempre está dentro de .pro-chart-canvas-wrap
+      // Buscamos en todas las cards el wrap que contiene el id original
+      const wrap = document.querySelector(`[data-canvas="${canvasId}"]`);
+      if(wrap) {
+        wrap.innerHTML = `<canvas id="${canvasId}"></canvas>`;
+        canvas = document.getElementById(canvasId);
+      }
+    }
+    if(!canvas) return;
+    if(canvas._proChart){ canvas._proChart.destroy(); canvas._proChart=null; }
 
-  if(intDatasets.length) new Chart(document.getElementById('chartInt'), {type:'line',data:{labels,datasets:intDatasets},options:chartOptions});
-  else document.getElementById('chartInt').parentElement.innerHTML += '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin datos</div></div>';
+    const hasData = datasets.length > 0 && datasets.some(d=>d.data&&d.data.some(v=>v!=null&&!isNaN(v)&&v!==0));
+    if(!hasData){
+      // Guardar referencia al wrap antes de reemplazar, para poder restaurar
+      const wrap = canvas.parentElement;
+      if(wrap) {
+        wrap.setAttribute('data-canvas', canvasId);
+        wrap.innerHTML = `<div class="pro-chart-empty"><div class="ico">📭</div><span>Sin datos para este período</span></div>`;
+      }
+      return;
+    }
+    const opts = proChartOptions(extraY);
+    canvas._proChart = new Chart(canvas, {type, data:{labels,datasets}, options:opts});
+  };
 
-  if(volDatasets.length) new Chart(document.getElementById('chartVol'), {type:'line',data:{labels,datasets:volDatasets},options:chartOptions});
-  else document.getElementById('chartVol').parentElement.innerHTML += '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin datos</div></div>';
-
-  if(sesIntVals.length) new Chart(document.getElementById('chartSesInt'), {type:'line',data:{labels:sesIntLabels,datasets:[{label:'Intensidad',data:sesIntVals,borderColor:'#00e5ff',backgroundColor:'#00e5ff',pointBackgroundColor:'#00e5ff',pointBorderColor:'#00e5ff',pointRadius:5,pointHoverRadius:7,tension:0.4,fill:false}]},options:chartOptions});
-  else document.getElementById('chartSesInt').parentElement.innerHTML += '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Sin datos</div></div>';
+  ['carga','rpe','vol','sesint','dur','frec','topej','desc'].forEach(id=>pcRefresh(id));
 };
 
 // ============ ANAMNESIS ============

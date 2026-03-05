@@ -1146,7 +1146,13 @@ async function savePendingSession() {
   // Asegurarse de que nivelCansancioInicio se preserve (puede haberse seteado antes del primer save)
   // ya está en state.sesionActiva, solo necesitamos persistirlo en Firebase junto con el resto.
 
-  // Capturar snapshot del formulario actual
+  // Capturar snapshot del formulario actual, SOLO si el DOM ya fue actualizado
+  // al ejercicio correcto. Esto previene guardar datos del ejercicio anterior
+  // bajo el índice del nuevo ejercicio cuando se avanza rápido.
+  const _page = document.getElementById('mainPage');
+  const _pageEjIdx = _page ? parseInt(_page.dataset.ejIdx ?? '-1') : -1;
+  if(_pageEjIdx !== state.ejercicioActual) return; // DOM desactualizado — abortar captura
+
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
   const ejsDia  = Object.values(diaData?.ejercicios||{});
@@ -2459,6 +2465,11 @@ function renderEjercicioActual() {
     }
   }
 
+  // Marcar el contenedor con el índice del ejercicio renderizado, para que
+  // savePendingSession pueda verificar que el DOM corresponde al ejercicio actual.
+  const _mainPage = document.getElementById('mainPage');
+  if(_mainPage) _mainPage.dataset.ejIdx = String(state.ejercicioActual);
+
   // Auto-save a Firebase en cada cambio de input
   document.querySelectorAll('.serie-field input, .serie-row input[type="text"]').forEach(input => {
     input.addEventListener('change', () => savePendingSession(), { passive: true });
@@ -2957,9 +2968,13 @@ window.completarEjercicio = async () => {
     state.ejercicioActual++;
   }
 
-  // Guardar progreso en Firebase tras completar cada ejercicio
-  savePendingSession();
+  // Guardar progreso en Firebase tras completar cada ejercicio.
+  // IMPORTANT: savePendingSession is called AFTER renderEjercicioActual so it captures
+  // the new exercise's DOM (clean/blank) and not the old exercise's completed series.
+  // Calling it before renderEjercicioActual would save the old DOM under the new ejercicioActual
+  // index, causing wrong values/ticks to appear when resuming.
   renderEjercicioActual();
+  setTimeout(() => savePendingSession(), 200);
 };
 
 window.ejercicioAnterior = () => {
