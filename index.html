@@ -67,8 +67,10 @@
   .login-wrapper {
     position: relative; z-index: 10;
     width: 100%; max-width: 420px;
-    padding: 24px;
+    padding: 16px 24px;
     animation: slideUp 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    max-height: 100vh;
+    overflow-y: auto;
   }
   @keyframes slideUp {
     from { opacity:0; transform: translateY(40px); }
@@ -82,7 +84,7 @@
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 28px;
-    padding: 48px 40px 40px;
+    padding: 36px 40px 32px;
     box-shadow: 
       0 0 0 1px rgba(0,200,255,0.05),
       0 20px 60px rgba(0,0,0,0.5),
@@ -103,7 +105,7 @@
     pointer-events:none;
   }
 
-  .logo-area { text-align:center; margin-bottom: 36px; }
+  .logo-area { text-align:center; margin-bottom: 20px; }
   .logo-text {
     font-family: 'Space Mono', monospace;
     font-size: 2.4rem; font-weight: 700;
@@ -126,16 +128,16 @@
   /* Mascots */
   .mascots {
     display: flex; justify-content: center;
-    margin-bottom: 28px;
+    margin-bottom: 18px;
   }
   .mascot-img {
-    width: 220px; height: auto;
+    width: 190px; height: auto;
     object-fit: contain;
     filter: drop-shadow(0 0 20px rgba(0,200,255,0.25));
   }
 
   /* Form */
-  .form-group { margin-bottom: 16px; position: relative; }
+  .form-group { margin-bottom: 12px; position: relative; }
   .form-group label {
     display: block; font-size: 0.75rem;
     color: var(--text-muted); letter-spacing: 1px;
@@ -204,7 +206,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .credits {
-    text-align: center; margin-top: 28px;
+    text-align: center; margin-top: 18px;
     color: var(--text-muted); font-size: 0.75rem;
   }
   .credits strong { color: var(--primary); }
@@ -260,6 +262,52 @@
   @media (max-width: 480px) {
     .glass-card { padding: 36px 24px 32px; }
     .logo-text { font-size: 2rem; }
+  }
+
+  /* Sotelo badge */
+  .sotelo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    padding: 5px 14px 5px 14px;
+    border-radius: 20px;
+    background: rgba(10, 20, 40, 0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+    opacity: 0.6;
+    margin-top: 10px;
+  }
+  .sotelo-badge:hover {
+    opacity: 1;
+    border-color: rgba(0,200,255,0.35);
+    box-shadow: 0 0 16px rgba(0,200,255,0.15);
+    transform: translateY(-2px);
+  }
+  .sotelo-badge .sotelo-label {
+    font-size: 0.7rem;
+    color: rgba(232,244,255,0.5);
+    font-family: 'Exo 2', sans-serif;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    margin-right: 2px;
+  }
+  .sotelo-wordmark {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: rgba(232, 244, 255, 0.88);
+  }
+  .sotelo-wordmark .t-letter {
+    background: linear-gradient(160deg, #a78bfa 0%, #7b2fff 60%, #c4b5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-style: italic;
   }
 </style>
 </head>
@@ -318,6 +366,11 @@
 
     <div class="credits">
       By: <strong>Sebas Moreno</strong> y <strong>Caro Muñoz</strong>
+      <br>
+      <a href="https://yhardanysotelo.github.io/" target="_blank" rel="noopener noreferrer" class="sotelo-badge" title="Diseñado por Sotelo">
+        <span class="sotelo-label">Diseñado por</span>
+        <span class="sotelo-wordmark">So<span class="t-letter">t</span>elo</span>
+      </a>
     </div>
   </div>
 </div>
