@@ -2115,15 +2115,29 @@ window.addMes = async (rutinaId, mes) => {
 };
 
 // ── Buscador de ejercicios en selector ──
+// _ejSelAllOptions guarda la lista completa para reconstruir el <select> al filtrar.
+// iOS Safari ignora option.style.display='none', por eso se reemplazan los nodos.
+window._ejSelAllOptions = [];
 window.filterEjSel = () => {
-  const q = (document.getElementById('ejSelSearch')?.value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const q = (document.getElementById('ejSelSearch')?.value || '')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const sel = document.getElementById('ejSel');
   if(!sel) return;
-  Array.from(sel.options).forEach(opt => {
-    if(!opt.value) { opt.style.display=''; return; }
-    const name = opt.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    opt.style.display = name.includes(q) ? '' : 'none';
-  });
+  const currentVal = sel.value;
+  sel.innerHTML = '';
+  window._ejSelAllOptions
+    .filter(o => {
+      if(!o.value) return true;
+      const name = o.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      return name.includes(q);
+    })
+    .forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.value;
+      opt.textContent = o.text;
+      if(o.value && (o.value === currentVal || (!currentVal && o.preselected))) opt.selected = true;
+      sel.appendChild(opt);
+    });
 };
 
 window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
@@ -2131,6 +2145,7 @@ window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
   const ejs = ejSnap.val()||{};
   const ejList = Object.entries(ejs).filter(([,e])=>e.estado).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'));
   const ejOptions = ejList.map(([id,e])=>`<option value="${id}">${e.nombre}</option>`).join('');
+  window._ejSelAllOptions = [{value:'',text:'— Seleccionar —'}, ...ejList.map(([id,e])=>({value:id, text:e.nombre, preselected:false}))];
 
   showOverlay(`
     <div class="overlay-header">
@@ -2381,6 +2396,13 @@ window.editEjDia = async (rutinaId, mes, semana, dia, idx) => {
     .sort((a,b) => a[1].nombre.localeCompare(b[1].nombre,'es'))
     .map(([id,e]) => `<option value="${id}" ${id===ej.ejercicioId?'selected':''}>${e.nombre}</option>`)
     .join('');
+  window._ejSelAllOptions = [
+    {value:'',text:'— Seleccionar —'},
+    ...Object.entries(ejs)
+      .filter(([,e]) => e.estado)
+      .sort((a,b) => a[1].nombre.localeCompare(b[1].nombre,'es'))
+      .map(([id,e]) => ({value:id, text:e.nombre, preselected: id===ej.ejercicioId}))
+  ];
 
   // Build per-series config from existing data (support legacy flat format)
   const existingCfg = ej.seriesConfig || Array.from({length: ej.series||4}, () => ({
