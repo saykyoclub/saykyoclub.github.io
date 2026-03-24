@@ -4379,11 +4379,18 @@ onAuthStateChanged(auth, (user) => {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if(saved) {
-      fab.style.left=saved.l; fab.style.top=saved.t;
-      fab.style.right='auto'; fab.style.bottom='auto';
+      const l = parseFloat(saved.l); const t = parseFloat(saved.t);
+      // Validar que la posición guardada siga dentro de la pantalla actual
+      if(l >= 0 && t >= 0 && l <= window.innerWidth - 48 && t <= window.innerHeight - 48) {
+        fab.style.left=saved.l; fab.style.top=saved.t;
+        fab.style.right='auto'; fab.style.bottom='auto';
+      } else {
+        // Posición fuera de pantalla → resetear a posición por defecto y limpiar
+        localStorage.removeItem(KEY);
+      }
       setTimeout(updateTooltip,0);
     }
-  } catch(e){}
+  } catch(e){ try{ localStorage.removeItem(KEY); }catch(_){} }
 
   let dragging=false, ox=0, oy=0, moved=false;
 
