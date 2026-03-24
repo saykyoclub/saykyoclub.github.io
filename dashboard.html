@@ -1981,7 +1981,7 @@ async function renderRutinaDetail(rutinaId) {
             <!-- Header pills -->
             <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
               <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:var(--primary)">📦 ${ej.series} series</span>
-              <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--text-muted)">⏱ ${ej.tiempo||0}s/rep</span>
+              <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--text-muted)">⏱ ${ej.tiempo||0}s/serie</span>
               ${ej.metodo?`<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#a78bfa">⚡ ${ej.metodo}</span>`:''}
               ${ej.biset?`<span style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#ff6b35">🔗 Biserie</span>`:''}
             </div>
@@ -2114,10 +2114,23 @@ window.addMes = async (rutinaId, mes) => {
   renderRutinaDetail(rutinaId);
 };
 
+// ── Buscador de ejercicios en selector ──
+window.filterEjSel = () => {
+  const q = (document.getElementById('ejSelSearch')?.value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const sel = document.getElementById('ejSel');
+  if(!sel) return;
+  Array.from(sel.options).forEach(opt => {
+    if(!opt.value) { opt.style.display=''; return; }
+    const name = opt.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    opt.style.display = name.includes(q) ? '' : 'none';
+  });
+};
+
 window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
   const ejSnap = await get(ref(db,'ejercicios'));
   const ejs = ejSnap.val()||{};
-  const ejOptions = Object.entries(ejs).filter(([,e])=>e.estado).map(([id,e])=>`<option value="${id}">${e.nombre}</option>`).join('');
+  const ejList = Object.entries(ejs).filter(([,e])=>e.estado).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'));
+  const ejOptions = ejList.map(([id,e])=>`<option value="${id}">${e.nombre}</option>`).join('');
 
   showOverlay(`
     <div class="overlay-header">
@@ -2129,7 +2142,8 @@ window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
     <div class="form-grid" style="margin-bottom:18px">
       <div class="form-group" style="grid-column:1/-1">
         <label>Ejercicio *</label>
-        <select class="glass-input" id="ejSel"><option value="">Seleccionar...</option>${ejOptions}</select>
+        <input class="glass-input" id="ejSelSearch" type="text" placeholder="🔍 Buscar ejercicio..." autocomplete="off" oninput="filterEjSel()" style="margin-bottom:6px">
+        <select class="glass-input" id="ejSel" size="5" style="height:auto;min-height:100px"><option value="">— Seleccionar —</option>${ejOptions}</select>
       </div>
       <div class="form-group">
         <label>N° de series</label>
@@ -2364,6 +2378,7 @@ window.editEjDia = async (rutinaId, mes, semana, dia, idx) => {
   const ej  = slotSnap.val()||{};
   const ejOptions = Object.entries(ejs)
     .filter(([,e]) => e.estado)
+    .sort((a,b) => a[1].nombre.localeCompare(b[1].nombre,'es'))
     .map(([id,e]) => `<option value="${id}" ${id===ej.ejercicioId?'selected':''}>${e.nombre}</option>`)
     .join('');
 
@@ -2388,7 +2403,8 @@ window.editEjDia = async (rutinaId, mes, semana, dia, idx) => {
     <div class="form-grid" style="margin-bottom:18px">
       <div class="form-group" style="grid-column:1/-1">
         <label>Ejercicio *</label>
-        <select class="glass-input" id="ejSel"><option value="">Seleccionar...</option>${ejOptions}</select>
+        <input class="glass-input" id="ejSelSearch" type="text" placeholder="🔍 Buscar ejercicio..." autocomplete="off" oninput="filterEjSel()" style="margin-bottom:6px">
+        <select class="glass-input" id="ejSel" size="5" style="height:auto;min-height:100px"><option value="">— Seleccionar —</option>${ejOptions}</select>
       </div>
       <div class="form-group">
         <label>N° de series</label>
@@ -3193,6 +3209,7 @@ function _admStartRestTimer(totalSecs) {
   if(existing) existing.remove();
 
   let remaining = totalSecs;
+  const endTime = Date.now() + totalSecs * 1000; // ancla al reloj real para iOS Safari
   const R = 95, C = 2 * Math.PI * R;
 
   const getColors = (rem, tot) => {
@@ -3241,11 +3258,38 @@ function _admStartRestTimer(totalSecs) {
   ovl.style.setProperty('--rt-glow', glow);
   document.body.appendChild(ovl);
 
+  // iOS Safari: resync al volver del fondo
+  const _admRestVisHandler = () => {
+    if(document.visibilityState === 'visible') {
+      const synced = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+      remaining = synced;
+      const countEl = document.getElementById('admRtCount');
+      const progressEl = document.getElementById('admRtProgressFill');
+      const overlay = document.getElementById('admRestTimerOverlay');
+      if(countEl) countEl.textContent = remaining > 0 ? remaining : '✓';
+      if(progressEl) progressEl.style.width = `${Math.max(0,(remaining/totalSecs)*100)}%`;
+      if(remaining <= 0 && overlay) {
+        clearInterval(_admRestInterval); _admRestInterval = null;
+        document.removeEventListener('visibilitychange', _admRestVisHandler);
+        if(navigator.vibrate) navigator.vibrate([100,50,150]);
+        overlay.style.setProperty('--rt-color','#00e5a0');
+        overlay.style.setProperty('--rt-glow','rgba(0,229,160,0.6)');
+        if(progressEl) progressEl.style.width='0%';
+        setTimeout(() => { const o=document.getElementById('admRestTimerOverlay'); if(o){o.style.animation='rtFadeOut 0.3s ease forwards';setTimeout(()=>o.remove(),320);} }, 1200);
+      }
+    }
+  };
+  document.addEventListener('visibilitychange', _admRestVisHandler);
+
   _admRestInterval = setInterval(() => {
-    remaining--;
+    const newRemaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+    const ticked = newRemaining < remaining;
+    remaining = newRemaining;
     if(remaining > 0) {
-      if(remaining <= 5) _admPlayTick(880 + (5-remaining)*100, 0.22, 0.07, 0.003, 0.055);
-      else _admPlayTick(528, 0.12, 0.09, 0.005, 0.07);
+      if(ticked) {
+        if(remaining <= 5) _admPlayTick(880 + (5-remaining)*100, 0.22, 0.07, 0.003, 0.055);
+        else _admPlayTick(528, 0.12, 0.09, 0.005, 0.07);
+      }
     }
     const countEl = document.getElementById('admRtCount');
     const ringFill = document.getElementById('admRtRingFill');
@@ -3269,6 +3313,7 @@ function _admStartRestTimer(totalSecs) {
     if(ringWrap) ringWrap.classList.toggle('rt-urgent', remaining <= 10 && remaining > 0);
     if(remaining <= 0) {
       clearInterval(_admRestInterval); _admRestInterval = null;
+      document.removeEventListener('visibilitychange', _admRestVisHandler);
       if(navigator.vibrate) navigator.vibrate([100, 50, 150]);
       overlay.style.setProperty('--rt-color', '#00e5a0');
       overlay.style.setProperty('--rt-glow', 'rgba(0,229,160,0.6)');
@@ -3284,6 +3329,7 @@ function _admStartRestTimer(totalSecs) {
 
 window._admSkipRest = () => {
   if(_admRestInterval) { clearInterval(_admRestInterval); _admRestInterval = null; }
+  // _admRestVisHandler is scoped to startRestTimer; removing by name requires it to be hoisted — skip is fine as timer ends anyway
   const o = document.getElementById('admRestTimerOverlay');
   if(o) { o.style.animation = 'rtFadeOut 0.3s ease forwards'; setTimeout(() => o.remove(), 300); }
 };

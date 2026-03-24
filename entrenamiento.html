@@ -2739,6 +2739,7 @@ function startRestTimer(totalSecs) {
   if(existingOvl) existingOvl.remove();
 
   let remaining = totalSecs;
+  const endTime = Date.now() + totalSecs * 1000; // anchor to wall clock for iOS Safari
   // r=95, circumference
   const R = 95;
   const C = 2 * Math.PI * R;
@@ -2798,26 +2799,62 @@ function startRestTimer(totalSecs) {
   ovl.style.setProperty('--rt-glow',  glow);
   document.body.appendChild(ovl);
 
-  _restTimerInterval = setInterval(() => {
-    remaining--;
-
-    // ── Audio tick ──
-    if(remaining > 0) {
-      if(remaining <= 5) {
-        playUrgentTick(5 - remaining);
-      } else {
-        playRestTick();
+  // iOS Safari: al volver del fondo, forzar resync inmediato del contador
+  const _restVisibilityHandler = () => {
+    if(document.visibilityState === 'visible') {
+      const synced = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+      remaining = synced;
+      const countEl = document.getElementById('rtCount');
+      const progressEl = document.getElementById('rtProgressFill');
+      const overlay = document.getElementById('restTimerOverlay');
+      if(countEl) countEl.textContent = remaining > 0 ? remaining : '✓';
+      if(progressEl) progressEl.style.width = `${Math.max(0,(remaining/totalSecs)*100)}%`;
+      if(remaining <= 0 && overlay) {
+        clearInterval(_restTimerInterval); _restTimerInterval = null;
+        document.removeEventListener('visibilitychange', _restVisibilityHandler);
+        if(navigator.vibrate) navigator.vibrate([100,50,150]);
+        overlay.classList.add('rt-done');
+        overlay.style.setProperty('--rt-color','#00e5a0');
+        overlay.style.setProperty('--rt-glow','rgba(0,229,160,0.6)');
+        if(progressEl) progressEl.style.width = '0%';
+        setTimeout(() => { const o=document.getElementById('restTimerOverlay'); if(o){o.classList.add('rt-exit');setTimeout(()=>o.remove(),320);} }, 1200);
       }
-    } else {
-      playFinishChime();
     }
+  };
+  document.addEventListener('visibilitychange', _restVisibilityHandler);
+  // Limpiar el listener si se salta el timer
+  const _origSkip = window.skipRestTimer;
+  window.skipRestTimer = () => {
+    document.removeEventListener('visibilitychange', _restVisibilityHandler);
+    if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+    const o = document.getElementById('restTimerOverlay');
+    if(o) { o.classList.add('rt-exit'); setTimeout(() => o.remove(), 300); }
+  };
 
-    // ── Voz: hablar cuando el mensaje de pantalla cambia, 350ms después del tick ──
-    if(remaining > 0) {
-      const prevMsg = getMsg(remaining + 1, totalSecs);
-      const currMsg = getMsg(remaining, totalSecs);
-      if(currMsg !== prevMsg) {
-        speakText(currMsg, 350);
+  _restTimerInterval = setInterval(() => {
+    const newRemaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+    const ticked = newRemaining < remaining;
+    remaining = newRemaining;
+
+    // ── Audio tick (solo cuando el segundo realmente avanzó) ──
+    if(ticked) {
+      if(remaining > 0) {
+        if(remaining <= 5) {
+          playUrgentTick(5 - remaining);
+        } else {
+          playRestTick();
+        }
+      } else {
+        playFinishChime();
+      }
+
+      // ── Voz: hablar cuando el mensaje de pantalla cambia, 350ms después del tick ──
+      if(remaining > 0) {
+        const prevMsg = getMsg(remaining + 1, totalSecs);
+        const currMsg = getMsg(remaining, totalSecs);
+        if(currMsg !== prevMsg) {
+          speakText(currMsg, 350);
+        }
       }
     }
 
@@ -2859,6 +2896,7 @@ function startRestTimer(totalSecs) {
     if(remaining <= 0) {
       clearInterval(_restTimerInterval);
       _restTimerInterval = null;
+      document.removeEventListener('visibilitychange', _restVisibilityHandler);
       if(navigator.vibrate) navigator.vibrate([100, 50, 150]);
 
       overlay.classList.add('rt-done');
