@@ -142,20 +142,24 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
   box-shadow:0 0 0 2px rgba(0,200,255,0.12);
 }
 .serie-done { 
-  width:40px;height:40px;border-radius:50%;
-  background:rgba(0,229,160,0.08);border:2px solid rgba(0,229,160,0.25);
-  cursor:pointer;font-size:1.1rem;transition:all 0.2s ease;
+  min-width:48px;height:48px;border-radius:50%;
+  background:rgba(0,229,160,0.08);border:2px solid rgba(0,229,160,0.35);
+  cursor:pointer;font-size:0.78rem;font-weight:800;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
   flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  color:rgba(0,229,160,0.5);
+  color:rgba(0,229,160,0.55);letter-spacing:0.5px;padding:0 6px;
+  font-family:'Exo 2',sans-serif;
 }
 .serie-done:hover { 
-  background:rgba(0,229,160,0.15);
-  border-color:rgba(0,229,160,0.4);
-  transform:scale(1.05);
+  background:rgba(0,229,160,0.18);
+  border-color:rgba(0,229,160,0.6);
+  transform:scale(1.08);
+  color:rgba(0,229,160,0.85);
 }
 .serie-done.checked { 
   background:var(--success);border-color:var(--success);
   color:#000;font-weight:900;
+  box-shadow:0 4px 16px rgba(0,229,160,0.45);
+  transform:scale(1.05);
 }
 
 /* EFFORT SCALE */
@@ -598,6 +602,59 @@ select.glass-input option { background:#0d1a35; }
   opacity:0;transition:all .2s
 }
 .help-fab:not(.dragging):hover + .help-fab-tooltip,.help-fab-tooltip.show{opacity:1}
+.pro-charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:700px){ .pro-charts-grid { grid-template-columns:1fr; } }
+.pro-chart-card {
+  background:rgba(8,16,36,0.88); backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.08); border-radius:20px;
+  overflow:hidden; transition:box-shadow 0.3s ease;
+}
+.pro-chart-card:hover { box-shadow:0 8px 40px rgba(0,200,255,0.1); }
+.pro-chart-card.full-width { grid-column: 1 / -1; }
+.pro-chart-header {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  padding:14px 18px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.pro-chart-title { font-size:0.9rem; font-weight:700; display:flex;align-items:center;gap:8px; }
+.pro-chart-badge {
+  font-size:0.62rem; letter-spacing:1.5px; text-transform:uppercase;
+  padding:3px 8px; border-radius:20px; font-weight:600;
+  background:rgba(0,200,255,0.12); color:var(--primary); border:1px solid rgba(0,200,255,0.2);
+}
+.pro-chart-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.pro-chart-select {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+  border-radius:8px; padding:5px 10px; color:var(--text-muted); font-family:'Exo 2',sans-serif;
+  font-size:0.75rem; outline:none; cursor:pointer; transition:all 0.2s;
+}
+.pro-chart-select:focus, .pro-chart-select:hover { border-color:rgba(0,200,255,0.4); color:var(--text); }
+.pro-chart-select option { background:#0d1a35; }
+.pro-chart-type-btn {
+  display:flex; align-items:center;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; overflow:hidden;
+}
+.pro-chart-type-btn button {
+  background:none; border:none; color:var(--text-muted); cursor:pointer;
+  padding:5px 11px; font-size:0.78rem; transition:all 0.2s; font-family:'Exo 2',sans-serif;
+}
+.pro-chart-type-btn button.active { background:rgba(0,200,255,0.18); color:var(--primary); }
+.pro-chart-filter-tags { display:flex; gap:6px; flex-wrap:wrap; padding:8px 18px 0; min-height:24px; }
+.pro-filter-tag {
+  font-size:0.62rem; letter-spacing:0.5px; padding:2px 9px; border-radius:20px;
+  background:rgba(123,47,255,0.13); color:#b090ff; border:1px solid rgba(123,47,255,0.22);
+}
+.pro-chart-body { padding:12px 12px 10px; }
+.pro-chart-canvas-wrap { position:relative; height:220px; }
+.pro-chart-empty { display:flex;flex-direction:column;align-items:center;justify-content:center; height:180px; gap:10px; color:var(--text-muted); font-size:0.85rem; }
+.pro-chart-empty .ico { font-size:2rem; opacity:0.4; }
+.pro-summary-row { display:flex; gap:10px; flex-wrap:wrap; padding:0 16px 14px; }
+.pro-summary-chip {
+  background:rgba(0,200,255,0.07); border:1px solid rgba(0,200,255,0.15);
+  border-radius:12px; padding:10px 14px; display:flex; flex-direction:column; gap:2px; min-width:90px;
+}
+.pro-summary-chip .val { font-size:1.3rem; font-weight:900; color:var(--primary); }
+.pro-summary-chip .lbl { font-size:0.62rem; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; }
 
 </style>
 </head>
@@ -1160,10 +1217,21 @@ async function savePendingSession() {
   const n = ejConfig?.series||0;
   const ejInfo  = state.ejercicios[ejConfig?.ejercicioId]||{};
 
-  // ── Detectar biserie ──
-  const esBiset = ejConfig?.biset === true && state.ejercicioActual + 1 < ejsDia.length;
-  const ejConfigB = esBiset ? ejsDia[state.ejercicioActual + 1] : null;
-  const ejInfoB   = ejConfigB ? (state.ejercicios[ejConfigB.ejercicioId]||{}) : null;
+  // ── Detectar cadena completa de N ejercicios ──
+  const _saveChain = [];
+  {
+    let _ci = state.ejercicioActual;
+    while(_ci < ejsDia.length) {
+      const _cfg = ejsDia[_ci];
+      const _inf = state.ejercicios[_cfg?.ejercicioId]||{};
+      _saveChain.push({ config: _cfg, info: _inf, idx: _ci });
+      if(_cfg?.biset === true && _ci + 1 < ejsDia.length) { _ci++; } else { break; }
+    }
+  }
+  const esBiset = _saveChain.length > 1;
+  // Backward compat aliases
+  const ejConfigB = _saveChain[1]?.config || null;
+  const ejInfoB   = _saveChain[1]?.info   || null;
 
   // Helper: captura series según prefijo e info del ejercicio
   function _captureSnap(prefix, nSeries, info) {
@@ -1189,12 +1257,22 @@ async function savePendingSession() {
     });
   }
 
-  const currentSeriesSnapshot = esBiset
-    ? _captureSnap('ea_', n, ejInfo)
-    : _captureSnap('', n, ejInfo);
-  const currentSeriesSnapshotB = esBiset
-    ? _captureSnap('eb_', ejConfigB?.series||0, ejInfoB)
-    : null;
+  // For compound (N-chain): use 'e0_', 'e1_', 'e2_'... prefixes
+  // For single: use '' prefix (backward compat)
+  let currentSeriesSnapshot, currentSeriesSnapshotB, currentSeriesSnapshotChain;
+  if(esBiset) {
+    // Save all N exercises in chain as an array of snapshots
+    currentSeriesSnapshotChain = _saveChain.map((e, n) =>
+      _captureSnap('e' + n + '_', e.config?.series||0, e.info)
+    );
+    // Keep backward-compat fields for A and B
+    currentSeriesSnapshot  = currentSeriesSnapshotChain[0];
+    currentSeriesSnapshotB = currentSeriesSnapshotChain[1] || null;
+  } else {
+    currentSeriesSnapshot = _captureSnap('', n, ejInfo);
+    currentSeriesSnapshotB = null;
+    currentSeriesSnapshotChain = null;
+  }
 
   try {
     await set(PENDING_REF(), {
@@ -1202,6 +1280,7 @@ async function savePendingSession() {
       ejercicioActual: state.ejercicioActual,
       currentSeriesSnapshot,
       ...(currentSeriesSnapshotB ? { currentSeriesSnapshotB } : {}),
+      ...(currentSeriesSnapshotChain ? { currentSeriesSnapshotChain } : {}),
       savedAt: Date.now()
     });
   } catch(e) { console.warn('savePendingSession error:', e); }
@@ -1362,8 +1441,9 @@ async function init() {
             // Restaurar estado completo de la sesión
             state.sesionActiva            = pending.sesionActiva;
             state.ejercicioActual         = pending.ejercicioActual || 0;
-            state._pendingSeriesSnapshot  = pending.currentSeriesSnapshot;
-            state._pendingSeriesSnapshotB = pending.currentSeriesSnapshotB || null;
+            state._pendingSeriesSnapshot      = pending.currentSeriesSnapshot;
+            state._pendingSeriesSnapshotB     = pending.currentSeriesSnapshotB || null;
+            state._pendingSeriesSnapshotChain = pending.currentSeriesSnapshotChain || null;
             state._pendingSessionData     = null;
             updateSessionDot(true);
             // 🏋️ Notificar al entrenador que retomó el entrenamiento
@@ -1618,19 +1698,40 @@ window.switchTab = (tab) => {
 async function checkRevisionesPendientes() {
   const progreso = state.progreso || {};
   const { mesActual=1, semanaActual=1 } = progreso;
-  if(mesActual === 1 && semanaActual === 1) return false;
+  // FIX 6&7: Check reviews - must check even at first positions, admin may have advanced progress
+  // Don't skip check - sessions may have been registered by admin
 
   // Helper: verificar si una semana fue completada realmente
   // (todos sus días con ejercicios aparecen en el historial)
+  // FIX 7: Si no hay ejercicios en semana, retorna false para no pedir revisión
   const semanaTotalmenteCompletada = (mes, sem) => {
+    if(!state.rutinaData) return false;
     const diasSem = Object.keys(state.rutinaData?.meses?.[mes]?.semanas?.[sem]?.dias||{}).map(Number);
     const diasConEj = diasSem.filter(d => {
       const diaData = state.rutinaData?.meses?.[mes]?.semanas?.[sem]?.dias?.[d];
       return Object.keys(diaData?.ejercicios||{}).length > 0;
     });
-    if(diasConEj.length === 0) return false; // semana sin ejercicios, no pedir revisión
+    if(diasConEj.length === 0) return false; // semana sin ejercicios configurados, no pedir revisión
+    // FIX 6: Check historial including sessions registered by admin
     return diasConEj.every(d => sesionCompletada(state.historial, mes, sem, d));
   };
+
+  // FIX 6: Also check if admin has set up sessions in admin_pending node
+  // This ensures that if admin registered sessions, we still detect pending reviews
+  const checkAdminRegisteredSessions = async () => {
+    try {
+      const adminPendSnap = await get(ref(db, `sesiones_admin_pendientes/${currentUser.id}`));
+      if(!adminPendSnap.exists()) return;
+      // Merge admin-registered sessions into historial for review detection
+      const adminSessions = adminPendSnap.val()||{};
+      Object.entries(adminSessions).forEach(([adminId, sessions]) => {
+        Object.entries(sessions||{}).forEach(([sesId, ses]) => {
+          if(!state.historial[sesId]) state.historial[sesId] = ses;
+        });
+      });
+    } catch(e) { console.warn('checkAdminRegisteredSessions error', e); }
+  };
+  await checkAdminRegisteredSessions();
 
   // Revisión mensual pendiente (inicio de mes nuevo)
   if(semanaActual === 1 && mesActual > 1) {
@@ -1664,6 +1765,12 @@ async function checkRevisionesPendientes() {
 
 async function renderTab(tab) {
   if(tab==='entrenar') {
+    // If session active, restore immediately - no reviews check needed
+    if(state.sesionActiva && state.ejercicioActual >= 0 && state.rutinaData) {
+      updateSessionDot(true);
+      renderEjercicioActual();
+      return;
+    }
     await checkRevisionesPendientes();
     await renderEntrenar();
   }
@@ -1691,6 +1798,14 @@ function sesionCompletada(historial, mes, semana, dia) {
 
 async function renderEntrenar() {
   const p = document.getElementById('mainPage');
+
+  // ── Caso 0: Sesión activa en curso — volvió de otro tab ──
+  // Restaurar inmediatamente sin Firebase, sin reiniciar, sin pedir fatiga
+  if(state.sesionActiva && state.ejercicioActual >= 0 && state.rutinaData) {
+    updateSessionDot(true);
+    renderEjercicioActual();
+    return;
+  }
 
   const rutSnap = await get(ref(db,'rutinas'));
   const rutinas = rutSnap.val()||{};
@@ -1989,13 +2104,14 @@ window.iniciarSesion = async () => {
   const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
   state.historial = histSnap.val()||{};
 
-  // ── Caso 1: Hay sesión pendiente → RETOMAR ──
+  // ── Caso 1: Hay sesión pendiente en Firebase → RETOMAR ──
   const pending = state._pendingSessionData;
   if(pending && pending.sesionActiva) {
     state.sesionActiva    = pending.sesionActiva;
     state.ejercicioActual = pending.ejercicioActual;
-    state._pendingSeriesSnapshot  = pending.currentSeriesSnapshot;
-    state._pendingSeriesSnapshotB = pending.currentSeriesSnapshotB || null;
+    state._pendingSeriesSnapshot      = pending.currentSeriesSnapshot;
+    state._pendingSeriesSnapshotB     = pending.currentSeriesSnapshotB || null;
+    state._pendingSeriesSnapshotChain = pending.currentSeriesSnapshotChain || null;
     state._pendingSessionData    = null;
     updateSessionDot(true);
     // Notificar que retomó (no bloquea el render)
@@ -2142,6 +2258,10 @@ window.toggleSerieP = (prefix, i) => {
   if(!prefix) { toggleSerie(i); return; } // normal path: use full logic
   const el = document.getElementById(`${prefix}done_${i}`);
   if(!el) return;
+  if(el.dataset.toggling) return; // FIX 1: prevent blocking
+  el.dataset.toggling = '1';
+  setTimeout(() => { if(el) delete el.dataset.toggling; }, 500);
+  
   const wasChecked = el.classList.contains('checked');
   el.classList.toggle('checked');
   const isNowChecked = !wasChecked;
@@ -2155,22 +2275,59 @@ window.toggleSerieP = (prefix, i) => {
   showAutosaveFeedback(el);
   savePendingSession();
 
-  // Rest timer — solo al marcar como hecha, y en biserie SOLO al completar el ejercicio B
-  // prefix 'ea_' = ejercicio A de biserie → NO mostrar timer todavía
-  // prefix 'eb_' = ejercicio B de biserie → SÍ mostrar timer
+  // Rest timer — solo al marcar como hecha, y en serie compuesta SOLO al completar el último
+  // Prefix format: 'e0_'=primero, 'e1_'=segundo... el último dispara el timer
   if(isNowChecked) {
-    const isBisetA = prefix === 'ea_';
-    if(!isBisetA) {
+    const prefixNum = parseInt(prefix.replace('e','').replace('_',''));
+    const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+    const diaDataCheck = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+    const ejsDiaCheck = Object.values(diaDataCheck?.ejercicios||{});
+    // Find chain length starting at ejercicioActual
+    let chainLen = 1;
+    let ci = state.ejercicioActual;
+    while(ejsDiaCheck[ci]?.biset === true && ci + 1 < ejsDiaCheck.length) { ci++; chainLen++; }
+    const isLastInChain = (prefixNum === chainLen - 1) || !prefix.startsWith('e');
+    if(isLastInChain) {
       const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
       const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
       const ejsDia = Object.values(diaData?.ejercicios||{});
-      // For biserie, use exercise B config for rest time
-      const isB = prefix === 'eb_';
-      const ejIdx = isB ? state.ejercicioActual + 1 : state.ejercicioActual;
+      // Use the last exercise in the chain for rest time config
+      const ejIdx = state.ejercicioActual + (chainLen - 1);
       const ejConfig = ejsDia[ejIdx];
       const sc = ejConfig?.seriesConfig;
       const restSecs = (sc && sc[i] && sc[i].descanso != null) ? sc[i].descanso : (ejConfig?.descanso || 90);
-      startRestTimer(restSecs);
+
+      // ── Build nextInfo for the timer overlay ──
+      const nextSerieIdx = i + 1;
+      const totalSeries  = ejConfig?.series || 3;
+      let nextInfo = null;
+
+      if(nextSerieIdx < totalSeries) {
+        // There are more series in this compound set — next is the first exercise (e0_) again
+        const ejFirst     = ejsDia[state.ejercicioActual];
+        const ejFirstInfo = state.ejercicios[ejFirst?.ejercicioId]||{};
+        const scFirst     = ejFirst?.seriesConfig;
+        const pesoFirst   = scFirst?.[nextSerieIdx]?.peso ?? ejFirst?.peso ?? null;
+        const repsFirst   = scFirst?.[nextSerieIdx]
+          ? `${scFirst[nextSerieIdx].repsMin}-${scFirst[nextSerieIdx].repsMax}`
+          : `${ejFirst?.repsMin??'?'}-${ejFirst?.repsMax??'?'}`;
+        nextInfo = { nombre: ejFirstInfo.nombre||'Ejercicio A', peso: pesoFirst, reps: repsFirst, metodo: ejFirst?.metodo||'', anotaciones: ejFirst?.anotaciones||'', isBisetSwitch: true, isNextExercise: false };
+      } else {
+        // All series done — next independent exercise after the chain
+        const nextEjIdx  = state.ejercicioActual + chainLen;
+        const nextEjConf = ejsDia[nextEjIdx];
+        const nextEjInfo = nextEjConf ? (state.ejercicios[nextEjConf.ejercicioId]||{}) : null;
+        if(nextEjInfo) {
+          const scN   = nextEjConf?.seriesConfig;
+          const pesoN = scN?.[0]?.peso ?? nextEjConf?.peso ?? null;
+          const repsN = scN?.[0]
+            ? `${scN[0].repsMin}-${scN[0].repsMax}`
+            : `${nextEjConf?.repsMin??'?'}-${nextEjConf?.repsMax??'?'}`;
+          nextInfo = { nombre: nextEjInfo.nombre||'Siguiente ejercicio', peso: pesoN, reps: repsN, metodo: nextEjConf?.metodo||'', anotaciones: nextEjConf?.anotaciones||'', isBisetSwitch: false, isNextExercise: true };
+        }
+      }
+
+      startRestTimer(restSecs, nextInfo);
     }
 
     updateSessionDot(true);
@@ -2209,6 +2366,8 @@ function _collectSeriesData(ejConfig, ejInfo, prefix) {
 }
 
 function renderEjercicioActual() {
+  // Arm the back button interception whenever we're in exercise view
+  _pushTrainingHistory();
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
   const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
   const ejsDia = Object.values(diaData?.ejercicios||{});
@@ -2223,25 +2382,52 @@ function renderEjercicioActual() {
   const total = ejsDia.length;
   const current = state.ejercicioActual+1;
 
-  // ── Biserie detection ──
-  const esBiset = ejConfig.biset === true && state.ejercicioActual + 1 < ejsDia.length;
-  const ejConfigB = esBiset ? ejsDia[state.ejercicioActual + 1] : null;
-  const ejInfoB   = ejConfigB ? (state.ejercicios[ejConfigB.ejercicioId]||{}) : null;
+  // ── Método de esfuerzo del ejercicio actual ──
+  const esCardio = ejConfig?.metodo === 'cardio' || ejInfo?.tipo === 'cardio';
+  const _usedMetodo = ejConfig?.metodo || currentUser.metodo || 'RPE';
+  const metodoLabel = _usedMetodo === 'RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
+  const metodoMin   = _usedMetodo === 'RPE' ? 1 : -1;
+  const metodoMax   = _usedMetodo === 'RPE' ? 10 : 6;
 
-  // Compute display step numbers (biserie pairs count as 1 step)
+  // ── Serie compuesta: detectar cadena de N ejercicios enlazados por biset:true ──
+  // Un ejercicio con biset:true agrupa con el siguiente; se encadenan hasta que uno NO tiene biset:true
+  const _chainEjs = []; // lista de {config, info, prefix} para todos los de la cadena
+  {
+    let _ci = state.ejercicioActual;
+    while(_ci < ejsDia.length) {
+      const _cfg = ejsDia[_ci];
+      const _inf = state.ejercicios[_cfg?.ejercicioId]||{};
+      _chainEjs.push({ config: _cfg, info: _inf, prefix: 'e'+(_ci - state.ejercicioActual)+'_', idx: _ci });
+      if(_cfg?.biset === true && _ci + 1 < ejsDia.length) { _ci++; } else { break; }
+    }
+  }
+  const esBiset = _chainEjs.length > 1;
+  // Aliases for backward compatibility with code below
+  const ejConfigB = _chainEjs[1]?.config || null;
+  const ejInfoB   = _chainEjs[1]?.info   || null;
+
+  // ── Compute display step numbers (each chain counts as 1 step) ──
   const displayTotal = (() => {
     let t = 0, i = 0;
-    while(i < ejsDia.length) { t++; i += (ejsDia[i]?.biset === true && i+1 < ejsDia.length) ? 2 : 1; }
+    while(i < ejsDia.length) {
+      t++;
+      while(ejsDia[i]?.biset === true && i + 1 < ejsDia.length) i++;
+      i++;
+    }
     return t;
   })();
   const displayCurrent = (() => {
     let c = 0, i = 0;
-    while(i <= state.ejercicioActual) { c++; i += (ejsDia[i]?.biset === true && i+1 < ejsDia.length) ? 2 : 1; }
+    while(i <= state.ejercicioActual) {
+      c++;
+      while(ejsDia[i]?.biset === true && i + 1 < ejsDia.length && i < state.ejercicioActual) i++;
+      i++;
+    }
     return c;
   })();
   const pct = Math.round(((displayCurrent-1)/displayTotal)*100);
 
-  // Last session data for this exercise
+  // Last session data for this exercise (A = first in chain)
   const ultimoReg = getUltimoRegistro(ejConfig.ejercicioId);
   let ultimoBanner = '';
   if(ultimoReg) {
@@ -2250,33 +2436,29 @@ function renderEjercicioActual() {
     const fechaStr   = new Date(fecha).toLocaleDateString('es-CO', {day:'2-digit', month:'short'});
     const thSt = 'padding:4px 6px;font-size:0.68rem;color:rgba(167,139,250,0.6);font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:0.5px;';
     const tdSt = 'padding:5px 6px;font-size:0.84rem;font-weight:700;color:#e8f4ff;';
-
     const thRpe = esBiextUlt
       ? `<th style="${thSt}color:#00e5a0">Izq reps</th><th style="${thSt}color:#ff6b35">Der reps</th><th style="${thSt}color:#00e5a0">Izq ${currentUser.metodo}</th><th style="${thSt}color:#ff6b35">Der ${currentUser.metodo}</th>`
       : `<th style="${thSt}color:#a78bfa">${currentUser.metodo}</th>`;
-
     const filas = series.map((s, i) => {
       const rpeCell = esBiextUlt
         ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.repsIzq??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.repsDer??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
         : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
-      return `
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-          <td style="${tdSt};color:#a78bfa;font-weight:700">${i+1}</td>
-          ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
-          <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
-          ${rpeCell}
-          <td style="padding:5px 6px;font-size:0.72rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
-        </tr>`;
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+        <td style="${tdSt};color:#a78bfa;font-weight:700">${i+1}</td>
+        ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
+        <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
+        ${rpeCell}
+        <td style="padding:5px 6px;font-size:0.72rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
+      </tr>`;
     }).join('');
-
     ultimoBanner = `
-      <div style="background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.3);border-radius:14px;padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:0.68rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-          <span>📖</span> Última vez — M${mes}·S${semana}·D${dia} · ${fechaStr}
+      <div style="background:rgba(123,47,25,0.08);border:1px solid rgba(0,200,255,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:0.68rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <span>🅰 Última vez</span> — M${mes}·S${semana}·D${dia} · ${fechaStr}
         </div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;min-width:200px">
-            <thead><tr style="border-bottom:1px solid rgba(123,47,255,0.3)">
+            <thead><tr style="border-bottom:1px solid rgba(0,200,255,0.3)">
               <th style="${thSt}">#</th>
               ${esBiextUlt ? '' : `<th style="${thSt}">Reps</th>`}
               <th style="${thSt}">Peso</th>
@@ -2289,80 +2471,129 @@ function renderEjercicioActual() {
       </div>`;
   }
 
-  // Detect if exercise belongs to Cardiovascular category → always RPE
-  const ejCategoriaNombre = (() => {
-    const catId = ejInfo.categoria;
-    if(!catId) return '';
-    const cat = state.categorias[catId];
-    return (cat?.nombre||cat?.name||'').toLowerCase();
-  })();
-  const esCardio = ejCategoriaNombre.includes('cardiovascular') || ejCategoriaNombre.includes('cardio');
-
-  const metodoLabel = (currentUser.metodo === 'RPE' || esCardio) ? 'RPE (1-10)' : 'RIR (-1→6)';
-  const metodoMin  = (currentUser.metodo === 'RPE' || esCardio) ? 1 : -1;
-  const metodoMax  = (currentUser.metodo === 'RPE' || esCardio) ? 10 : 6;
-
   const p = document.getElementById('mainPage');
 
   if(esBiset) {
-    // ── BISERIE layout ──
-    const seriesRowsA = _buildSeriesRows(ejConfig,  ejInfo,  'ea_', metodoLabel, metodoMin, metodoMax);
-    const seriesRowsB = _buildSeriesRows(ejConfigB, ejInfoB, 'eb_', metodoLabel, metodoMin, metodoMax);
+    // ── SERIE COMPUESTA (N ejercicios) ──
+    const _chainColors = ['rgba(0,200,255,', 'rgba(123,47,255,', 'rgba(0,229,160,', 'rgba(255,107,53,', 'rgba(255,214,10,'];
+    const _chainLabels = ['A','B','C','D','E'];
+    const nInChain = _chainEjs.length;
+    const nSeries  = Math.max(..._chainEjs.map(e => e.config?.series||3));
+    const metLbl = metodoLabel, metMin = metodoMin, metMax = metodoMax;
+    const svFor = (cfg, i, f, fb) => {
+      const sc = cfg?.seriesConfig;
+      return (sc && sc[i] && sc[i][f] != null) ? sc[i][f] : (cfg?.[f] ?? fb);
+    };
 
+    // Build "última vez" for each exercise in chain
+    const buildUltBanner = (cfg, inf, colorBase, label) => {
+      const reg = getUltimoRegistro(cfg.ejercicioId);
+      if(!reg) return '';
+      const { series: sr, fecha: fe, mes: me, semana: se2, dia: di } = reg;
+      const fStr = new Date(fe).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
+      const thS = 'padding:3px 5px;font-size:0.62rem;color:' + colorBase + '0.6);font-weight:600;text-align:left;';
+      const tdS = 'padding:4px 5px;font-size:0.8rem;font-weight:700;color:#e8f4ff;';
+      const filas = sr.map((s,i) => '<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">'
+        + '<td style="' + tdS + ';color:' + colorBase + '0.8)">' + (i+1) + '</td>'
+        + '<td style="' + tdS + '">' + (s.reps ?? '—') + '</td>'
+        + '<td style="' + tdS + '">' + (s.peso ? s.peso + ' kg' : '—') + '</td>'
+        + '<td style="' + tdS + ';color:' + colorBase + '0.8)">' + (s.rirRpe ?? '—') + '</td>'
+        + '</tr>').join('');
+      return '<div style="background:' + colorBase + '0.07);border:1px solid ' + colorBase + '0.25);border-radius:12px;padding:10px 12px;margin-bottom:10px">'
+        + '<div style="font-size:0.62rem;color:' + colorBase + '0.9);font-weight:700;margin-bottom:6px">' + label + ' Última vez — M' + me + '·S' + se2 + '·D' + di + ' · ' + fStr + '</div>'
+        + '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+        + '<th style="' + thS + '">#</th><th style="' + thS + '">Reps</th><th style="' + thS + '">Peso</th><th style="' + thS + '">RIR/RPE</th>'
+        + '</tr></thead><tbody>' + filas + '</tbody></table></div>';
+    };
+
+    // Build series rows (interleaved: 1A+1B+1C..., 2A+2B+2C...)
+    const buildSerieRow = (cfg, inf, pfx, colorBase, label, i) => {
+      const sv = (f, fb) => svFor(cfg, i, f, fb);
+      const descanso = svFor(cfg, i, 'descanso', cfg?.descanso||90);
+      return '<div style="background:' + colorBase + '0.04);padding:10px 14px;border-bottom:1px solid ' + colorBase + '0.1)">'
+        + '<div style="font-size:0.6rem;color:' + colorBase + '0.9);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">' + label + ' ' + (inf.nombre||'Ejercicio') + '</div>'
+        + '<div class="serie-inputs">'
+        + '<div class="serie-field"><label>Reps</label><input type="number" id="' + pfx + 'reps_' + i + '" placeholder="' + sv('repsMin',0) + '-' + sv('repsMax',0) + '" min="0" value="' + sv('repsMin',0) + '"></div>'
+        + '<div class="serie-field"><label>Peso (kg)</label><input type="number" id="' + pfx + 'peso_' + i + '" placeholder="' + sv('peso',0) + '" min="0" step="0.5" value="' + sv('peso',0) + '"></div>'
+        + '<div class="serie-field"><label style="color:' + colorBase + '0.9)">' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:' + colorBase + '0.3);background:' + colorBase + '0.05)"></div>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px">'
+        + '<input type="text" id="' + pfx + 'comentario_' + i + '" placeholder="💬 Comentario..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 10px;color:var(--text-muted);font-family:\'Exo 2\',sans-serif;font-size:0.78rem;outline:none;margin-right:10px">'
+        + '<button class="serie-done" id="' + pfx + 'done_' + i + '" onclick="toggleSerieP(\'' + pfx + '\',' + i + ')" style="border-color:' + colorBase + '0.5)">✓ ' + label + '</button>'
+        + '</div></div>';
+    };
+
+    // Build info cards header
+    const infoCardsHtml = _chainEjs.map((e, n) => {
+      const col = _chainColors[n % _chainColors.length];
+      const lbl = _chainLabels[n] || ('#'+(n+1));
+      return '<div style="background:' + col + '0.06);border:1px solid ' + col + '0.25);border-radius:14px;padding:12px 14px">'
+        + '<div style="font-size:0.6rem;color:' + col + '0.9);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:6px">' + lbl + ' ' + (e.info.nombre||'Ejercicio') + '</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:4px">'
+        + '<span class="meta-pill" style="font-size:0.7rem">🔢 ' + (e.config?.repsMin||'?') + '-' + (e.config?.repsMax||'?') + '</span>'
+        + '<span class="meta-pill" style="background:' + col + '0.15);border-color:' + col + '0.4);color:' + col + '0.9);font-weight:800;font-size:0.75rem">⚖️ ' + (e.config?.peso||0) + 'kg</span>'
+        + (e.config?.metodo ? '<span class="meta-pill" style="font-size:0.68rem;color:#c084fc">⚡ ' + e.config.metodo + '</span>' : '')
+        + '</div>'
+        + (e.config?.anotaciones ? '<div style="margin-top:6px;font-size:0.7rem;color:#ffd60a">📝 ' + e.config.anotaciones + '</div>' : '')
+        + '</div>';
+    }).join('');
+
+    // Build ultima vez for each
+    const ultimasVecesHtml = _chainEjs.map((e, n) => {
+      const col = _chainColors[n % _chainColors.length];
+      const lbl = _chainLabels[n] || ('#'+(n+1));
+      return buildUltBanner(e.config, e.info, col, lbl);
+    }).join('');
+
+    // Build interleaved series
+    let seriesHtml = '';
+    for(let si = 0; si < nSeries; si++) {
+      const lastEj = _chainEjs[nInChain - 1];
+      const scLast = lastEj.config?.seriesConfig;
+      const descansoSeg = (scLast && scLast[si] && scLast[si].descanso != null) ? scLast[si].descanso : (lastEj.config?.descanso||90);
+      seriesHtml += '<div style="border:1px solid rgba(255,107,53,0.2);border-radius:14px;overflow:hidden;margin-bottom:12px">'
+        + '<div style="background:rgba(255,107,53,0.08);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">'
+        + '<span style="font-weight:800;font-size:0.9rem">Serie ' + (si+1) + '</span>'
+        + '<span style="font-size:0.7rem;color:rgba(255,107,53,0.7)">⏱ ' + descansoSeg + 's descanso</span>'
+        + '</div>'
+        + _chainEjs.map((e, n) => {
+            const col = _chainColors[n % _chainColors.length];
+            const lbl = _chainLabels[n] || ('#'+(n+1));
+            return buildSerieRow(e.config, e.info, e.prefix, col, lbl, si);
+          }).join('')
+        + '</div>';
+    }
+
+    const nLabel = nInChain === 2 ? 'Biserie' : nInChain === 3 ? 'Triserie' : `Serie compuesta (${nInChain})`;
+    const gridCols = nInChain === 1 ? '1fr' : nInChain === 2 ? '1fr 1fr' : `repeat(${Math.min(nInChain,3)},1fr)`;
     p.innerHTML = `
       <div style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:0.8rem;color:var(--text-muted)">Paso ${displayCurrent} de ${displayTotal} 🔗 Biserie</span>
+          <span style="font-size:0.8rem;color:var(--text-muted)">Paso ${displayCurrent} de ${displayTotal} 🔗 ${nLabel}</span>
           <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${pct}% completado</span>
         </div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>
 
       <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:0.78rem;color:#ff6b35;font-weight:600">
-        🔗 BISERIE — Alterna: 1 serie A → 1 serie B → descanso → siguiente serie
+        🔗 ${nLabel} — Alterna: ${_chainLabels.slice(0,nInChain).join(' → ')} → descanso → siguiente serie
       </div>
 
-      <!-- Ejercicio A -->
-      <div class="training-card" style="border-color:rgba(0,200,255,0.3);margin-bottom:14px">
-        <div class="training-info">
-          <div style="font-size:0.68rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">🅰 Ejercicio A</div>
-          <div class="training-title">${ejInfo.nombre||'Ejercicio A'}</div>
-          <div class="training-meta">
-            <span class="meta-pill">📦 ${ejConfig.series} series</span>
-            <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
-            <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
-            ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
-          </div>
-          ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
-        </div>
-      </div>
-      ${ultimoBanner}
-      <div class="glass-card" style="margin-bottom:16px">
-        <div class="card-title">📊 Series — Ejercicio A</div>
-        <div class="series-list">${seriesRowsA}</div>
+      <div style="display:grid;grid-template-columns:${gridCols};gap:10px;margin-bottom:14px">
+        ${infoCardsHtml}
       </div>
 
-      <!-- Ejercicio B -->
-      <div class="training-card" style="border-color:rgba(123,47,255,0.3);margin-bottom:14px">
-        <div class="training-info">
-          <div style="font-size:0.68rem;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">🅱 Ejercicio B</div>
-          <div class="training-title">${ejInfoB.nombre||'Ejercicio B'}</div>
-          <div class="training-meta">
-            <span class="meta-pill">📦 ${ejConfigB.series} series</span>
-            <span class="meta-pill">🔢 ${ejConfigB.repsMin}-${ejConfigB.repsMax} reps</span>
-            <span class="meta-pill">⚖️ ${ejConfigB.peso}kg</span>
-            ${ejConfigB.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfigB.metodo}</span>`:''}
-          </div>
-          ${ejConfigB.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfigB.anotaciones}</div>`:''}
-        </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        ${ultimasVecesHtml}
       </div>
+
       <div class="glass-card">
-        <div class="card-title">📊 Series — Ejercicio B</div>
-        <div class="series-list">${seriesRowsB}</div>
-        <button class="btn btn-success btn-full" onclick="completarEjercicio()">✅ Completar biserie</button>
+        <div class="card-title">📊 Series (alterna ${_chainLabels.slice(0,nInChain).join(' → ')} → descanso)</div>
+        ${seriesHtml}
+        <button class="btn btn-success btn-full" onclick="completarEjercicio()">✅ Completar ${nLabel.toLowerCase()}</button>
         ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
       </div>
-    `;
+    `
   } else {
     // ── NORMAL single exercise layout ──
     const seriesRows = _buildSeriesRows(ejConfig, ejInfo, '', metodoLabel, metodoMin, metodoMax);
@@ -2438,15 +2669,25 @@ function renderEjercicioActual() {
   // Prioridad 1: snapshot de sesión pendiente recuperada (retomar sesión)
   const snap  = state._pendingSeriesSnapshot;
   const snapB = state._pendingSeriesSnapshotB;
+  const snapChain = state._pendingSeriesSnapshotChain;
   if(snap && Array.isArray(snap)) {
     if(esBiset) {
-      _applySnap('ea_', snap,  ejInfo);
-      _applySnap('eb_', snapB, ejInfoB);
+      if(snapChain && Array.isArray(snapChain)) {
+        // N-chain: apply each exercise in chain with e0_, e1_, e2_... prefixes
+        _chainEjs.forEach((e, n) => {
+          if(snapChain[n]) _applySnap('e' + n + '_', snapChain[n], e.info);
+        });
+      } else {
+        // Fallback for old saved data with ea_/eb_ prefixes (2-exercise only)
+        _applySnap('e0_', snap,  ejInfo);
+        if(snapB) _applySnap('e1_', snapB, ejInfoB);
+      }
     } else {
       _applySnap('', snap, ejInfo);
     }
-    state._pendingSeriesSnapshot  = null;
-    state._pendingSeriesSnapshotB = null;
+    state._pendingSeriesSnapshot       = null;
+    state._pendingSeriesSnapshotB      = null;
+    state._pendingSeriesSnapshotChain  = null;
   } else {
     // Prioridad 2: datos guardados al navegar entre ejercicios (ir atrás/adelante)
     // Esto preserva el avance cuando el usuario se salta un ejercicio y luego regresa
@@ -2455,9 +2696,11 @@ function renderEjercicioActual() {
       const savedA = savedComp[state.ejercicioActual];
       if(savedA && savedA.series) {
         if(esBiset) {
-          _applySnap('ea_', savedA.series, ejInfo);
-          const savedB = savedComp[state.ejercicioActual + 1];
-          if(savedB && savedB.series) _applySnap('eb_', savedB.series, ejInfoB);
+          // Apply all N exercises in chain
+          _chainEjs.forEach((e, n) => {
+            const savedN = savedComp[state.ejercicioActual + n];
+            if(savedN && savedN.series) _applySnap('e' + n + '_', savedN.series, e.info);
+          });
         } else {
           _applySnap('', savedA.series, ejInfo);
         }
@@ -2478,6 +2721,11 @@ function renderEjercicioActual() {
 
 window.toggleSerie = (i) => {
   const btn = document.getElementById(`done_${i}`);
+  if(!btn) return; // FIX 1: guard against null ref
+  if(btn.dataset.toggling) return; // FIX 1: prevent double-tap blocking
+  btn.dataset.toggling = '1';
+  setTimeout(() => { if(btn) delete btn.dataset.toggling; }, 500);
+  
   const wasChecked = btn.classList.contains('checked');
   btn.classList.toggle('checked');
   const isNowChecked = !wasChecked;
@@ -2497,9 +2745,29 @@ window.toggleSerie = (i) => {
     const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
     const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
     const ejConfig = Object.values(diaData?.ejercicios||{})[state.ejercicioActual];
+    const ejsDia2  = Object.values(diaData?.ejercicios||{});
     const sc = ejConfig?.seriesConfig;
     const restSecs = (sc && sc[i] && sc[i].descanso != null) ? sc[i].descanso : (ejConfig?.descanso || 90);
-    startRestTimer(restSecs);
+    // Build nextInfo for normal toggle (non-biset path)
+    const nxtSerieIdx = i + 1;
+    const totSeries2  = ejConfig?.series || 3;
+    let nextInfo2 = null;
+    if(nxtSerieIdx < totSeries2) {
+      const pesoN2 = sc?.[nxtSerieIdx]?.peso ?? ejConfig?.peso ?? null;
+      const repsN2 = sc?.[nxtSerieIdx] ? `${sc[nxtSerieIdx].repsMin}-${sc[nxtSerieIdx].repsMax}` : `${ejConfig?.repsMin??'?'}-${ejConfig?.repsMax??'?'}`;
+      const ejInfo2b = state.ejercicios[ejConfig?.ejercicioId]||{};
+      nextInfo2 = { nombre: ejInfo2b.nombre||'', peso: pesoN2, reps: repsN2, metodo: ejConfig?.metodo||'', anotaciones: '', isBisetSwitch: false, isNextExercise: false };
+    } else {
+      const nxtEjConf = ejsDia2[state.ejercicioActual + 1];
+      const nxtEjInfo = nxtEjConf ? (state.ejercicios[nxtEjConf.ejercicioId]||{}) : null;
+      if(nxtEjInfo) {
+        const scN2 = nxtEjConf?.seriesConfig;
+        const pesoN2 = scN2?.[0]?.peso ?? nxtEjConf?.peso ?? null;
+        const repsN2 = scN2?.[0] ? `${scN2[0].repsMin}-${scN2[0].repsMax}` : `${nxtEjConf?.repsMin??'?'}-${nxtEjConf?.repsMax??'?'}`;
+        nextInfo2 = { nombre: nxtEjInfo.nombre||'Siguiente ejercicio', peso: pesoN2, reps: repsN2, metodo: nxtEjConf?.metodo||'', anotaciones: nxtEjConf?.anotaciones||'', isBisetSwitch: false, isNextExercise: true };
+      }
+    }
+    startRestTimer(restSecs, nextInfo2);
 
     // 4. Session-in-progress indicator
     updateSessionDot(true);
@@ -2731,7 +2999,78 @@ function speakText(rawText, delayMs = 0) {
 
 if(window.speechSynthesis) initVoices();
 
-function startRestTimer(totalSecs) {
+
+// ── SESSION MAP OVERLAY ──
+window.showSessionMapOverlay = () => {
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejsDia = Object.values(diaData?.ejercicios||{});
+  const completados = state.sesionActiva?.ejerciciosCompletados||{};
+
+  let ejIdx = 0;
+  const rows = [];
+  while(ejIdx < ejsDia.length) {
+    const ej = ejsDia[ejIdx];
+    const ejInfo = state.ejercicios[ej?.ejercicioId]||{};
+    const esBiset = ej?.biset === true && ejIdx + 1 < ejsDia.length;
+    const isCurrent = ejIdx === state.ejercicioActual || (esBiset && ejIdx + 1 === state.ejercicioActual);
+    const comp = completados[ejIdx];
+    const isDone = comp && comp.series?.some(s => s.completada);
+    const sc = ej.seriesConfig;
+    const nextSeries = sc || Array.from({length: ej.series||3}, (_,i) => ({
+      repsMin: ej.repsMin, repsMax: ej.repsMax, peso: ej.peso, rirRpe: ej.rirRpe
+    }));
+
+    let status = isDone ? '✅' : isCurrent ? '▶️' : '⏳';
+    let borderColor = isDone ? 'rgba(0,229,160,0.4)' : isCurrent ? 'rgba(0,200,255,0.5)' : 'rgba(255,255,255,0.08)';
+    let bgColor = isDone ? 'rgba(0,229,160,0.06)' : isCurrent ? 'rgba(0,200,255,0.08)' : 'rgba(255,255,255,0.03)';
+
+    const seriesDetail = nextSeries.slice(0,4).map((s,i) => {
+      const done = comp?.series?.[i]?.completada;
+      return `<span style="display:inline-flex;align-items:center;gap:3px;background:${done?'rgba(0,229,160,0.15)':'rgba(255,255,255,0.06)'};border:1px solid ${done?'rgba(0,229,160,0.3)':'rgba(255,255,255,0.1)'};border-radius:6px;padding:2px 6px;font-size:0.68rem;color:${done?'#00e5a0':'rgba(232,244,255,0.6)'}">
+        ${done?'✓':i+1} · ${s.repsMin||ej.repsMin}-${s.repsMax||ej.repsMax}r · ${s.peso||ej.peso}kg
+      </span>`;
+    }).join('');
+
+    rows.push(`
+      <div style="border:1px solid ${borderColor};background:${bgColor};border-radius:12px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:0.9rem">${status}</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:0.85rem">${ejInfo.nombre||'Ejercicio'}</div>
+            ${esBiset ? `<div style="font-size:0.72rem;color:#ff6b35">🔗 + ${state.ejercicios[ejsDia[ejIdx+1]?.ejercicioId]?.nombre||'Ejercicio B'}</div>` : ''}
+          </div>
+          <span style="font-size:0.72rem;font-weight:700;color:${isCurrent?'var(--primary)':'var(--text-muted)'}">
+            ${ej.series} series
+          </span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${seriesDetail}</div>
+      </div>
+    `);
+    ejIdx += esBiset ? 2 : 1;
+  }
+
+  const existing = document.getElementById('sessionMapOverlay');
+  if(existing) { existing.remove(); return; }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sessionMapOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div style="background:rgba(6,14,32,0.98);border-radius:24px 24px 0 0;padding:24px 16px 40px;width:100%;max-height:80vh;overflow-y:auto;animation:sheetUp 0.3s cubic-bezier(0.16,1,0.3,1)">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:1.05rem;font-weight:800">🗺️ Mapa de sesión</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">M${mesActual}·S${semanaActual}·D${diaActual}</div>
+      </div>
+      ${rows.join('')}
+    </div>
+  `;
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+};
+
+function startRestTimer(totalSecs, nextInfo) {
   if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
   const existing = document.getElementById('restTimerToast');
   if(existing) existing.remove();
@@ -2791,7 +3130,22 @@ function startRestTimer(totalSecs) {
       <div class="rt-progress-fill" id="rtProgressFill" style="width:${(remaining/totalSecs)*100}%"></div>
     </div>
 
-    <button class="rt-skip" onclick="skipRestTimer()">Saltar descanso</button>
+    ${nextInfo ? `<div style="background:rgba(255,255,255,0.04);border:1px solid ${nextInfo.isBisetSwitch?'rgba(255,107,53,0.35)':'rgba(0,200,255,0.25)'};border-radius:16px;padding:14px 18px;margin-top:16px;width:90%;max-width:320px;text-align:left">
+      <div style="font-size:0.6rem;color:${nextInfo.isBisetSwitch?'#ff6b35':'var(--primary)'};text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px">
+        ${nextInfo.isBisetSwitch ? '🔗 Siguiente en la biserie' : nextInfo.isNextExercise ? '⏭️ Siguiente ejercicio' : '⏭️ Siguiente serie'}
+      </div>
+      <div style="font-weight:800;font-size:1rem;margin-bottom:8px;color:#e8f4ff">${nextInfo.nombre}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${nextInfo.reps ? `<div style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;font-weight:700;color:#00e5a0">🔢 ${nextInfo.reps}</div>` : ''}
+        ${nextInfo.peso !== null ? `<div style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.35);border-radius:10px;padding:6px 12px;font-size:1.1rem;font-weight:900;color:#00c8ff">⚖️ ${nextInfo.peso} kg</div>` : ''}
+        ${nextInfo.metodo ? `<div style="background:rgba(123,47,255,0.1);border:1px solid rgba(123,47,255,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;color:#a78bfa">${nextInfo.metodo}</div>` : ''}
+      </div>
+      ${nextInfo.anotaciones ? `<div style="margin-top:8px;font-size:0.75rem;color:#ffd60a;border-top:1px solid rgba(255,255,255,0.07);padding-top:6px">📝 ${nextInfo.anotaciones}</div>` : ''}
+    </div>` : ''}
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="rt-skip" onclick="skipRestTimer()">Saltar descanso</button>
+      <button class="rt-skip" onclick="showSessionMapOverlay()" style="background:rgba(0,200,255,0.08);border-color:rgba(0,200,255,0.25);color:rgba(0,200,255,0.8)">🗺️ Ver sesión</button>
+    </div>
   `;
 
   // Apply initial color via CSS variables
@@ -2802,6 +3156,8 @@ function startRestTimer(totalSecs) {
   // iOS Safari: al volver del fondo, forzar resync inmediato del contador
   const _restVisibilityHandler = () => {
     if(document.visibilityState === 'visible') {
+      // Also save pending session when returning to the app
+      savePendingSession();
       const synced = Math.max(0, Math.round((endTime - Date.now()) / 1000));
       remaining = synced;
       const countEl = document.getElementById('rtCount');
@@ -2962,16 +3318,25 @@ window.completarEjercicio = async () => {
   }
 
   const ejInfo2 = state.ejercicios[ejConfig.ejercicioId]||{};
-  const esBiset = ejConfig.biset === true && state.ejercicioActual + 1 < ejsDia.length;
+  // Detect full chain
+  const _compChain = [];
+  { let ci = state.ejercicioActual;
+    while(ci < ejsDia.length) {
+      _compChain.push(ci);
+      if(ejsDia[ci]?.biset === true && ci+1 < ejsDia.length) ci++; else break;
+    }
+  }
+  const esBiset = _compChain.length > 1;
 
   let allSeries = [];
   if(esBiset) {
-    const ejConfigB = ejsDia[state.ejercicioActual + 1];
-    const ejInfoB   = state.ejercicios[ejConfigB.ejercicioId]||{};
-    const seriesA = _collectSeriesData(ejConfig,  ejInfo2,  'ea_');
-    const seriesB = _collectSeriesData(ejConfigB, ejInfoB,  'eb_');
-    // Validate: at least one serie marked done across both
-    allSeries = [...seriesA, ...seriesB];
+    // Collect series for each exercise in chain using prefix e0_, e1_, e2_...
+    const chainSeriesAll = _compChain.map((ejI, n) => {
+      const cfg = ejsDia[ejI];
+      const inf = state.ejercicios[cfg?.ejercicioId]||{};
+      return _collectSeriesData(cfg, inf, 'e'+n+'_');
+    });
+    allSeries = chainSeriesAll.flat();
     const alguenCompleta = allSeries.some(s => s.completada);
     if(!alguenCompleta) {
       const res = await Swal.fire({
@@ -2984,9 +3349,11 @@ window.completarEjercicio = async () => {
     }
     if(!state.sesionActiva) { console.error('sesionActiva undefined'); return; }
     if(!state.sesionActiva.ejerciciosCompletados) state.sesionActiva.ejerciciosCompletados = {};
-    state.sesionActiva.ejerciciosCompletados[state.ejercicioActual]     = { ejercicioId: ejConfig.ejercicioId,  series: seriesA };
-    state.sesionActiva.ejerciciosCompletados[state.ejercicioActual + 1] = { ejercicioId: ejConfigB.ejercicioId, series: seriesB };
-    state.ejercicioActual += 2;
+    _compChain.forEach((ejI, n) => {
+      const cfg = ejsDia[ejI];
+      state.sesionActiva.ejerciciosCompletados[ejI] = { ejercicioId: cfg.ejercicioId, series: chainSeriesAll[n] };
+    });
+    state.ejercicioActual += _compChain.length;
   } else {
     const series = _collectSeriesData(ejConfig, ejInfo2, '');
     allSeries = series;
@@ -3060,25 +3427,94 @@ async function finalizarSesion() {
   if(restToast) restToast.remove();
   const restOvl = document.getElementById('restTimerOverlay');
   if(restOvl) restOvl.remove();
-  updateSessionDot(false);
-  // Limpiar sesión pendiente de Firebase — ya se va a guardar como sesión completada
-  await clearPendingSession();
-  // Post-session fatigue
-  const cansancio = await showFatigueModal('¿Qué tan cansado quedaste?', 'post');
-  if(cansancio===null) return;
 
-  state.sesionActiva.nivelCansancioFin = cansancio;
+  // ── FIX: Validar que todos los ejercicios tienen al menos 1 serie marcada ──
+  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  const diaData = state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias?.[diaActual];
+  const ejsDia = Object.values(diaData?.ejercicios||{});
+  const completados = state.sesionActiva?.ejerciciosCompletados||{};
+  const faltantes = [];
+  let ejIdx = 0;
+  while(ejIdx < ejsDia.length) {
+    const ej = ejsDia[ejIdx];
+    const ejInfo = state.ejercicios[ej?.ejercicioId]||{};
+    const esBiset = ej?.biset === true && ejIdx + 1 < ejsDia.length;
+    const compA = completados[ejIdx];
+    const allA = compA?.series?.every(s => s.completada);
+    const compB = esBiset ? completados[ejIdx+1] : null;
+    const allB = esBiset ? compB?.series?.every(s => s.completada) : true;
+    if(!compA || !allA || !allB) {
+      const ejNombre = ejInfo.nombre || `Ejercicio ${ejIdx+1}`;
+      const ejNombreB = esBiset ? (state.ejercicios[ejsDia[ejIdx+1]?.ejercicioId]?.nombre || `Ejercicio ${ejIdx+2}`) : null;
+      faltantes.push({ ejIdx, nombre: ejNombre + (ejNombreB ? ` + ${ejNombreB}` : ''), esBiset });
+    }
+    ejIdx += esBiset ? 2 : 1;
+  }
+
+  if(faltantes.length > 0) {
+    const listaHTML = faltantes.map(f => `<li style="margin-bottom:6px">⚠️ <strong>${f.nombre}</strong> — series sin completar</li>`).join('');
+    const result = await Swal.fire({
+      background: 'rgba(8,16,36,0.98)', color: '#e8f4ff',
+      title: '📋 Series sin completar',
+      html: `<div style="text-align:left">
+        <p style="margin-bottom:12px;color:rgba(232,244,255,0.7)">Los siguientes ejercicios tienen series sin marcar como hechas:</p>
+        <ul style="list-style:none;padding:0;font-size:0.88rem">${listaHTML}</ul>
+        <p style="margin-top:12px;font-size:0.82rem;color:rgba(232,244,255,0.5)">¿Finalizar así o regresar a completarlas?</p>
+      </div>`,
+      showCancelButton: true,
+      confirmButtonText: '✅ Finalizar igual',
+      cancelButtonText: '← Ir a completarlas',
+      confirmButtonColor: '#00c8ff',
+      cancelButtonColor: '#7b2fff',
+    });
+    if(!result.isConfirmed) {
+      // Ir al primer ejercicio faltante
+      state.ejercicioActual = faltantes[0].ejIdx;
+      renderEjercicioActual();
+      return;
+    }
+  }
+
+  // ── CRITICAL ORDER: Save FIRST, then ask for fatigue ──
+  // Session is safe regardless of what user does after this point.
+
+  // 1. Mark fechaFin NOW
   state.sesionActiva.fechaFin = Date.now();
 
-  // Save session
-  const sesId = `ses_${Date.now()}`;
+  // 2. Save session to Firebase IMMEDIATELY
+  const sesId = `ses_${state.sesionActiva.fechaFin}`;
   await set(ref(db,`sesiones/${currentUser.id}/historial/${sesId}`), state.sesionActiva);
-  // Actualizar en memoria para que el calendario se vea al instante sin caché de Firebase
   if(!state.historial) state.historial = {};
   state.historial[sesId] = { ...state.sesionActiva };
 
-  // Advance progress
-  const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
+  // 3. Clear pending session (safe — already saved to historial)
+  await clearPendingSession();
+
+  // 4. Clear active session state
+  updateSessionDot(false);
+  state.sesionActiva   = null;
+  state.ejercicioActual = 0;
+
+  // 5. Push history state so back button during fatigue modal can be caught
+  history.pushState({ saykyo: 'fatigue' }, '');
+
+  // 6. Ask for post-session fatigue (already saved — this is just an enrichment)
+  const cansancio = await showFatigueModal('¿Qué tan cansado quedaste?', 'post');
+  // Clean up the history state we pushed for the fatigue guard
+  // Only call history.back() if we're still on that state (not already dismissed via back btn)
+  if(history.state && history.state.saykyo === 'fatigue') {
+    // Temporarily disable popstate to avoid re-triggering
+    window._suppressPopstate = true;
+    history.back();
+    setTimeout(() => { window._suppressPopstate = false; }, 100);
+  }
+
+  if(cansancio !== null) {
+    await set(ref(db,`sesiones/${currentUser.id}/historial/${sesId}/nivelCansancioFin`), cansancio);
+    if(state.historial[sesId]) state.historial[sesId].nivelCansancioFin = cansancio;
+  }
+
+  // Advance progress (mesActual/semanaActual/diaActual already declared above)
   let newMes = mesActual, newSem = semanaActual, newDia = diaActual+1;
   // Calcular dinámicamente cuántos días tiene esta semana
   const _diasSemActual = Object.keys(state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias||{}).map(Number);
@@ -3257,6 +3693,8 @@ window.guardarRevSemana = async (mes, semana) => {
   // reset temp vars
   ['doms','animo','sueno','dolor'].forEach(k => delete window[`_rev_${k}`]);
   Swal.fire({icon:'success',title:'✅ Revisión guardada',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  // FIX 9: Notify trainer that user submitted weekly review
+  notifyTrainerReview('semanal', mes, semana, data);
   if(window._revSemanaResolve) window._revSemanaResolve();
 };
 
@@ -3359,8 +3797,50 @@ window.guardarRevMes = async (mes) => {
   if(window._revMesOverlay) document.body.removeChild(window._revMesOverlay);
   ['mejora','diaMasFatiga','motivoFatiga','masDescanso'].forEach(k => delete window[`_rev_${k}`]);
   Swal.fire({icon:'success',title:'🏆 ¡Revisión mensual guardada!',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  // FIX 9: Notify trainer that user submitted monthly review
+  notifyTrainerReview('mensual', mes, null, data);
   if(window._revMesResolve) window._revMesResolve();
 };
+
+
+// FIX 9: Notificar al entrenador cuando el atleta envía revisión semanal/mensual
+async function notifyTrainerReview(tipo, mes, semana, data) {
+  try {
+    const userSnap = await get(ref(db, `usuarios/${currentUser.id}`));
+    const userData = userSnap.val() || {};
+    const gid = userData.grupoId;
+    if(!gid) return;
+    const gSnap = await get(ref(db, `grupos/${gid}`));
+    const g = gSnap.val() || {};
+    const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados||{})].filter(Boolean);
+    if(!adminIds.length) return;
+
+    const titulo = tipo === 'semanal'
+      ? `📋 Revisión Sem ${semana} (Mes ${mes}) completada`
+      : `🏆 Revisión Mes ${mes} completada`;
+
+    // Build summary of key data points
+    let resumen = '';
+    if(tipo === 'semanal') {
+      resumen = `DOMS: ${data.doms}/10 · Ánimo: ${data.animo}/5 · Sueño: ${data.sueno}${data.dolor==='Si'?' · ⚠️ Dolor reportado':''}`;
+    } else {
+      resumen = `Mejora: ${data.mejora} · Día más fatiga: ${data.diaMasFatiga} · Motivo: ${data.motivoFatiga}`;
+    }
+
+    const notif = {
+      mensaje: `${titulo} — ${resumen}`,
+      deId: currentUser.id,
+      deNombre: `${currentUser.nombres} ${currentUser.apellidos||''}`.trim(),
+      avatar: currentUser.avatar||'',
+      tipo: tipo === 'semanal' ? 'revision_semanal' : 'revision_mensual',
+      mes, semana: semana||null,
+      data, // full review data for trainer to see
+      leida: false,
+      creadaEn: Date.now()
+    };
+    await Promise.all(adminIds.map(aid => push(ref(db, `notificaciones/${aid}`), notif)));
+  } catch(e) { console.warn('notifyTrainerReview error', e); }
+}
 
 // ============ EFFORT MODAL ============
 async function showEffortModal() {
@@ -3397,7 +3877,8 @@ async function showEffortModal() {
           ${options.map(o=>`
             <div class="effort-option" data-val="${o.v}" onclick="selectEffort(${o.v})">
               <span class="effort-emoji">${o.e}</span>
-              <span class="effort-label">${o.l}</span>
+              <span style="font-size:0.75rem;font-weight:800;color:var(--primary);line-height:1">${o.v}</span>
+              <span class="effort-label">${o.l.replace(/^[-0-9]+ - /,'')}</span>
             </div>
           `).join('')}
         </div>
@@ -3427,13 +3908,13 @@ async function showFatigueModal(title, mode) {
     // mode 'pre':  1=muerto/sin energía → 10=súper descansado
     // mode 'post': 1=nada cansado      → 10=totalmente agotado
     const colorsPre  = ['#b91c1c','#dc2626','#ef4444','#f97316','#ff6b35','#ffd60a','#a3e635','#4ade80','#00e5a0','#00c8ff'];
-    const emojisPre  = ['💀','😵','🥵','😓','😰','😔','😑','😐','🙂','🔥'];
+    const emojisPre  = ['💀','😵','🥵','😩','😪','😑','😊','😁','⚡','🔥'];
     const labelsPre  = ['1 - Sin energía','2 - Agotado','3 - Muy cansado','4 - Bastante cansado','5 - Cansado','6 - Regular','7 - Bien','8 - Muy bien','9 - Excelente','10 - Súper descansado'];
     const leftPre    = '💀 Sin energía';
     const rightPre   = 'Súper descansado 🔥';
 
     const colorsPost = ['#00c8ff','#00e5a0','#4ade80','#a3e635','#ffd60a','#ff6b35','#f97316','#ef4444','#dc2626','#b91c1c'];
-    const emojisPost = ['😊','🙂','😐','😑','😔','😰','😓','🥵','😵','💀'];
+    const emojisPost = ['😊','😁','🙂','😐','😑','😓','😩','🥵','😵','💀'];
     const labelsPost = ['1 - Nada cansado','2 - Muy poco cansado','3 - Poco cansado','4 - Algo cansado','5 - Moderadamente cansado','6 - Bastante cansado','7 - Muy cansado','8 - Agotado','9 - Muy agotado','10 - Totalmente destruido'];
     const leftPost   = '😊 Nada cansado';
     const rightPost  = 'Totalmente agotado 💀';
@@ -3449,7 +3930,7 @@ async function showFatigueModal(title, mode) {
     overlay.className = 'overlay-backdrop';
 
     const dotsHtml = Array.from({length:10}, (_,i) => {
-      return '<div class="fatigue-dot" data-val="' + (i+1) + '" style="color:' + colors[i] + ';font-size:1.3rem" onclick="selectFatigue(' + (i+1) + ')" title="' + labels[i] + '">' + emojis[i] + '</div>';
+      return '<div class="fatigue-dot" data-val="' + (i+1) + '" style="color:' + colors[i] + ';font-size:1.1rem;flex-direction:column;gap:2px;height:50px" onclick="selectFatigue(' + (i+1) + ')" title="' + labels[i] + '"><span style="font-size:1.2rem">' + emojis[i] + '</span><span style="font-size:0.65rem;font-weight:700;opacity:0.85">' + (i+1) + '</span></div>';
     }).join('');
 
     overlay.innerHTML =
@@ -3481,6 +3962,12 @@ async function showFatigueModal(title, mode) {
     };
     window.confirmFatigueFn = () => {
       if(selected !== null) { document.body.removeChild(overlay); resolve(selected); }
+    };
+    // Expose dismiss so popstate/external code can cancel the modal cleanly
+    window._dismissFatigueModal = () => {
+      if(document.body.contains(overlay)) document.body.removeChild(overlay);
+      window._dismissFatigueModal = null;
+      resolve(null);
     };
     document.body.appendChild(overlay);
   });
@@ -3826,10 +4313,12 @@ async function renderProgreso() {
   const p = document.getElementById('mainPage');
   p.innerHTML = '<div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
 
-  const [histSnap, valSnap, rutSnap] = await Promise.all([
+  const [histSnap, valSnap, rutSnap, revSemSnap, revMesSnap] = await Promise.all([
     get(ref(db,`sesiones/${currentUser.id}/historial`)),
     get(ref(db,`valoraciones/${currentUser.id}`)),
-    get(ref(db,'rutinas'))
+    get(ref(db,'rutinas')),
+    get(ref(db,`revisiones_semana/${currentUser.id}`)),
+    get(ref(db,`revisiones_mes/${currentUser.id}`))
   ]);
   const hist = histSnap.val()||{};
   const sesiones = Object.values(hist).sort((a,b)=>(a.fecha||0)-(b.fecha||0));
@@ -3866,18 +4355,7 @@ async function renderProgreso() {
     });
   });
   const wkLabels = Object.keys(weekMap);
-  const avgCansancio = wkLabels.map(w=>weekMap[w].cansancioFin.reduce((a,b)=>a+b,0)/weekMap[w].cansancioFin.length);
-  const totalSeries = wkLabels.map(w=>weekMap[w].series);
   const totalSeriesAll = Object.values(weekMap).reduce((a,w)=>a+w.series,0);
-
-  const chartOpts = {
-    responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{
-      x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}},
-      y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}}
-    }
-  };
 
   // ─── Valoraciones trend ───
   const hasValoraciones = valoraciones.length >= 1;
@@ -3886,7 +4364,6 @@ async function renderProgreso() {
   const anyHasMes = valoraciones.some(v => v.mes);
   const valLabels = valoraciones.map((v, i) => anyHasMes ? `Mes ${v.mes || (i+1)}` : new Date(v.fecha).toLocaleDateString('es-CO',{month:'short',year:'2-digit'}));
 
-  // delta: el valor numérico del cambio. invertido=true significa que bajar es bueno (ej: grasa)
   const deltaFmt = (delta, invertido=false) => {
     if(delta===undefined||delta===null) return '';
     const n = parseFloat(delta).toFixed(1);
@@ -3904,6 +4381,219 @@ async function renderProgreso() {
   const deltaMuscular = valoraciones.length>1 ? lastVal.muscular-firstVal.muscular : null;
   const deltaPeso = valoraciones.length>1 ? lastVal.peso-firstVal.peso : null;
 
+  // ─── Pro chart helpers (mismos que dashboard) ───
+  const PRO_PALETTE = [
+    '#00c8ff','#7b2fff','#00e5a0','#ff6b35','#ffd60a',
+    '#ff4d6d','#4ade80','#818cf8','#f472b6','#38bdf8',
+    '#fb923c','#a3e635','#e879f9','#2dd4bf','#facc15'
+  ];
+
+  function proChartOptions(extraY={}) {
+    return {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels:{ color:'rgba(232,244,255,0.7)', font:{family:'Exo 2',size:10}, boxWidth:12, padding:12, usePointStyle:true, pointStyle:'circle' }
+        },
+        tooltip:{
+          backgroundColor:'rgba(6,12,28,0.95)', borderColor:'rgba(0,200,255,0.25)', borderWidth:1,
+          titleColor:'#e8f4ff', bodyColor:'rgba(232,244,255,0.75)',
+          titleFont:{family:'Exo 2',weight:'700',size:12}, bodyFont:{family:'Exo 2',size:11},
+          padding:10, cornerRadius:10
+        }
+      },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)',drawBorder:false}, ticks:{color:'rgba(232,244,255,0.5)',font:{family:'Exo 2',size:10}} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)',drawBorder:false}, ticks:{color:'rgba(232,244,255,0.5)',font:{family:'Exo 2',size:10}}, min:extraY.min, max:extraY.max }
+      }
+    };
+  }
+
+  function makeProDataset(name, data, i, type='line') {
+    const color = PRO_PALETTE[i % PRO_PALETTE.length];
+    if(type==='bar') return {
+      label:name, data, backgroundColor:color+'55', borderColor:color, borderWidth:2, borderRadius:6, borderSkipped:false
+    };
+    return {
+      label:name, data, borderColor:color, backgroundColor:color+'20',
+      pointBackgroundColor:color, pointBorderColor:'#060c18',
+      pointRadius:4, pointHoverRadius:7, pointBorderWidth:2,
+      tension:0.4, fill:false, spanGaps:true, borderWidth:2.5
+    };
+  }
+
+  function renderProChart(canvasId, type, labels, datasets, extraY={}) {
+    let canvas = document.getElementById(canvasId);
+    if(!canvas) {
+      const wrap = document.querySelector(`[data-canvas="${canvasId}"]`);
+      if(wrap) { wrap.innerHTML=`<canvas id="${canvasId}"></canvas>`; canvas=document.getElementById(canvasId); }
+    }
+    if(!canvas) return;
+    if(canvas._proChart) { canvas._proChart.destroy(); canvas._proChart=null; }
+    const hasData = datasets.length>0 && datasets.some(d=>d.data&&d.data.some(v=>v!=null&&!isNaN(v)&&v!==0));
+    if(!hasData) {
+      const wrap = canvas.parentElement;
+      if(wrap) { wrap.setAttribute('data-canvas',canvasId); wrap.innerHTML=`<div class="pro-chart-empty"><div class="ico">📭</div><span>Sin datos aún</span></div>`; }
+      return;
+    }
+    const opts = proChartOptions(extraY);
+    canvas._proChart = new Chart(canvas, {type, data:{labels, datasets}, options:opts});
+  }
+
+  function buildProCard(id, icon, title, badge, filterTags, controlsHTML, canvasHTML) {
+    return `
+    <div class="pro-chart-card" id="card_${id}">
+      <div class="pro-chart-header">
+        <div class="pro-chart-title">${icon} ${title} <span class="pro-chart-badge">${badge}</span></div>
+        <div class="pro-chart-controls">${controlsHTML}</div>
+      </div>
+      <div class="pro-chart-filter-tags">${filterTags}</div>
+      <div class="pro-chart-body">${canvasHTML}</div>
+    </div>`;
+  }
+
+  // ─── Data builders (solo sesiones del usuario actual) ───
+  const allSessions = sesiones; // ya filtradas al usuario logueado
+
+  // Rango de semanas disponibles
+  const semSet = new Set(allSessions.map(s=>(s.mes-1)*4+s.semana));
+  const semMin = semSet.size ? Math.min(...semSet) : 1;
+  const semMax = semSet.size ? Math.max(...semSet) : 1;
+  const nSem = semMax - semMin + 1;
+  const labels = Array.from({length:nSem},(_,i)=>`Sem ${semMin+i}`);
+
+  // Cargar ejercicios y categorias para los charts
+  const [ejSnap2, catSnap2] = await Promise.all([
+    get(ref(db,'ejercicios')),
+    get(ref(db,'categorias'))
+  ]);
+  const ejs = ejSnap2.val()||{};
+  const cats = catSnap2.val()||{};
+
+  const ejsEnData={}, catsEnData={};
+  allSessions.forEach(ses=>{
+    Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+      if(ejs[ec.ejercicioId]) ejsEnData[ec.ejercicioId]=ejs[ec.ejercicioId].nombre;
+      const cat=ejs[ec.ejercicioId]?.categoria;
+      if(cat&&cats[cat]) catsEnData[cat]=cats[cat].nombre;
+    });
+  });
+  const ejOL=`<option value="">Todos</option>`+Object.entries(ejsEnData).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+  const catOL=`<option value="">Todas</option>`+Object.entries(catsEnData).map(([id,n])=>`<option value="${id}">${n}</option>`).join('');
+  const semOL=Array.from({length:nSem},(_,i)=>{const s=semMin+i;return`<option value="${s}">Sem ${s}</option>`;}).join('');
+
+  function buildCarga(ejFil, chartType) {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        if(ejFil && ec.ejercicioId!==ejFil) return;
+        const n=ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
+        if(!map[n]) map[n]=Array(nSem).fill(null).map(()=>[]);
+        const idx=(ses.mes-1)*4+ses.semana-semMin;
+        if(idx>=0&&idx<nSem)(ec.series||[]).forEach(s=>{if(+s.peso>0)map[n][idx].push(+s.peso);});
+      });
+    });
+    return Object.entries(map).map(([name,wks],i)=>
+      makeProDataset(name, wks.map(w=>w.length?+(w.reduce((a,b)=>a+b)/w.length).toFixed(1):null), i, chartType)
+    );
+  }
+
+  function buildRPE(ejFil, chartType) {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        if(ejFil && ec.ejercicioId!==ejFil) return;
+        const n=ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
+        if(!map[n]) map[n]=Array(nSem).fill(null).map(()=>[]);
+        const idx=(ses.mes-1)*4+ses.semana-semMin;
+        if(idx>=0&&idx<nSem)(ec.series||[]).forEach(s=>{if(s.rirRpe!=null)map[n][idx].push(s.rirRpe);});
+      });
+    });
+    return Object.entries(map).map(([name,wks],i)=>
+      makeProDataset(name, wks.map(w=>w.length?+(w.reduce((a,b)=>a+b)/w.length).toFixed(2):null), i, chartType)
+    );
+  }
+
+  function buildVol(catFil, chartType) {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        const ejCat=ejs[ec.ejercicioId]?.categoria;
+        if(catFil && ejCat!==catFil) return;
+        const cN=cats[ejCat]?.nombre||'Sin cat';
+        if(!map[cN]) map[cN]=Array(nSem).fill(0);
+        const idx=(ses.mes-1)*4+ses.semana-semMin;
+        if(idx>=0&&idx<nSem) map[cN][idx]+=(ec.series||[]).length;
+      });
+    });
+    return Object.entries(map).map(([name,data],i)=>makeProDataset(name,data,i,chartType));
+  }
+
+  function buildIntSesion(semA) {
+    const map={};
+    allSessions.filter(s=>(s.mes-1)*4+s.semana===semA).forEach(ses=>{
+      const k=`Día ${ses.dia}`;
+      if(ses.nivelCansancioFin!=null) map[k]=ses.nivelCansancioFin;
+    });
+    const lbs=Object.keys(map).sort((a,b)=>+a.replace('Día ','')-+b.replace('Día ',''));
+    return { lbs, vals:lbs.map(k=>map[k]) };
+  }
+
+  function buildDuracion() {
+    const bySem=Array(nSem).fill(null).map(()=>[]);
+    allSessions.forEach(ses=>{
+      if(!ses.fechaInicio||!ses.fechaFin) return;
+      const mins=Math.round((ses.fechaFin-ses.fechaInicio)/60000);
+      if(mins<5||mins>300) return;
+      const idx=(ses.mes-1)*4+ses.semana-semMin;
+      if(idx>=0&&idx<nSem) bySem[idx].push(mins);
+    });
+    const vals=bySem.map(w=>w.length?Math.round(w.reduce((a,b)=>a+b)/w.length):null);
+    return [makeProDataset('Duración promedio (min)', vals, 5, 'line')];
+  }
+
+  function buildFrecuencia() {
+    const bySem=Array(nSem).fill(0);
+    allSessions.forEach(ses=>{
+      const idx=(ses.mes-1)*4+ses.semana-semMin;
+      if(idx>=0&&idx<nSem) bySem[idx]++;
+    });
+    return [makeProDataset('Sesiones', bySem, 3, 'bar')];
+  }
+
+  function buildTopEjercicios() {
+    const map={};
+    allSessions.forEach(ses=>{
+      Object.values(ses.ejerciciosCompletados||{}).forEach(ec=>{
+        const n=ejs[ec.ejercicioId]?.nombre||ec.ejercicioId;
+        map[n]=(map[n]||0)+(ec.series||[]).length;
+      });
+    });
+    const sorted=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    return {
+      lbs: sorted.map(([n])=>n.length>20?n.slice(0,18)+'…':n),
+      vals: sorted.map(([,v])=>v)
+    };
+  }
+
+  function buildDescanso() {
+    const bySem=Array(nSem).fill(null).map(()=>[]);
+    allSessions.forEach(ses=>{
+      if(ses.nivelCansancioInicio==null) return;
+      const idx=(ses.mes-1)*4+ses.semana-semMin;
+      if(idx>=0&&idx<nSem) bySem[idx].push(ses.nivelCansancioInicio);
+    });
+    const vals=bySem.map(w=>w.length?+(w.reduce((a,b)=>a+b)/w.length).toFixed(1):null);
+    return [makeProDataset('Nivel de descanso al llegar', vals, 2, 'line')];
+  }
+
+  const withDur=allSessions.filter(s=>s.fechaInicio&&s.fechaFin&&(s.fechaFin-s.fechaInicio)/60000>5);
+  const avgDur=withDur.length?Math.round(withDur.reduce((a,s)=>a+(s.fechaFin-s.fechaInicio)/60000,0)/withDur.length):'-';
+
+  function ftag(txt){ return `<span class="pro-filter-tag">${txt}</span>`; }
+
   p.innerHTML = `
     <!-- ═══ STREAK CARD ═══ -->
     <div class="glass-card" style="position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(123,47,255,0.1),rgba(0,200,255,0.08));border-color:rgba(255,107,53,0.3)">
@@ -3912,8 +4602,6 @@ async function renderProgreso() {
         <div class="card-title" style="margin:0">🔥 Racha de entrenamiento</div>
         <div style="font-size:0.75rem;color:var(--text-muted)">Fines de semana no cuentan</div>
       </div>
-
-      <!-- Números principales -->
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
         <div style="text-align:center;flex:1;min-width:100px">
           <div style="font-size:4rem;font-weight:900;line-height:1;background:linear-gradient(135deg,#ff6b35,#ffd60a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${streakActual}</div>
@@ -3930,8 +4618,6 @@ async function renderProgreso() {
           <div style="font-size:0.75rem;color:rgba(255,107,53,0.9);font-weight:700;margin-top:4px">${streakMessage}</div>
         </div>
       </div>
-
-      <!-- Progress bar to next milestone -->
       ${(() => {
         const milestones = [3,7,14,21,30,60,90];
         const next = milestones.find(m=>m>streakActual) || 100;
@@ -3947,8 +4633,6 @@ async function renderProgreso() {
             </div>
           </div>`;
       })()}
-
-      <!-- Calendario -->
       <div>
         <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Calendario de entrenamientos</div>
         ${(() => {
@@ -3966,6 +4650,7 @@ async function renderProgreso() {
         <div class="mini-stat"><div class="val">${sesiones.length}</div><div class="lbl">Sesiones</div></div>
         <div class="mini-stat"><div class="val">${totalSeriesAll}</div><div class="lbl">Series totales</div></div>
         <div class="mini-stat"><div class="val">M${state.progreso?.mesActual||1}·S${state.progreso?.semanaActual||1}</div><div class="lbl">Posición</div></div>
+        <div class="mini-stat"><div class="val">${avgDur} min</div><div class="lbl">Duración prom.</div></div>
       </div>
     </div>
 
@@ -3973,8 +4658,6 @@ async function renderProgreso() {
     ${hasValoraciones ? `
     <div class="glass-card" style="background:linear-gradient(135deg,rgba(0,100,200,0.08),rgba(123,47,255,0.06));border-color:rgba(0,200,255,0.2)">
       <div class="card-title">⚖️ Mi composición corporal</div>
-
-      <!-- Current snapshot -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
         <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);border-radius:14px;padding:12px;text-align:center">
           <div style="font-size:0.65rem;color:rgba(255,107,53,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">% Grasa</div>
@@ -3992,11 +4675,8 @@ async function renderProgreso() {
           ${valoraciones.length>1?`<div style="font-size:0.72rem;margin-top:2px">${deltaFmt(deltaPeso)}</div>`:''}
         </div>
       </div>
-
       ${valoraciones.length===1?`<div style="font-size:0.82rem;color:var(--text-muted);text-align:center;padding:8px;background:rgba(0,200,255,0.04);border-radius:10px;margin-bottom:10px">📊 Tu entrenador agregará más valoraciones para mostrar tu tendencia</div>`:''}
-
       ${valoraciones.length >= 2 ? `
-      <!-- Trend charts -->
       <div style="margin-bottom:12px">
         <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px">Tendencia: % Grasa vs % Músculo</div>
         <div style="height:160px"><canvas id="chartComposicion"></canvas></div>
@@ -4006,21 +4686,13 @@ async function renderProgreso() {
         <div style="height:130px"><canvas id="chartPesoTrend"></canvas></div>
       </div>
       ` : ''}
-
       ${valoraciones.length >= 2 ? `
-      <!-- Progress summary -->
       <div style="margin-top:14px;padding:12px;background:rgba(0,0,0,0.2);border-radius:12px;border:1px solid rgba(255,255,255,0.05)">
         <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">📈 Cambio total desde inicio</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span style="font-size:0.8rem;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:20px;padding:4px 10px">
-            Grasa: ${deltaFmt(deltaGrasa, true)} % ${deltaGrasa<0?'🎯 ¡Bajó!':deltaGrasa>0?'📈 Subió':' ='}
-          </span>
-          <span style="font-size:0.8rem;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 10px">
-            Músculo: ${deltaFmt(deltaMuscular, false)} % ${deltaMuscular>0?'💪 ¡Ganó!':deltaMuscular<0?'📉 Bajó':' ='}
-          </span>
-          <span style="font-size:0.8rem;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:4px 10px">
-            Peso: ${deltaFmt(deltaPeso, false)} kg
-          </span>
+          <span style="font-size:0.8rem;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:20px;padding:4px 10px">Grasa: ${deltaFmt(deltaGrasa, true)} % ${deltaGrasa<0?'🎯 ¡Bajó!':deltaGrasa>0?'📈 Subió':' ='}</span>
+          <span style="font-size:0.8rem;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 10px">Músculo: ${deltaFmt(deltaMuscular, false)} % ${deltaMuscular>0?'💪 ¡Ganó!':deltaMuscular<0?'📉 Bajó':' ='}</span>
+          <span style="font-size:0.8rem;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:4px 10px">Peso: ${deltaFmt(deltaPeso, false)} kg</span>
         </div>
       </div>` : ''}
     </div>
@@ -4031,91 +4703,222 @@ async function renderProgreso() {
       <div style="font-size:0.82rem;color:var(--text-muted)">Tu entrenador agregará valoraciones de composición corporal para ver tu progreso</div>
     </div>`}
 
-    <!-- ═══ FATIGA ═══ -->
-    ${wkLabels.length > 0 ? `
+    <!-- ═══ GRÁFICAS PRO ═══ -->
+    ${allSessions.length > 0 ? `
+    <div class="glass-card" style="padding:0;overflow:hidden">
+      <div style="padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
+        <div class="card-title" style="margin:0">📊 Análisis de rendimiento</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Basado en tus ${allSessions.length} sesión${allSessions.length!==1?'es':''} registradas</div>
+      </div>
+      <div style="padding:16px">
+        <div class="pro-charts-grid">
+
+          ${buildProCard('carga','📈','Carga','Peso prom / semana', ftag('Tus datos'),
+            `<select class="pro-chart-select" id="myCarga" onchange="myPcRefresh('carga')">${ejOL}</select>
+             <div class="pro-chart-type-btn">
+               <button class="active" id="mypct_carga_line" onclick="myPcType('carga','line')">〜</button>
+               <button id="mypct_carga_bar" onclick="myPcType('carga','bar')">▮</button>
+             </div>`,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartCarga"></canvas></div>`
+          )}
+
+          ${buildProCard('rpe','🔥','Esfuerzo RPE/RIR','Promedio / semana', ftag('Tus datos'),
+            `<select class="pro-chart-select" id="myRpe" onchange="myPcRefresh('rpe')">${ejOL}</select>
+             <div class="pro-chart-type-btn">
+               <button class="active" id="mypct_rpe_line" onclick="myPcType('rpe','line')">〜</button>
+               <button id="mypct_rpe_bar" onclick="myPcType('rpe','bar')">▮</button>
+             </div>`,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartRpe"></canvas></div>`
+          )}
+
+          ${buildProCard('vol','📦','Volumen','Series por categoría / sem', ftag('Tus datos'),
+            `<select class="pro-chart-select" id="myVol" onchange="myPcRefresh('vol')">${catOL}</select>
+             <div class="pro-chart-type-btn">
+               <button class="active" id="mypct_vol_bar" onclick="myPcType('vol','bar')">▮</button>
+               <button id="mypct_vol_line" onclick="myPcType('vol','line')">〜</button>
+             </div>`,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartVol"></canvas></div>`
+          )}
+
+          ${buildProCard('sesint','⚡','Intensidad percibida','Cansancio al finalizar sesión', ftag('Tus datos'),
+            `<select class="pro-chart-select" id="mySesint" onchange="myPcRefresh('sesint')">${semOL}</select>
+             <div class="pro-chart-type-btn">
+               <button class="active" id="mypct_sesint_line" onclick="myPcType('sesint','line')">〜</button>
+               <button id="mypct_sesint_bar" onclick="myPcType('sesint','bar')">▮</button>
+             </div>`,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartSesInt"></canvas></div>`
+          )}
+
+          ${buildProCard('dur','⏱️','Duración de sesión','Minutos prom / semana', ftag('Tus datos'),
+            ``,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartDur"></canvas></div>`
+          )}
+
+          ${buildProCard('frec','🗓️','Frecuencia','Sesiones por semana', ftag('Tus datos'),
+            ``,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartFrec"></canvas></div>`
+          )}
+
+          ${buildProCard('topej','🏆','Top Ejercicios','Los más entrenados', ftag('Tus datos'),
+            ``,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartTopEj"></canvas></div>`
+          )}
+
+          ${buildProCard('desc','😴','Descanso al llegar','1=Sin energía · 10=Descansado', ftag('Tus datos'),
+            ``,
+            `<div class="pro-chart-canvas-wrap"><canvas id="myChartDesc"></canvas></div>`
+          )}
+
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- ═══ FATIGA BÁSICA (solo si hay datos de semanas) ═══ -->
+    ${wkLabels.length > 0 && allSessions.length === 0 ? `
     <div class="glass-card">
       <div class="card-title">😴 Cansancio al finalizar sesión</div>
       <div style="height:180px"><canvas id="chartCansancio"></canvas></div>
-    </div>
-
-    <div class="glass-card">
-      <div class="card-title">📦 Volumen semanal (series)</div>
-      <div style="height:180px"><canvas id="chartVolumen"></canvas></div>
     </div>` : ''}
 
-    <!-- ═══ HISTORIAL ═══ -->
-    <div class="glass-card">
-      <div class="card-title">📅 Últimas sesiones</div>
-      <div id="sesHistorialWrap">
-      ${(()=>{
-        const SES_PG = 8;
-        const totalSesP = Math.ceil(sesiones.length / SES_PG);
-        const renderSesPage = (pg) => {
-          const slice = [...sesiones].reverse().slice(pg*SES_PG,(pg+1)*SES_PG);
-          if(!slice.length) return '<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin sesiones aún</div>';
-          return slice.map(s=>`
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-              <div>
-                <div style="font-weight:600;font-size:0.88rem">M${s.mes}·S${s.semana}·D${s.dia}</div>
-                <div style="font-size:0.75rem;color:var(--text-muted)">${new Date(s.fecha||s.fechaFin||0).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'2-digit'})}</div>
+    <!-- ═══ REVISIONES ═══ -->
+    ${(() => {
+      const revSemanas = (revSemSnap && revSemSnap.exists()) ? Object.entries(revSemSnap.val()||{}) : [];
+      const revMeses = (revMesSnap && revMesSnap.exists()) ? Object.entries(revMesSnap.val()||{}) : [];
+      if(!revSemanas.length && !revMeses.length) return '';
+      return `
+        <div class="glass-card">
+          <div class="card-title">📋 Mis revisiones semanales</div>
+          ${revSemanas.length === 0 ? '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:10px">Sin revisiones semanales aún</div>' :
+          revSemanas.slice(-4).reverse().map(([key, rev]) => `
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:8px">
+              <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:8px">📋 M${rev.mes||'?'} · S${rev.semana||'?'}</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+                <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">DOMS</div><div style="font-weight:800;color:#ff6b35">${rev.doms}/10</div></div>
+                <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">Ánimo</div><div style="font-weight:800;color:var(--primary)">${rev.animo}/5</div></div>
+                <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">Sueño</div><div style="font-weight:800;color:#a78bfa">${rev.sueno||'?'}</div></div>
               </div>
-              <div style="text-align:right;font-size:0.82rem">
-                <div style="color:var(--primary)">${Object.values(s.ejerciciosCompletados||{}).length} ej.</div>
-                <div style="color:var(--text-muted)">😓 ${s.nivelCansancioFin||'—'}/10</div>
-              </div>
-            </div>`).join('') +
-            (totalSesP > 1 ? `<div style="display:flex;align-items:center;gap:6px;margin-top:12px">
-              <span style="font-size:0.72rem;color:var(--text-muted)">${pg*SES_PG+1}–${Math.min((pg+1)*SES_PG,sesiones.length)} de ${sesiones.length}</span>
-              <div style="margin-left:auto;display:flex;gap:4px">
-                ${pg>0?`<button onclick="window._renderSesHistorial(${pg-1})" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.8rem;cursor:pointer">‹</button>`:''}
-                ${pg<totalSesP-1?`<button onclick="window._renderSesHistorial(${pg+1})" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(0,200,255,0.3);background:rgba(0,200,255,0.1);color:var(--primary);font-family:'Exo 2',sans-serif;font-size:0.8rem;cursor:pointer">›</button>`:''}
-              </div>
-            </div>` : '');
-        };
-        window._renderSesHistorial = (pg) => {
-          const el = document.getElementById('sesHistorialWrap');
-          if(el) el.innerHTML = renderSesPage(pg);
-        };
-        return sesiones.length===0 ? '<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin sesiones aún</div>' : renderSesPage(0);
-      })()}
-      </div>
-    </div>
+              ${rev.observacionesEntrenador ? `<div style="margin-top:8px;padding:8px;background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.15);border-radius:8px;font-size:0.78rem">
+                <div style="font-size:0.65rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">💬 Observaciones del entrenador</div>
+                <div>${rev.observacionesEntrenador}</div>
+              </div>` : ''}
+            </div>`).join('')}
+          ${revMeses.length > 0 ? `
+          <div class="card-title" style="margin-top:16px">📅 Revisiones mensuales</div>
+          ${revMeses.slice(-3).reverse().map(([key, rev]) => `
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:8px">
+              <div style="font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px">📅 Mes ${rev.mes||'?'}</div>
+              ${rev.observacionesEntrenador ? `<div style="padding:8px;background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.15);border-radius:8px;font-size:0.78rem">
+                <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">💬 Observaciones del entrenador</div>
+                <div>${rev.observacionesEntrenador}</div>
+              </div>` : ''}
+            </div>`).join('')}
+          ` : ''}
+        </div>`;
+    })()}
   `;
 
-  setTimeout(()=>{
-    const makeGrad = (ctx, c1, c2) => {
-      const g = ctx.createLinearGradient(0,0,0,180);
-      g.addColorStop(0,c1); g.addColorStop(1,c2); return g;
+  // ─── Render charts con setTimeout para que el DOM esté listo ───
+  setTimeout(() => {
+    // Valoraciones charts
+    const baseChartOpts = {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}}
+      }
     };
 
-    if(wkLabels.length > 0) {
-      const cc = document.getElementById('chartCansancio');
-      if(cc) new Chart(cc,{type:'line',data:{labels:wkLabels,datasets:[{label:'Cansancio',data:avgCansancio,borderColor:'#ff6b35',backgroundColor:(ctx)=>makeGrad(ctx.chart.ctx,'rgba(255,107,53,0.3)','rgba(255,107,53,0)'),tension:0.4,fill:true,pointBackgroundColor:'#ff6b35',pointRadius:4}]},options:chartOpts});
-      const cv = document.getElementById('chartVolumen');
-      if(cv) new Chart(cv,{type:'bar',data:{labels:wkLabels,datasets:[{label:'Series',data:totalSeries,backgroundColor:'rgba(0,200,255,0.25)',borderColor:'var(--primary)',borderWidth:2,borderRadius:6}]},options:chartOpts});
+    if(hasValoraciones && valoraciones.length >= 2) {
+      const cComp = document.getElementById('chartComposicion');
+      if(cComp) {
+        if(cComp._chart) cComp._chart.destroy();
+        cComp._chart = new Chart(cComp, {
+          type:'line',
+          data:{
+            labels: valLabels,
+            datasets:[
+              { label:'% Grasa', data:valoraciones.map(v=>v.grasa), borderColor:'#ff6b35', backgroundColor:'rgba(255,107,53,0.15)', tension:0.4, fill:true, pointBackgroundColor:'#ff6b35', pointRadius:5 },
+              { label:'% Músculo', data:valoraciones.map(v=>v.muscular), borderColor:'#00e5a0', backgroundColor:'rgba(0,229,160,0.15)', tension:0.4, fill:true, pointBackgroundColor:'#00e5a0', pointRadius:5 }
+            ]
+          },
+          options:{...baseChartOpts, plugins:{...baseChartOpts.plugins, legend:{display:true, labels:{color:'rgba(232,244,255,0.7)',font:{size:10}}}}}
+        });
+      }
+      const cPeso = document.getElementById('chartPesoTrend');
+      if(cPeso) {
+        if(cPeso._chart) cPeso._chart.destroy();
+        cPeso._chart = new Chart(cPeso, {
+          type:'line',
+          data:{
+            labels: valLabels,
+            datasets:[{ label:'Peso (kg)', data:valoraciones.map(v=>v.peso), borderColor:'#00c8ff', backgroundColor:(ctx)=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,130); g.addColorStop(0,'rgba(0,200,255,0.25)'); g.addColorStop(1,'rgba(0,200,255,0)'); return g; }, tension:0.4, fill:true, pointBackgroundColor:'#00c8ff', pointRadius:5 }]
+          },
+          options:baseChartOpts
+        });
+      }
     }
 
-    if(valoraciones.length >= 2) {
-      const compOpts = {
-        ...chartOpts,
-        plugins:{legend:{display:true,labels:{color:'rgba(232,244,255,0.7)',font:{size:10},boxWidth:12}}}
+    // Pro charts (solo si hay sesiones)
+    if(allSessions.length > 0) {
+      window._myPcTypes = { carga:'line', rpe:'line', vol:'bar', sesint:'line', dur:'line', frec:'bar', topej:'bar', desc:'line' };
+
+      window.myPcType = (chartId, type) => {
+        window._myPcTypes[chartId] = type;
+        ['line','bar'].forEach(t=>{
+          const b = document.getElementById(`mypct_${chartId}_${t}`);
+          if(b) b.classList.toggle('active', t===type);
+        });
+        myPcRefresh(chartId);
       };
-      const chartC = document.getElementById('chartComposicion');
-      if(chartC) new Chart(chartC,{type:'line',data:{labels:valLabels,datasets:[
-        {label:'% Grasa',data:valoraciones.map(v=>v.grasa),borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0)',tension:0.4,pointBackgroundColor:'#ff6b35',pointRadius:5},
-        {label:'% Músculo',data:valoraciones.map(v=>v.muscular),borderColor:'#00e5a0',backgroundColor:'rgba(0,229,160,0)',tension:0.4,pointBackgroundColor:'#00e5a0',pointRadius:5}
-      ]},options:compOpts});
 
-      const chartP = document.getElementById('chartPesoTrend');
-      if(chartP) new Chart(chartP,{type:'line',data:{labels:valLabels,datasets:[{
-        label:'Peso (kg)',data:valoraciones.map(v=>v.peso),
-        borderColor:'#00c8ff',
-        backgroundColor:(ctx)=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,130); g.addColorStop(0,'rgba(0,200,255,0.25)'); g.addColorStop(1,'rgba(0,200,255,0)'); return g; },
-        tension:0.4,fill:true,pointBackgroundColor:'#00c8ff',pointRadius:5
-      }]},options:chartOpts});
+      window.myPcRefresh = (chartId) => {
+        const type = window._myPcTypes[chartId]||'line';
+        if(chartId==='carga') {
+          renderProChart('myChartCarga', type, labels, buildCarga(document.getElementById('myCarga')?.value||'', type));
+        } else if(chartId==='rpe') {
+          renderProChart('myChartRpe', type, labels, buildRPE(document.getElementById('myRpe')?.value||'', type));
+        } else if(chartId==='vol') {
+          renderProChart('myChartVol', type, labels, buildVol(document.getElementById('myVol')?.value||'', type));
+        } else if(chartId==='sesint') {
+          const sem = +document.getElementById('mySesint')?.value || semMin;
+          const {lbs, vals} = buildIntSesion(sem);
+          renderProChart('myChartSesInt', type, lbs, vals.length?[makeProDataset('Intensidad percibida',vals,0,type)]:[], {min:0,max:10});
+        } else if(chartId==='dur') {
+          renderProChart('myChartDur', 'line', labels, buildDuracion());
+        } else if(chartId==='frec') {
+          renderProChart('myChartFrec', 'bar', labels, buildFrecuencia());
+        } else if(chartId==='topej') {
+          const {lbs, vals} = buildTopEjercicios();
+          renderProChart('myChartTopEj', 'bar', lbs, vals.length?[{label:'Series totales',data:vals, backgroundColor:PRO_PALETTE.map(c=>c+'88'), borderColor:PRO_PALETTE, borderWidth:2, borderRadius:6}]:[]);
+        } else if(chartId==='desc') {
+          const ds = buildDescanso();
+          const optsDesc = proChartOptions({min:0,max:10});
+          optsDesc.scales.y.ticks = { color:'rgba(232,244,255,0.5)', font:{family:'Exo 2',size:10}, callback:v=>v===0?'0':v===5?'5':v===10?'10':v };
+          let canvas2 = document.getElementById('myChartDesc');
+          if(!canvas2) { const w=document.querySelector('[data-canvas="myChartDesc"]'); if(w){w.innerHTML=`<canvas id="myChartDesc"></canvas>`;canvas2=document.getElementById('myChartDesc');} }
+          if(!canvas2) return;
+          if(canvas2._proChart){canvas2._proChart.destroy();canvas2._proChart=null;}
+          const hasD=ds.some(d=>d.data&&d.data.some(v=>v!=null&&v>0));
+          if(!hasD){ const w=canvas2.parentElement; if(w){w.setAttribute('data-canvas','myChartDesc');w.innerHTML=`<div class="pro-chart-empty"><div class="ico">📭</div><span>Sin datos aún</span></div>`;} return; }
+          canvas2._proChart = new Chart(canvas2, {type:'line', data:{labels, datasets:ds}, options:optsDesc});
+        }
+      };
+
+      // Render inicial de todos los charts pro
+      myPcRefresh('carga');
+      myPcRefresh('rpe');
+      myPcRefresh('vol');
+      myPcRefresh('sesint');
+      myPcRefresh('dur');
+      myPcRefresh('frec');
+      myPcRefresh('topej');
+      myPcRefresh('desc');
     }
-  },120);
+  }, 120);
 }
+
 
 // ============ PERFIL ============
 async function renderPerfil() {
@@ -4291,7 +5094,7 @@ function setupSessionWatcher(uid) {
 
   // ⏱️ Verificar membresía cada 60s para detectar vencimiento automático (sin cambio en DB)
   if (_membershipCheckInterval) clearInterval(_membershipCheckInterval);
-  _membershipCheckInterval = setInterval(checkMembershipExpiry, 60_000);
+  _membershipCheckInterval = setInterval(checkMembershipExpiry, 60000);
 
   _swListener = onValue(_swRef, async (snap) => {
     // Primer disparo = estado actual al registrar el listener, no un cambio real
@@ -4337,6 +5140,66 @@ function setupSessionWatcher(uid) {
   });
 }
 // ──────────────────────────────────────────────────────────────────────────────
+
+// ── FIX 1: Robust save on page visibility change (app goes to background) ──
+// This handles iOS Safari backgrounding, screen lock, switch app, etc.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden' && state.sesionActiva) {
+    // Force save immediately when app goes to background
+    savePendingSession();
+  }
+});
+
+// ── Intercept browser back button during active session ──
+window.addEventListener('popstate', (e) => {
+  if(window._suppressPopstate) return;
+  // Case 1: back pressed while fatigue modal is open after session completed
+  // Dismiss the modal cleanly (Promise resolves with null → session already saved)
+  if(e.state && e.state.saykyo === 'fatigue') {
+    if(typeof window._dismissFatigueModal === 'function') {
+      window._dismissFatigueModal();
+    } else {
+      const fatigueOvl = document.querySelector('.overlay-backdrop');
+      if(fatigueOvl) fatigueOvl.remove();
+    }
+    return;
+  }
+  // Case 2: back pressed while session is active (during exercise)
+  // Intercept: push state back + restore exercise view
+  if(state.sesionActiva && state.rutinaData) {
+    history.pushState({ saykyo: 'training' }, '');
+    if(state.tab !== 'entrenar') {
+      state.tab = 'entrenar';
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'entrenar'));
+    }
+    updateSessionDot(true);
+    renderEjercicioActual();
+    return;
+  }
+});
+
+// Push training history state whenever exercise view is shown
+// so the back button is always armed during an active session
+function _pushTrainingHistory() {
+  if(!history.state || history.state.saykyo !== 'training') {
+    history.pushState({ saykyo: 'training' }, '');
+  }
+}
+
+// ── FIX 1: Save on page unload/beforeunload (browser/tab close) ──
+window.addEventListener('beforeunload', () => {
+  if(state.sesionActiva) {
+    // Synchronous save not possible, but we trigger the async save
+    savePendingSession();
+  }
+});
+
+// ── FIX 1: Periodic auto-save every 30 seconds as extra safety net ──
+setInterval(() => {
+  if(state.sesionActiva && state.tab === 'entrenar') {
+    savePendingSession();
+  }
+}, 30000);
 
 // Init — esperar sesión Firebase antes de leer DB
 onAuthStateChanged(auth, (user) => {
