@@ -860,7 +860,7 @@ window.toggleUserNotifSheet = () => {
       </div>
       <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08)">
         <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">📣 Crear Alerta para tu entrenador</div>
-        <textarea id="userAlertMsg" placeholder="Ej: Llego tarde a la sesión, mucho tráfico..." style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;min-height:70px;resize:none;outline:none;margin-bottom:8px" onfocus="this.style.borderColor='var(--primary)'"></textarea>
+        <textarea id="userAlertMsg" placeholder="Ej: Llego tarde a la sesión, mucho tráfico..." style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:var(--text);font-size:0.88rem;width:100%;min-height:70px;resize:none;outline:none;margin-bottom:8px" onfocus="this.style.borderColor='var(--primary)'"></textarea>
         <button onclick="sendAlertToAdmins()" class="btn btn-primary btn-sm btn-full" style="width:100%;justify-content:center">⚡ Enviar alerta al entrenador</button>
       </div>
       ${sorted.length===0
@@ -887,7 +887,7 @@ window.toggleUserNotifSheet = () => {
                 <div style="font-size:0.7rem;color:var(--text-muted)">${new Date(n.creadaEn).toLocaleString()}${!n.leida?'  <span style="color:var(--primary);font-weight:700">● Sin leer</span>':''}</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:flex-end">
-                ${canReply ? `<button onclick="userReplyNotif('${nid}','${n.deId||''}')" style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);border-radius:8px;color:var(--primary);padding:5px 8px;cursor:pointer;font-family:'Exo 2',sans-serif;font-size:0.7rem;font-weight:700;white-space:nowrap">💬 Responder</button>` : ''}
+                ${canReply ? `<button onclick="userReplyNotif('${nid}','${n.deId||''}')" style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);border-radius:8px;color:var(--primary);padding:5px 8px;cursor:pointer;font-size:0.7rem;font-weight:700;white-space:nowrap">💬 Responder</button>` : ''}
                 <button onclick="userDeleteNotif('${nid}')" title="Eliminar" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
               </div>
             </div>
@@ -988,15 +988,8 @@ window.submitUserReply = async (nid, adminId, overlayEl) => {
 
   // Also find all group admins if adminId not set
   if(!adminId) {
-    const userSnap = await get(ref(db,`usuarios/${currentUser.id}`));
-    const userData = userSnap.val()||{};
-    const gid = userData.grupoId;
-    if(gid) {
-      const gSnap = await get(ref(db,`grupos/${gid}`));
-      const g = gSnap.val()||{};
-      const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados||{})].filter(Boolean);
-      adminIds.forEach(aid => tasks.push(push(ref(db,`notificaciones/${aid}`), notif)));
-    }
+    const adminIds = await getGrupoAdminIds();
+    adminIds.forEach(aid => tasks.push(push(ref(db,`notificaciones/${aid}`), notif)));
   }
 
   // Mark original notification as responded
@@ -1013,17 +1006,11 @@ window.sendAlertToAdmins = async () => {
     Swal.fire({icon:'warning',title:'Escribe tu alerta',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
     return;
   }
-  // Find all admins in user's group
-  const userSnap = await get(ref(db,`usuarios/${currentUser.id}`));
-  const userData = userSnap.val()||{};
-  const gid = userData.grupoId;
-  if(!gid) {
+  const adminIds = await getGrupoAdminIds();
+  if(!adminIds.length) {
     Swal.fire({icon:'info',title:'No estás en ningún grupo',text:'Contacta a tu entrenador para que te asigne a un grupo.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
     return;
   }
-  const gSnap = await get(ref(db,`grupos/${gid}`));
-  const g = gSnap.val()||{};
-  const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados||{})].filter(Boolean);
   
   const notif = {
     mensaje: msg,
@@ -1188,7 +1175,10 @@ let state = {
   rutinaData: null,
   progreso: null,
   ejercicios: {},
-  categorias: {}
+  categorias: {},
+  historial: {},
+  _grupoAdminIds: null,   // cache adminIds del grupo (evita get usuario+grupo repetidos)
+  _historialLoadedAt: 0   // timestamp del último load de historial
 };
 
 // ═══════════════════════════════════════════════
@@ -1198,8 +1188,21 @@ let state = {
 // ═══════════════════════════════════════════════
 const PENDING_REF = () => ref(db, `sesiones_pendientes/${currentUser.id}`);
 
+// ── Debounce: evita múltiples writes a Firebase por cambios rápidos de input ──
+let _savePendingTimer = null;
+const savePendingSessionDebounced = () => {
+  clearTimeout(_savePendingTimer);
+  _savePendingTimer = setTimeout(() => savePendingSession(), 1500);
+};
+
 async function savePendingSession() {
+  clearTimeout(_savePendingTimer);
   if(!state.sesionActiva) return;
+  // No guardar mientras el timer de descanso está corriendo: el usuario está en flujo
+  // normal (marcó una serie → timer → siguiente serie). Si guardamos aquí y la app
+  // se recarga, mostraría "continuar donde quedé" sin que el usuario haya salido.
+  // La sesión se guarda cuando el timer termina o se salta.
+  if(_restTimerActive) return;
   // Asegurarse de que nivelCansancioInicio se preserve (puede haberse seteado antes del primer save)
   // ya está en state.sesionActiva, solo necesitamos persistirlo en Firebase junto con el resto.
 
@@ -1317,6 +1320,7 @@ async function init() {
   state.ejercicios = ejSnap.val()||{};
   state.categorias = catSnap.val()||{};
   state.historial  = histSnap.val()||{};
+  state._historialLoadedAt = Date.now();
   
   const ana = anaSnap.val();
   if(!ana || !ana.completada) {
@@ -1417,10 +1421,10 @@ async function init() {
             </div>` : ''}
 
             <div style="display:flex;flex-direction:column;gap:8px">
-              <button id="swal-continuar" style="width:100%;padding:13px;background:linear-gradient(135deg,#0088cc,#00c8ff);border:none;border-radius:12px;color:#fff;font-family:'Exo 2',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.5px">
+              <button id="swal-continuar" style="width:100%;padding:13px;background:linear-gradient(135deg,#0088cc,#00c8ff);border:none;border-radius:12px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.5px">
                 ▶️ Continuar donde quedé
               </button>
-              <button id="swal-nueva" style="width:100%;padding:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:rgba(232,244,255,0.6);font-family:'Exo 2',sans-serif;font-size:0.85rem;cursor:pointer">
+              <button id="swal-nueva" style="width:100%;padding:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:rgba(232,244,255,0.6);font-size:0.85rem;cursor:pointer">
                 🔄 Descartar y empezar nueva sesión
               </button>
             </div>
@@ -1825,9 +1829,12 @@ async function renderEntrenar() {
   state.rutinaData = rutina;
   state.rutinaId   = rutinaId;
 
-  // Load session history to know what's done
-  const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
-  state.historial = histSnap.val()||{};
+  // Historial: solo cargar si no está ya en state o lleva más de 5 min sin actualizar
+  if(!state._historialLoadedAt || Date.now() - state._historialLoadedAt > 5*60*1000) {
+    const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
+    state.historial = histSnap.val()||{};
+    state._historialLoadedAt = Date.now();
+  }
 
   const { mesActual=1, semanaActual=1, diaActual=1 } = state.progreso||{};
 
@@ -2070,15 +2077,24 @@ window.retrocederDia = async () => {
 };
 
 // 🏋️ Notifica a todos los admins del grupo que el usuario inició/retomó entrenamiento.
-async function notifyTrainingStart(mes, semana, dia, retomando) {
+// ── Helper cacheado: adminIds del grupo del usuario (1 sola lectura a Firebase) ──
+async function getGrupoAdminIds() {
+  if(state._grupoAdminIds !== null) return state._grupoAdminIds;
   try {
     const userSnap = await get(ref(db, `usuarios/${currentUser.id}`));
-    const userData = userSnap.val() || {};
-    const gid = userData.grupoId;
-    if (!gid) return;
+    const gid = userSnap.val()?.grupoId;
+    if(!gid) { state._grupoAdminIds = []; return []; }
     const gSnap = await get(ref(db, `grupos/${gid}`));
-    const g = gSnap.val() || {};
-    const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados || {})].filter(Boolean);
+    const g = gSnap.val()||{};
+    const ids = [g.adminDueno, ...Object.keys(g.adminsInvitados||{})].filter(Boolean);
+    state._grupoAdminIds = ids;
+    return ids;
+  } catch(e) { return []; }
+}
+
+async function notifyTrainingStart(mes, semana, dia, retomando) {
+  try {
+    const adminIds = await getGrupoAdminIds();
     if (!adminIds.length) return;
     const accion = retomando ? 'retomó el entrenamiento' : 'empezó a entrenar';
     const notif = {
@@ -2168,14 +2184,22 @@ function getUltimoRegistro(ejercicioId) {
   let lastSesion = null;
   let lastFecha = 0;
 
+  // Recorrer TODAS las sesiones (sin el if previo a verificar ejercicio) para no
+  // descartar sesiones anteriores que sí tienen el ejercicio cuando hay sesiones
+  // más recientes que no lo incluyen.
   Object.values(historial).forEach(ses => {
     const sesDate = ses.fechaFin || ses.fechaInicio || ses.fecha || 0;
-    if(sesDate > lastFecha) {
-      const match = Object.values(ses.ejerciciosCompletados || {}).find(ec => ec.ejercicioId === ejercicioId);
-      if(match && match.series && match.series.length > 0) {
-        lastFecha = sesDate;
-        lastSesion = { series: match.series, fecha: sesDate, mes: ses.mes, semana: ses.semana, dia: ses.dia };
-      }
+    if(sesDate <= lastFecha) return; // ya tenemos una más reciente con este ejercicio
+
+    const match = Object.values(ses.ejerciciosCompletados || {}).find(ec =>
+      ec.ejercicioId === ejercicioId &&
+      !ec._draft &&                          // excluir entradas parciales/autosave
+      ec.series && ec.series.length > 0 &&
+      ec.series.some(s => s.completada)      // al menos 1 serie marcada como hecha
+    );
+    if(match) {
+      lastFecha = sesDate;
+      lastSesion = { series: match.series, fecha: sesDate, mes: ses.mes, semana: ses.semana, dia: ses.dia };
     }
   });
   return lastSesion;
@@ -2207,12 +2231,12 @@ function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, meto
           <div style="display:flex;flex-direction:column;gap:3px">
             <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
             <input type="number" id="${prefix}reps_izq_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
-              style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
+              style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none">
           </div>
           <div style="display:flex;flex-direction:column;gap:3px">
             <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
             <input type="number" id="${prefix}reps_der_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
-              style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-family:'Exo 2',sans-serif;font-size:0.88rem;width:100%;outline:none">
+              style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none">
           </div>
         </div>
         <div class="serie-field" style="display:none"><input type="number" id="${prefix}reps_${i}" value="${sv(i,'repsMin',0)}"></div>
@@ -2246,7 +2270,7 @@ function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, meto
         `}
       </div>
       <input type="text" id="${prefix}comentario_${i}" placeholder="💬 Comentario opcional (sensación, forma, ajuste...)"
-        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:var(--text-muted);font-family:'Exo 2',sans-serif;font-size:0.82rem;outline:none;transition:all 0.2s ease"
+        style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:var(--text-muted);font-size:0.82rem;outline:none;transition:all 0.2s ease"
         onfocus="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='var(--text)';this.style.background='rgba(0,200,255,0.04)'"
         onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--text-muted)';this.style.background='rgba(255,255,255,0.04)'">
     </div>
@@ -2384,7 +2408,10 @@ function renderEjercicioActual() {
 
   // ── Método de esfuerzo del ejercicio actual ──
   const esCardio = ejConfig?.metodo === 'cardio' || ejInfo?.tipo === 'cardio';
-  const _usedMetodo = ejConfig?.metodo || currentUser.metodo || 'RPE';
+  // Solo usar el método del ejercicio si es explícitamente 'RPE' o 'RIR'.
+  // Cualquier otro valor (ej: 'cardio', '') no es un método de esfuerzo válido → usar el del usuario.
+  const _ejMetodo = (ejConfig?.metodo === 'RPE' || ejConfig?.metodo === 'RIR') ? ejConfig.metodo : null;
+  const _usedMetodo = _ejMetodo || currentUser.metodo || 'RPE';
   const metodoLabel = _usedMetodo === 'RPE' ? 'RPE (1-10)' : 'RIR (-1→6)';
   const metodoMin   = _usedMetodo === 'RPE' ? 1 : -1;
   const metodoMax   = _usedMetodo === 'RPE' ? 10 : 6;
@@ -2493,16 +2520,27 @@ function renderEjercicioActual() {
       const fStr = new Date(fe).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
       const thS = 'padding:3px 5px;font-size:0.62rem;color:' + colorBase + '0.6);font-weight:600;text-align:left;';
       const tdS = 'padding:4px 5px;font-size:0.8rem;font-weight:700;color:#e8f4ff;';
-      const filas = sr.map((s,i) => '<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">'
-        + '<td style="' + tdS + ';color:' + colorBase + '0.8)">' + (i+1) + '</td>'
-        + '<td style="' + tdS + '">' + (s.reps ?? '—') + '</td>'
-        + '<td style="' + tdS + '">' + (s.peso ? s.peso + ' kg' : '—') + '</td>'
-        + '<td style="' + tdS + ';color:' + colorBase + '0.8)">' + (s.rirRpe ?? '—') + '</td>'
-        + '</tr>').join('');
+      const esBiextUlt = sr.some(s => s.rirRpeIzq != null || s.repsIzq != null);
+      const metodoColLabel = _usedMetodo === 'RPE' ? 'RPE' : 'RIR/RPE';
+      const filas = sr.map((s,i) => {
+        const repsCell = esBiextUlt
+          ? '<span style="color:#00e5a0">' + (s.repsIzq ?? s.reps ?? '—') + '</span>/<span style="color:#ff6b35">' + (s.repsDer ?? s.reps ?? '—') + '</span>'
+          : (s.reps ?? '—');
+        const rpeCell = esBiextUlt
+          ? '<span style="color:#00e5a0">' + (s.rirRpeIzq ?? '—') + '</span>/<span style="color:#ff6b35">' + (s.rirRpeDer ?? '—') + '</span>'
+          : (s.rirRpe ?? '—');
+        return '<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">'
+          + '<td style="' + tdS + ';color:' + colorBase + '0.8)">' + (i+1) + '</td>'
+          + '<td style="' + tdS + '">' + repsCell + '</td>'
+          + '<td style="' + tdS + '">' + (s.peso ? s.peso + ' kg' : '—') + '</td>'
+          + '<td style="' + tdS + ';color:' + colorBase + '0.8)">' + rpeCell + '</td>'
+          + '</tr>';
+      }).join('');
+      const repsHeader = esBiextUlt ? 'Reps Izq/Der' : 'Reps';
       return '<div style="background:' + colorBase + '0.07);border:1px solid ' + colorBase + '0.25);border-radius:12px;padding:10px 12px;margin-bottom:10px">'
         + '<div style="font-size:0.62rem;color:' + colorBase + '0.9);font-weight:700;margin-bottom:6px">' + label + ' Última vez — M' + me + '·S' + se2 + '·D' + di + ' · ' + fStr + '</div>'
         + '<table style="width:100%;border-collapse:collapse"><thead><tr>'
-        + '<th style="' + thS + '">#</th><th style="' + thS + '">Reps</th><th style="' + thS + '">Peso</th><th style="' + thS + '">RIR/RPE</th>'
+        + '<th style="' + thS + '">#</th><th style="' + thS + '">' + repsHeader + '</th><th style="' + thS + '">Peso</th><th style="' + thS + '">' + metodoColLabel + '</th>'
         + '</tr></thead><tbody>' + filas + '</tbody></table></div>';
     };
 
@@ -2510,12 +2548,29 @@ function renderEjercicioActual() {
     const buildSerieRow = (cfg, inf, pfx, colorBase, label, i) => {
       const sv = (f, fb) => svFor(cfg, i, f, fb);
       const descanso = svFor(cfg, i, 'descanso', cfg?.descanso||90);
+      const isBiextRow = inf?.biextremidad === true;
+      // Reps: biextremidad en biserie → izq + der separados; ocultar campo único
+      const repsHtml = isBiextRow
+        ? '<div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">'
+          + '<div style="grid-column:1/-1;font-size:0.6rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">🦾 Reps por lado</div>'
+          + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#00e5a0">Izq reps</label>'
+            + '<input type="number" id="' + pfx + 'reps_izq_' + i + '" placeholder="' + sv('repsMin',0) + '" min="0" value="' + sv('repsMin',0) + '" style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none"></div>'
+          + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#ff6b35">Der reps</label>'
+            + '<input type="number" id="' + pfx + 'reps_der_' + i + '" placeholder="' + sv('repsMin',0) + '" min="0" value="' + sv('repsMin',0) + '" style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none"></div>'
+          + '</div>'
+          + '<div class="serie-field" style="display:none"><input type="number" id="' + pfx + 'reps_' + i + '" value="' + sv('repsMin',0) + '"></div>'
+        : '<div class="serie-field"><label>Reps</label><input type="number" id="' + pfx + 'reps_' + i + '" placeholder="' + sv('repsMin',0) + '-' + sv('repsMax',0) + '" min="0" value="' + sv('repsMin',0) + '"></div>';
+      // RPE/RIR: biextremidad → izq + der separados
+      const rpeHtml = isBiextRow
+        ? '<div class="serie-field"><label style="color:#00e5a0">🦾 Izq ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_izq_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)"></div>'
+          + '<div class="serie-field"><label style="color:#ff6b35">🦾 Der ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_der_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)"></div>'
+        : '<div class="serie-field"><label style="color:' + colorBase + '0.9)">' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:' + colorBase + '0.3);background:' + colorBase + '0.05)"></div>';
       return '<div style="background:' + colorBase + '0.04);padding:10px 14px;border-bottom:1px solid ' + colorBase + '0.1)">'
-        + '<div style="font-size:0.6rem;color:' + colorBase + '0.9);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">' + label + ' ' + (inf.nombre||'Ejercicio') + '</div>'
+        + '<div style="font-size:0.6rem;color:' + colorBase + '0.9);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">' + label + ' ' + (inf.nombre||'Ejercicio') + (isBiextRow ? ' <span style="font-size:0.55rem;background:rgba(0,229,160,0.15);color:#00e5a0;border-radius:4px;padding:1px 4px">🦾 Biext</span>' : '') + '</div>'
         + '<div class="serie-inputs">'
-        + '<div class="serie-field"><label>Reps</label><input type="number" id="' + pfx + 'reps_' + i + '" placeholder="' + sv('repsMin',0) + '-' + sv('repsMax',0) + '" min="0" value="' + sv('repsMin',0) + '"></div>'
+        + repsHtml
         + '<div class="serie-field"><label>Peso (kg)</label><input type="number" id="' + pfx + 'peso_' + i + '" placeholder="' + sv('peso',0) + '" min="0" step="0.5" value="' + sv('peso',0) + '"></div>'
-        + '<div class="serie-field"><label style="color:' + colorBase + '0.9)">' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:' + colorBase + '0.3);background:' + colorBase + '0.05)"></div>'
+        + rpeHtml
         + '</div>'
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px">'
         + '<input type="text" id="' + pfx + 'comentario_' + i + '" placeholder="💬 Comentario..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 10px;color:var(--text-muted);font-family:\'Exo 2\',sans-serif;font-size:0.78rem;outline:none;margin-right:10px">'
@@ -2715,7 +2770,7 @@ function renderEjercicioActual() {
 
   // Auto-save a Firebase en cada cambio de input
   document.querySelectorAll('.serie-field input, .serie-row input[type="text"]').forEach(input => {
-    input.addEventListener('change', () => savePendingSession(), { passive: true });
+    input.addEventListener('change', () => savePendingSessionDebounced(), { passive: true });
   });
 }
 
@@ -2793,6 +2848,10 @@ function updateSessionDot(active) {
 
 // ── REST TIMER (full overlay) ──
 let _restTimerInterval = null;
+// Mientras el timer de descanso corre, bloqueamos savePendingSession para evitar
+// que se guarde un snapshot en medio del flujo normal (causaría "continuar donde quedé"
+// aunque el usuario nunca salió de la app).
+let _restTimerActive = false;
 
 // ── AUDIO ENGINE — Web Audio API ──
 // Lazy-init: el contexto se crea la primera vez que el usuario interactúa
@@ -3072,6 +3131,7 @@ window.showSessionMapOverlay = () => {
 
 function startRestTimer(totalSecs, nextInfo) {
   if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+  _restTimerActive = true; // bloquear saves durante el descanso
   const existing = document.getElementById('restTimerToast');
   if(existing) existing.remove();
   const existingOvl = document.getElementById('restTimerOverlay');
@@ -3097,7 +3157,7 @@ function startRestTimer(totalSecs, nextInfo) {
     if(pct > 0.45) return 'Descansa, lo mereces 🧘';
     if(pct > 0.15) return 'Casi listo... 💪';
     if(rem > 0)    return '¡Prepárate! 🔥';
-    return '¡A por la siguiente serie! 🚀';
+    return '¡Vamos por la siguiente serie! 🚀';
   };
 
   const { color, glow } = getColors(remaining, totalSecs);
@@ -3107,8 +3167,6 @@ function startRestTimer(totalSecs, nextInfo) {
   ovl.id = 'restTimerOverlay';
   ovl.innerHTML = `
     <div class="rt-label">Tiempo de descanso</div>
-    <div class="rt-series-badge">✅ Serie completada</div>
-
     <div class="rt-ring-wrap" id="rtRingWrap">
       <svg width="220" height="220" viewBox="0 0 220 220">
         <circle class="rt-ring-bg"    cx="110" cy="110" r="${R}"/>
@@ -3156,8 +3214,9 @@ function startRestTimer(totalSecs, nextInfo) {
   // iOS Safari: al volver del fondo, forzar resync inmediato del contador
   const _restVisibilityHandler = () => {
     if(document.visibilityState === 'visible') {
-      // Also save pending session when returning to the app
-      savePendingSession();
+      // Al volver al foco: resincronizar el timer con el reloj real
+      // NO llamar savePendingSession aquí — el usuario no salió de la app,
+      // solo fue a background durante el descanso.
       const synced = Math.max(0, Math.round((endTime - Date.now()) / 1000));
       remaining = synced;
       const countEl = document.getElementById('rtCount');
@@ -3167,6 +3226,7 @@ function startRestTimer(totalSecs, nextInfo) {
       if(progressEl) progressEl.style.width = `${Math.max(0,(remaining/totalSecs)*100)}%`;
       if(remaining <= 0 && overlay) {
         clearInterval(_restTimerInterval); _restTimerInterval = null;
+        _restTimerActive = false; // permitir saves nuevamente
         document.removeEventListener('visibilitychange', _restVisibilityHandler);
         if(navigator.vibrate) navigator.vibrate([100,50,150]);
         overlay.classList.add('rt-done');
@@ -3183,8 +3243,11 @@ function startRestTimer(totalSecs, nextInfo) {
   window.skipRestTimer = () => {
     document.removeEventListener('visibilitychange', _restVisibilityHandler);
     if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+    _restTimerActive = false; // permitir saves nuevamente
     const o = document.getElementById('restTimerOverlay');
     if(o) { o.classList.add('rt-exit'); setTimeout(() => o.remove(), 300); }
+    // Guardar ahora que el timer fue saltado manualmente (el usuario sigue en la app)
+    savePendingSession();
   };
 
   _restTimerInterval = setInterval(() => {
@@ -3252,6 +3315,7 @@ function startRestTimer(totalSecs, nextInfo) {
     if(remaining <= 0) {
       clearInterval(_restTimerInterval);
       _restTimerInterval = null;
+      _restTimerActive = false; // permitir saves nuevamente
       document.removeEventListener('visibilitychange', _restVisibilityHandler);
       if(navigator.vibrate) navigator.vibrate([100, 50, 150]);
 
@@ -3274,6 +3338,7 @@ function startRestTimer(totalSecs, nextInfo) {
 
 window.skipRestTimer = () => {
   if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
+  _restTimerActive = false;
   const o = document.getElementById('restTimerOverlay');
   if(o) { o.classList.add('rt-exit'); setTimeout(() => o.remove(), 300); }
 };
@@ -3806,13 +3871,7 @@ window.guardarRevMes = async (mes) => {
 // FIX 9: Notificar al entrenador cuando el atleta envía revisión semanal/mensual
 async function notifyTrainerReview(tipo, mes, semana, data) {
   try {
-    const userSnap = await get(ref(db, `usuarios/${currentUser.id}`));
-    const userData = userSnap.val() || {};
-    const gid = userData.grupoId;
-    if(!gid) return;
-    const gSnap = await get(ref(db, `grupos/${gid}`));
-    const g = gSnap.val() || {};
-    const adminIds = [g.adminDueno, ...Object.keys(g.adminsInvitados||{})].filter(Boolean);
+    const adminIds = await getGrupoAdminIds();
     if(!adminIds.length) return;
 
     const titulo = tipo === 'semanal'
@@ -5145,8 +5204,12 @@ function setupSessionWatcher(uid) {
 // This handles iOS Safari backgrounding, screen lock, switch app, etc.
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'hidden' && state.sesionActiva) {
-    // Force save immediately when app goes to background
-    savePendingSession();
+    // Solo guardar si NO hay timer corriendo. Si el timer está activo, el usuario
+    // está en flujo normal y el timer tiene su propio visibilitychange handler.
+    // Guardar aquí causaría "continuar donde quedé" al volver aunque no salió de la app.
+    if(!_restTimerActive) {
+      savePendingSession();
+    }
   }
 });
 
@@ -5196,7 +5259,8 @@ window.addEventListener('beforeunload', () => {
 
 // ── FIX 1: Periodic auto-save every 30 seconds as extra safety net ──
 setInterval(() => {
-  if(state.sesionActiva && state.tab === 'entrenar') {
+  // No guardar durante el timer de descanso — evita el modal "continuar donde quedé"
+  if(state.sesionActiva && state.tab === 'entrenar' && !_restTimerActive) {
     savePendingSession();
   }
 }, 30000);

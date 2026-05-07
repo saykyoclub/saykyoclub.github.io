@@ -1149,8 +1149,7 @@ async function renderUsuarios(container, action) {
   action.style.display = 'flex';
   action.onclick = () => showUserModal();
 
-  const snap = await get(ref(db,'usuarios'));
-  const users = snap.val()||{};
+  const users = await dbCache.getUsers();
 
   // SuperAdmin sees everyone; regular admin only sees regular users
   const rows = isSuperAdmin()
@@ -1250,6 +1249,7 @@ window.toggleUserActivo = async (id, currentActivo) => {
   });
   if(!res.isConfirmed) return;
   await update(ref(db,`usuarios/${id}`), { activo: !currentActivo });
+  dbCache.invalidateUsers();
   Swal.fire({icon:'success',title:`Usuario ${!currentActivo?'activado':'desactivado'}`,timer:1200,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
   document.querySelector('[data-page="usuarios"]').click();
 };
@@ -1492,6 +1492,7 @@ window.saveUser = async () => {
     }
 
     closeOverlay();
+    dbCache.invalidateUsers();
 
     Swal.fire({
       icon:'success',
@@ -1552,8 +1553,7 @@ async function renderCategorias(container, action) {
   action.style.display = 'flex';
   action.onclick = () => showCatModal();
 
-  const snap = await get(ref(db,'categorias'));
-  const cats = snap.val()||{};
+  const cats = await dbCache.getCats();
 
   const rowsCat = Object.entries(cats);
   container.innerHTML = `
@@ -1638,6 +1638,7 @@ window.saveCat = async (catId) => {
   const data = { nombre, descripcion:document.getElementById('cDesc').value.trim(), estado:document.getElementById('cEstado').checked };
   const path = catId || `cat_${Date.now()}`;
   await set(ref(db,`categorias/${path}`), data);
+  dbCache.invalidateCats();
   closeOverlay();
   Swal.fire({icon:'success',title:'¡Guardado!',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
   document.querySelector('[data-page="categorias"]').click();
@@ -1654,9 +1655,7 @@ async function renderEjercicios(container, action) {
   action.style.display = 'flex';
   action.onclick = () => showEjModal();
 
-  const [ejSnap, catSnap] = await Promise.all([get(ref(db,'ejercicios')),get(ref(db,'categorias'))]);
-  const ejs = ejSnap.val()||{};
-  const cats = catSnap.val()||{};
+  const [ejs, cats] = await Promise.all([dbCache.getEjs(), dbCache.getCats()]);
 
   const rowsEj = Object.entries(ejs);
   container.innerHTML = `
@@ -1729,8 +1728,7 @@ function convertYoutubeUrl(url) {
 window.showEjModal = async (ejId=null) => {
   let ej = {};
   if(ejId) { const s=await get(ref(db,`ejercicios/${ejId}`)); ej=s.val()||{}; }
-  const catSnap = await get(ref(db,'categorias'));
-  const cats = catSnap.val()||{};
+  const cats = await dbCache.getCats();
   const catOptions = Object.entries(cats).filter(([,c])=>c.estado).map(([id,c])=>`<option value="${id}" ${ej.categoria===id?'selected':''}>${c.nombre}</option>`).join('');
 
   showOverlay(`
@@ -1778,6 +1776,7 @@ window.saveEj = async (ejId) => {
   };
   const path = ejId || `ej_${Date.now()}`;
   await set(ref(db,`ejercicios/${path}`), data);
+  dbCache.invalidateEjs();
   closeOverlay();
   Swal.fire({icon:'success',title:'¡Guardado!',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
   document.querySelector('[data-page="ejercicios"]').click();
@@ -1803,14 +1802,28 @@ window.deleteEj = async (id) => {
 // ============ RUTINAS ============
 let rutinaState = { selectedUser:null, selectedRutina:null, selectedMes:null, selectedSemana:null, selectedDia:null };
 
+// ── Cache de datos estáticos/semi-estáticos de Firebase ──
+// ejercicios y categorias raramente cambian; usuarios cambia pero no en cada render.
+// Se invalida explícitamente solo cuando el admin modifica esos datos.
+const dbCache = {
+  ejercicios: null, categorias: null, usuarios: null,
+  _ejTs: 0, _catTs: 0, _usTs: 0,
+  TTL: 5 * 60 * 1000, // 5 minutos
+  async getEjs()  { if(!this.ejercicios  || Date.now()-this._ejTs  > this.TTL) { const s=await get(ref(db,'ejercicios'));  this.ejercicios =s.val()||{}; this._ejTs =Date.now(); } return this.ejercicios;  },
+  async getCats() { if(!this.categorias  || Date.now()-this._catTs > this.TTL) { const s=await get(ref(db,'categorias')); this.categorias=s.val()||{}; this._catTs=Date.now(); } return this.categorias; },
+  async getUsers(){ if(!this.usuarios    || Date.now()-this._usTs  > this.TTL) { const s=await get(ref(db,'usuarios'));   this.usuarios  =s.val()||{}; this._usTs =Date.now(); } return this.usuarios;   },
+  invalidateEjs()  { this.ejercicios=null;  },
+  invalidateCats() { this.categorias=null;  },
+  invalidateUsers(){ this.usuarios=null;    },
+};
+
 async function renderRutinas(container, action) {
   action.textContent = '+ Nueva Rutina';
   action.style.display = 'flex';
   action.onclick = () => showRutinaModal();
 
-  const [rutSnap, usSnap, myUids] = await Promise.all([get(ref(db,'rutinas')),get(ref(db,'usuarios')), getMyGroupUserUids()]);
+  const [rutSnap, users, myUids] = await Promise.all([get(ref(db,'rutinas')), dbCache.getUsers(), getMyGroupUserUids()]);
   const ruts = rutSnap.val()||{};
-  const users = usSnap.val()||{};
   // Filter to only show rutinas for athletes in admin's groups
   const myRuts = Object.entries(ruts).filter(([,r]) => !r.usuario || myUids.has(r.usuario));
 
@@ -1954,9 +1967,12 @@ function _initEjDragSort() {
       placeholder = null;
 
       const newOrder = slots().map(el => parseInt(el.dataset.ejIdx));
-      const oldOrder = [...newOrder].sort((a,b)=>a-b);
-      if(JSON.stringify(newOrder) !== JSON.stringify(oldOrder)) {
-        await _saveEjOrder(newOrder);
+      // Deduplicate: if the DOM somehow has repeated slot indices, keep first occurrence only
+      const _seen = new Set();
+      const newOrderDeduped = newOrder.filter(v => { if(_seen.has(v)) return false; _seen.add(v); return true; });
+      const oldOrder = [...newOrderDeduped].sort((a,b)=>a-b);
+      if(JSON.stringify(newOrderDeduped) !== JSON.stringify(oldOrder)) {
+        await _saveEjOrder(newOrderDeduped);
       }
     } else {
       if(placeholder) placeholder.remove();
@@ -2028,19 +2044,32 @@ async function _saveEjOrder(newOrder) {
     ei += isBiset ? 2 : 1;
   }
 
-  // newOrder contains the visual slot indices in the new desired sequence
-  // Build the flat reordered array
+  // newOrder contains the visual slot indices in the new desired sequence.
+  // IMPORTANT: newOrder values are positional slot indices (0,1,2...) assigned by
+  // renderRutinaDetail. slotToEntries maps each slot index to its Firebase entry index/indices.
+  // We must NEVER fall back to using slotIdx as an entry index — if a slot has no mapping
+  // it means the DOM is out of sync; skip it to avoid duplicating entries.
+  const seenEntries = new Set(); // guard: each Firebase entry written at most once
   const reordered = {};
   let newEi = 0;
   newOrder.forEach(slotIdx => {
-    const entryIdxList = slotToEntries[slotIdx] || [slotIdx];
+    const entryIdxList = slotToEntries[slotIdx]; // undefined if out of range
+    if(!entryIdxList) return; // slot has no mapping — skip, never fall back
     entryIdxList.forEach(origEi => {
+      if(seenEntries.has(origEi)) return; // guard against duplicates
       if(entries[origEi]) {
+        seenEntries.add(origEi);
         reordered[newEi] = entries[origEi][1];
         newEi++;
       }
     });
   });
+
+  // Safety: if reordered is empty or has fewer entries than expected, abort — something is wrong
+  if(newEi === 0 || newEi < entries.length) {
+    console.warn('_saveEjOrder: reorder aborted — mapped', newEi, 'of', entries.length, 'entries. newOrder:', newOrder, 'slotToEntries:', slotToEntries);
+    return;
+  }
 
   await set(ref(db, ejPath), reordered);
   renderRutinaDetail(rid);
@@ -2049,14 +2078,13 @@ async function _saveEjOrder(newOrder) {
 async function renderRutinaDetail(rutinaId) {
   const detail = document.getElementById('rutinaDetail');
   if(!detail) return;
-  const [rSnap, usSnap, ejSnap, catSnap] = await Promise.all([
-    get(ref(db,`rutinas/${rutinaId}`)), get(ref(db,'usuarios')),
-    get(ref(db,'ejercicios')), get(ref(db,'categorias'))
+  const [rSnap, users, ejs, cats] = await Promise.all([
+    get(ref(db,`rutinas/${rutinaId}`)),
+    dbCache.getUsers(),
+    dbCache.getEjs(),
+    dbCache.getCats()
   ]);
   const r = rSnap.val(); if(!r) return;
-  const users = usSnap.val()||{};
-  const ejs = ejSnap.val()||{};
-  const cats = catSnap.val()||{};
   const meses = r.meses||{};
   const numMeses = Math.max(...Object.keys(meses).map(Number), 0);
 
@@ -2162,55 +2190,62 @@ async function renderRutinaDetail(rutinaId) {
           ${diaActual > 5 ? `<button class="btn btn-danger btn-sm" onclick="removeDia('${rutinaId}',${mesActual},${semActual},${diaActual})" style="opacity:0.8">🗑️ Eliminar día ${diaActual}</button>` : ''}
         </div>
         <div id="ejSortableList" style="display:flex;flex-direction:column;gap:0">
-        ${Object.entries(ejsDia).map(([i,ej])=>`
-          <div class="exercise-slot" data-ej-idx="${i}" style="transition:box-shadow 0.2s">
-            <div class="exercise-slot-header">
-              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-                <span data-drag-handle="1" style="font-size:1rem;color:rgba(255,255,255,0.2);cursor:grab;flex-shrink:0;padding:4px 4px;touch-action:none;-webkit-user-select:none;user-select:none" title="Mantén para reordenar">⠿</span>
-                <span class="exercise-slot-title">💪 ${ejs[ej.ejercicioId]?.nombre||'Ejercicio'}</span>
-              </div>
-              <div style="display:flex;gap:6px">
-                <button class="btn btn-secondary btn-sm" onclick="editEjDia('${rutinaId}',${mesActual},${semActual},${diaActual},${i})">✏️ Editar</button>
-                <button class="btn btn-danger btn-sm" onclick="removeEjDia('${rutinaId}',${mesActual},${semActual},${diaActual},${i})">🗑️</button>
-              </div>
-            </div>
-            <!-- Header pills -->
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
-              <span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:var(--primary)">📦 ${ej.series} series</span>
-
-              ${ej.metodo?`<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#a78bfa">⚡ ${ej.metodo}</span>`:''}
-              ${ej.biset?`<span style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#ff6b35">🔗 Biserie</span>`:''}
-            </div>
-            <!-- Per-series table -->
-            ${(() => {
-              const cfg = ej.seriesConfig;
-              if(cfg && cfg.length) {
-                const thS = 'padding:5px 8px;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;text-align:center;';
-                const tdS = 'padding:5px 8px;font-size:0.8rem;font-weight:600;text-align:center;';
-                const rows = cfg.map((s,si) => `
-                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
-                    <td style="${tdS};color:rgba(0,200,255,0.7);font-weight:800">${si+1}</td>
-                    <td style="${tdS}">${s.repsMin}-${s.repsMax}</td>
-                    <td style="${tdS}">${s.peso} kg</td>
-                    <td style="${tdS};color:#a78bfa">${s.rirRpe}</td>
-                    <td style="${tdS};color:#00e5a0">${s.descanso}s</td>
-                  </tr>`).join('');
-                return `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:280px">
-                  <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
-                    <th style="${thS}">#</th><th style="${thS}">Reps</th><th style="${thS}">Peso</th><th style="${thS}">RIR/RPE</th><th style="${thS}">Descanso</th>
-                  </tr></thead><tbody>${rows}</tbody></table></div>`;
-              } else {
-                return `<div class="slot-mini-grid">
-                  <div><div style="font-size:0.7rem;color:var(--text-muted)">Reps</div><strong>${ej.repsMin}-${ej.repsMax}</strong></div>
-                  <div><div style="font-size:0.7rem;color:var(--text-muted)">Peso</div><strong>${ej.peso} kg</strong></div>
-                  <div><div style="font-size:0.7rem;color:var(--text-muted)">RIR/RPE</div><strong>${ej.rirRpe}</strong></div>
-                  <div><div style="font-size:0.7rem;color:var(--text-muted)">Descanso</div><strong>${ej.descanso}s</strong></div>
-                </div>`;
-              }
-            })()}
-            ${ej.anotaciones?`<div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);font-style:italic;background:rgba(255,210,0,0.06);border:1px solid rgba(255,210,0,0.12);border-radius:10px;padding:8px 12px">📝 ${ej.anotaciones}</div>`:''}
-          </div>
-        `).join('')||'<div class="empty-state" style="padding:20px"><div class="empty-icon">💪</div><div class="empty-text">Sin ejercicios. Agrega el primero.</div></div>'}
+        ${(() => {
+          // Ordenar por key numérico y asignar índice de posición (slotIdx) para el D&D
+          // IMPORTANTE: data-ej-idx debe ser el índice de posición (0,1,2...), NO el key de Firebase.
+          // Si hay gaps en los keys (por borrados), usar el key causaba duplicaciones en _saveEjOrder.
+          const ejEntries = Object.entries(ejsDia).sort((a,b)=>+a[0]-+b[0]);
+          if(!ejEntries.length) return '<div class="empty-state" style="padding:20px"><div class="empty-icon">💪</div><div class="empty-text">Sin ejercicios. Agrega el primero.</div></div>';
+          return ejEntries.map(([firebaseKey, ej], slotIdx) => {
+            const thS = 'padding:5px 8px;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;text-align:center;';
+            const tdS = 'padding:5px 8px;font-size:0.8rem;font-weight:600;text-align:center;';
+            const cfg = ej.seriesConfig;
+            let seriesHtml = '';
+            if(cfg && cfg.length) {
+              const rows = cfg.map((s,si) =>
+                '<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">'
+                + '<td style="'+tdS+';color:rgba(0,200,255,0.7);font-weight:800">'+(si+1)+'</td>'
+                + '<td style="'+tdS+'">'+s.repsMin+'-'+s.repsMax+'</td>'
+                + '<td style="'+tdS+'">'+s.peso+' kg</td>'
+                + '<td style="'+tdS+';color:#a78bfa">'+s.rirRpe+'</td>'
+                + '<td style="'+tdS+';color:#00e5a0">'+s.descanso+'s</td>'
+                + '</tr>'
+              ).join('');
+              seriesHtml = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:280px">'
+                + '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08)">'
+                + '<th style="'+thS+'">#</th><th style="'+thS+'">Reps</th><th style="'+thS+'">Peso</th><th style="'+thS+'">RIR/RPE</th><th style="'+thS+'">Descanso</th>'
+                + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+            } else {
+              seriesHtml = '<div class="slot-mini-grid">'
+                + '<div><div style="font-size:0.7rem;color:var(--text-muted)">Reps</div><strong>'+ej.repsMin+'-'+ej.repsMax+'</strong></div>'
+                + '<div><div style="font-size:0.7rem;color:var(--text-muted)">Peso</div><strong>'+ej.peso+' kg</strong></div>'
+                + '<div><div style="font-size:0.7rem;color:var(--text-muted)">RIR/RPE</div><strong>'+ej.rirRpe+'</strong></div>'
+                + '<div><div style="font-size:0.7rem;color:var(--text-muted)">Descanso</div><strong>'+ej.descanso+'s</strong></div>'
+                + '</div>';
+            }
+            const metodoHtml  = ej.metodo ? '<span style="background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#a78bfa">⚡ '+ej.metodo+'</span>' : '';
+            const bisetHtml   = ej.biset  ? '<span style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.35);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:#ff6b35">🔗 Biserie</span>' : '';
+            const anotHtml    = ej.anotaciones ? '<div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);font-style:italic;background:rgba(255,210,0,0.06);border:1px solid rgba(255,210,0,0.12);border-radius:10px;padding:8px 12px">📝 '+ej.anotaciones+'</div>' : '';
+            const ejNombre    = ejs[ej.ejercicioId] ? ejs[ej.ejercicioId].nombre : 'Ejercicio';
+            return '<div class="exercise-slot" data-ej-idx="'+slotIdx+'" data-fb-key="'+firebaseKey+'" style="transition:box-shadow 0.2s">'
+              + '<div class="exercise-slot-header">'
+              + '<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
+              + '<span data-drag-handle="1" style="font-size:1rem;color:rgba(255,255,255,0.2);cursor:grab;flex-shrink:0;padding:4px 4px;touch-action:none;-webkit-user-select:none;user-select:none" title="Mantén para reordenar">⠿</span>'
+              + '<span class="exercise-slot-title">💪 '+ejNombre+'</span>'
+              + '</div>'
+              + '<div style="display:flex;gap:6px">'
+              + '<button class="btn btn-secondary btn-sm" onclick="editEjDia(\''+rutinaId+'\','+mesActual+','+semActual+','+diaActual+','+firebaseKey+')">✏️ Editar</button>'
+              + '<button class="btn btn-danger btn-sm" onclick="removeEjDia(\''+rutinaId+'\','+mesActual+','+semActual+','+diaActual+','+firebaseKey+')">🗑️</button>'
+              + '</div></div>'
+              + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'
+              + '<span style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.25);border-radius:20px;padding:3px 10px;font-size:0.72rem;font-weight:700;color:var(--primary)">📦 '+ej.series+' series</span>'
+              + metodoHtml + bisetHtml
+              + '</div>'
+              + seriesHtml
+              + anotHtml
+              + '</div>';
+          }).join('');
+        })()}
         </div>
       `:'<div class="empty-state"><div class="empty-icon">👆</div><div class="empty-text">Selecciona Mes → Semana → Día para ver los ejercicios</div></div>'}
     </div>
@@ -2393,8 +2428,7 @@ window.filterEjSel = () => {
 };
 
 window.addEjercicioDia = async (rutinaId, mes, semana, dia) => {
-  const ejSnap = await get(ref(db,'ejercicios'));
-  const ejs = ejSnap.val()||{};
+  const ejs = await dbCache.getEjs();
   const ejList = Object.entries(ejs).filter(([,e])=>e.estado).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'));
   const ejOptions = ejList.map(([id,e])=>`<option value="${id}">${e.nombre}</option>`).join('');
   window._ejSelAllOptions = [{value:'',text:'— Seleccionar —'}, ...ejList.map(([id,e])=>({value:id, text:e.nombre, preselected:false}))];
@@ -2707,12 +2741,11 @@ window.removeEjDia = async (rutinaId, mes, semana, dia, idx) => {
 };
 
 window.editEjDia = async (rutinaId, mes, semana, dia, idx) => {
-  // Load current data
-  const [ejSnap, slotSnap] = await Promise.all([
-    get(ref(db, 'ejercicios')),
+  // Load current data — ejercicios from cache, slot config direct from Firebase
+  const [ejs, slotSnap] = await Promise.all([
+    dbCache.getEjs(),
     get(ref(db, `rutinas/${rutinaId}/meses/${mes}/semanas/${semana}/dias/${dia}/ejercicios/${idx}`))
   ]);
-  const ejs = ejSnap.val()||{};
   const ej  = slotSnap.val()||{};
   const ejOptions = Object.entries(ejs)
     .filter(([,e]) => e.estado)
@@ -3136,6 +3169,7 @@ async function renderAtletas(container, action) {
 const _ADMIN_PENDING_REF = (targetUid) => ref(db, `sesiones_admin_pendientes/${currentUser.id}/${targetUid}`);
 
 window._admSavePendingSession = async function _admSavePendingSession() {
+  if(_admRestTimerActive) return; // no guardar durante el timer — evita "continuar donde quedé"
   const s = window._adminSesion;
   if(!s) return;
 
@@ -3197,18 +3231,16 @@ async function _admClearPendingSession(targetUid) {
 
 // ── Abrir modal de registro de sesión como admin ──
 window._registrarComoAdmin = async (targetUid) => {
-  const [usSnap, rutSnap, ejSnap, catSnap, histSnap, pendSnap] = await Promise.all([
+  const [usSnap, rutSnap, ejs, cats, histSnap, pendSnap] = await Promise.all([
     get(ref(db,`usuarios/${targetUid}`)),
     get(ref(db,'rutinas')),
-    get(ref(db,'ejercicios')),
-    get(ref(db,'categorias')),
+    dbCache.getEjs(),
+    dbCache.getCats(),
     get(ref(db,`sesiones/${targetUid}/historial`)),
     get(_ADMIN_PENDING_REF(targetUid))
   ]);
   const user    = usSnap.val()||{};
   const ruts    = rutSnap.val()||{};
-  const ejs     = ejSnap.val()||{};
-  const cats    = catSnap.val()||{};
   const hist    = histSnap.val()||{};
   const rutEntry = Object.entries(ruts).find(([,r])=>r.usuario===targetUid && r.activa);
   if(!rutEntry) return Swal.fire({icon:'warning',title:'Sin rutina activa',text:'Este atleta no tiene una rutina activa asignada.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
@@ -3534,6 +3566,7 @@ function _admCollectSeries(ejConfig, ejInfo, prefix) {
 
 // ── Admin: toggle serie done + rest timer ──
 let _admRestInterval = null;
+let _admRestTimerActive = false; // bloquea saves durante el descanso del admin
 let _admAudioCtx = null;
 
 function _admGetAudioCtx() {
@@ -3560,6 +3593,7 @@ function _admPlayTick(freq, gain, duration, attack, decay) {
 
 function _admStartRestTimer(totalSecs, nextInfo) {
   if(_admRestInterval) { clearInterval(_admRestInterval); _admRestInterval = null; }
+  _admRestTimerActive = true; // bloquear saves durante el descanso
   const existing = document.getElementById('admRestTimerOverlay');
   if(existing) existing.remove();
 
@@ -3589,7 +3623,6 @@ function _admStartRestTimer(totalSecs, nextInfo) {
   ovl.id = 'admRestTimerOverlay';
   ovl.innerHTML = `
     <div class="rt-label" style="margin-top:24px">Tiempo de descanso</div>
-    <div class="rt-series-badge">✅ Serie completada</div>
     <div class="rt-ring-wrap" id="admRtRingWrap">
       <svg width="220" height="220" viewBox="0 0 220 220">
         <circle class="rt-ring-bg" cx="110" cy="110" r="${R}"/>
@@ -3652,6 +3685,7 @@ function _admStartRestTimer(totalSecs, nextInfo) {
       if(progressEl) progressEl.style.width = `${Math.max(0,(remaining/totalSecs)*100)}%`;
       if(remaining <= 0 && overlay) {
         clearInterval(_admRestInterval); _admRestInterval = null;
+        _admRestTimerActive = false;
         document.removeEventListener('visibilitychange', _admRestVisHandler);
         if(navigator.vibrate) navigator.vibrate([100,50,150]);
         overlay.style.setProperty('--rt-color','#00e5a0');
@@ -3695,6 +3729,7 @@ function _admStartRestTimer(totalSecs, nextInfo) {
     if(ringWrap) ringWrap.classList.toggle('rt-urgent', remaining <= 10 && remaining > 0);
     if(remaining <= 0) {
       clearInterval(_admRestInterval); _admRestInterval = null;
+      _admRestTimerActive = false;
       document.removeEventListener('visibilitychange', _admRestVisHandler);
       if(navigator.vibrate) navigator.vibrate([100, 50, 150]);
       overlay.style.setProperty('--rt-color', '#00e5a0');
@@ -3794,6 +3829,7 @@ window._admShowSessionMap = () => {
 
 window._admSkipRest = () => {
   if(_admRestInterval) { clearInterval(_admRestInterval); _admRestInterval = null; }
+  _admRestTimerActive = false;
   // _admRestVisHandler is scoped to startRestTimer; removing by name requires it to be hoisted — skip is fine as timer ends anyway
   const o = document.getElementById('admRestTimerOverlay');
   if(o) { o.style.animation = 'rtFadeOut 0.3s ease forwards'; setTimeout(() => o.remove(), 300); }
@@ -3894,17 +3930,42 @@ function _buildAdmBisetRows(cfgArray, infoArray, metodoLabel, metodoMin, metodoM
     const lbl = _chainLabels[n] || ('#'+(n+1));
     const _admBiPfxMap = ['admA','admB','admC','admD','admE'];
     const pfx = (_admBiPfxMap[n] || ('adm'+n)) + '_';
-    const label = lbl + ' ' + (inf.nombre||'Ejercicio');
+    const label = lbl + ' ' + (inf.nombre||'Ejercicio') + (inf.biextremidad ? ' <span style="font-size:0.52rem;background:rgba(0,229,160,0.15);color:#00e5a0;border-radius:4px;padding:1px 4px;vertical-align:middle">🦾 Biext</span>' : '');
     const colBorder = n < nInChain - 1 ? col + '0.1)' : 'transparent';
+    const isBiext = inf?.biextremidad === true;
+
+    // Reps: si biextremidad → izq + der separados; si no → un solo campo
+    const repsHtml = isBiext
+      ? '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:8px;border:1px solid rgba(0,229,160,0.15)">'
+          + '<div style="grid-column:1/-1;font-size:0.6rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">🦾 Reps por lado</div>'
+          + '<div><label style="font-size:0.62rem;color:#00e5a0;display:block;margin-bottom:3px">Izq reps</label>'
+            + '<input type="number" id="' + pfx + 'reps_izq_' + si + '" value="' + svFor(cfg,si,'repsMin',0) + '" min="0" style="width:100%;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:7px;color:#e8f4ff;font-family:\'Exo 2\',sans-serif;font-size:0.88rem;outline:none"></div>'
+          + '<div><label style="font-size:0.62rem;color:#ff6b35;display:block;margin-bottom:3px">Der reps</label>'
+            + '<input type="number" id="' + pfx + 'reps_der_' + si + '" value="' + svFor(cfg,si,'repsMin',0) + '" min="0" style="width:100%;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:7px;color:#e8f4ff;font-family:\'Exo 2\',sans-serif;font-size:0.88rem;outline:none"></div>'
+          + '<div style="display:none"><input type="number" id="' + pfx + 'reps_' + si + '" value="' + svFor(cfg,si,'repsMin',0) + '"></div>'
+          + '</div>'
+      : '<div><label style="' + lblSt + '">Reps</label>'
+          + '<input type="number" id="' + pfx + 'reps_' + si + '" value="' + svFor(cfg,si,'repsMin',0) + '" placeholder="' + svFor(cfg,si,'repsMin',0) + '-' + svFor(cfg,si,'repsMax',0) + '" min="0" style="' + inputSt + '"></div>';
+
+    // RPE/RIR: si biextremidad → izq + der separados; si no → un solo campo
+    const rpeHtml = isBiext
+      ? '<div><label style="font-size:0.65rem;color:#00e5a0;display:block;margin-bottom:3px">Izq ' + metodoLabel + '</label>'
+          + '<input type="number" id="' + pfx + 'rpe_izq_' + si + '" value="' + svFor(cfg,si,'rirRpe',0) + '" min="' + metodoMin + '" max="' + metodoMax + '" style="width:100%;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:7px;color:#e8f4ff;font-family:\'Exo 2\',sans-serif;font-size:0.88rem;outline:none"></div>'
+        + '<div><label style="font-size:0.65rem;color:#ff6b35;display:block;margin-bottom:3px">Der ' + metodoLabel + '</label>'
+          + '<input type="number" id="' + pfx + 'rpe_der_' + si + '" value="' + svFor(cfg,si,'rirRpe',0) + '" min="' + metodoMin + '" max="' + metodoMax + '" style="width:100%;background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:7px;color:#e8f4ff;font-family:\'Exo 2\',sans-serif;font-size:0.88rem;outline:none"></div>'
+      : '<div><label style="' + lblSt + '">' + metodoLabel + '</label>'
+          + '<input type="number" id="' + pfx + 'rpe_' + si + '" value="' + svFor(cfg,si,'rirRpe',0) + '" min="' + metodoMin + '" max="' + metodoMax + '" style="' + inputSt + '"></div>';
+
+    // Grid: biext necesita más columnas (repsIzq/Der + peso + rpeIzq/Der)
+    const gridCols = isBiext ? '1fr 1fr' : '1fr 1fr 1fr';
+
     return '<div style="background:' + col + '0.04);padding:10px 14px;border-bottom:1px solid ' + colBorder + '">'
       + '<div style="font-size:0.58rem;color:' + col + '0.9);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">' + label + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">'
-        + '<div><label style="' + lblSt + '">Reps</label>'
-          + '<input type="number" id="' + pfx + 'reps_' + si + '" value="' + svFor(cfg,si,'repsMin',0) + '" placeholder="' + svFor(cfg,si,'repsMin',0) + '-' + svFor(cfg,si,'repsMax',0) + '" min="0" style="' + inputSt + '"></div>'
+      + '<div style="display:grid;grid-template-columns:' + gridCols + ';gap:8px;margin-bottom:8px">'
+        + repsHtml
         + '<div><label style="' + lblSt + '">Peso (kg)</label>'
           + '<input type="number" id="' + pfx + 'peso_' + si + '" value="' + svFor(cfg,si,'peso',0) + '" min="0" step="0.5" style="' + inputSt + '"></div>'
-        + '<div><label style="' + lblSt + '">' + metodoLabel + '</label>'
-          + '<input type="number" id="' + pfx + 'rpe_' + si + '" value="' + svFor(cfg,si,'rirRpe',0) + '" min="' + metodoMin + '" max="' + metodoMax + '" style="' + inputSt + '"></div>'
+        + rpeHtml
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px">'
         + '<input type="text" id="' + pfx + 'comentario_' + si + '" placeholder="💬 Comentario..." style="' + txtSt + '">'
@@ -3939,7 +4000,11 @@ function buildUltimoBanner(ejConfig, ejInfo, label) {
     .sort((a, b) => (b.fechaFin || b.fecha || 0) - (a.fechaFin || a.fecha || 0));
   let lastRecord = null, lastFecha = 0;
   for (const ses of sessions) {
-    const match = Object.values(ses.ejerciciosCompletados).find(ec => ec.ejercicioId === ejId && !ec._draft);
+    const match = Object.values(ses.ejerciciosCompletados).find(ec =>
+      ec.ejercicioId === ejId &&
+      !ec._draft &&
+      ec.series?.some(s => s.completada) // solo sesiones con al menos 1 serie marcada
+    );
     if (match) { lastRecord = match; lastFecha = ses.fechaFin || ses.fecha || 0; break; }
   }
   if (!lastRecord || !Array.isArray(lastRecord.series) || !lastRecord.series.length) return '';
@@ -4518,19 +4583,15 @@ async function renderRuta(container) {
 async function renderMensual(container) {
   container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:200px"><div class="spinner"></div></div>`;
 
-  const [usSnap, sesSnap, ejSnap, catSnap, myUids] = await Promise.all([
-    get(ref(db,'usuarios')),
+  const [users, sesSnap, ejs, cats, myUids] = await Promise.all([
+    dbCache.getUsers(),
     get(ref(db,'sesiones')),
-    get(ref(db,'ejercicios')),
-    get(ref(db,'categorias')),
+    dbCache.getEjs(),
+    dbCache.getCats(),
     getMyGroupUserUids()
   ]);
 
-  const users    = usSnap.val()||{};
   const sesiones = sesSnap.val()||{};
-  const ejs      = ejSnap.val()||{};
-  const cats     = catSnap.val()||{};
-
   // Get available months
   const now   = new Date();
   const curM  = now.getMonth()+1;
@@ -4759,10 +4820,7 @@ async function renderMensual(container) {
 }
 
 async function renderEstadisticas(container) {
-  const [usSnap, ejSnap, catSnap, myUids] = await Promise.all([get(ref(db,'usuarios')),get(ref(db,'ejercicios')),get(ref(db,'categorias')),getMyGroupUserUids()]);
-  const users = usSnap.val()||{};
-  const ejs = ejSnap.val()||{};
-  const cats = catSnap.val()||{};
+  const [users, ejs, cats, myUids] = await Promise.all([dbCache.getUsers(), dbCache.getEjs(), dbCache.getCats(), getMyGroupUserUids()]);
   const userOpts = Object.entries(users).filter(([id,u])=>u.rol!=='admin' && u.rol!=='superadmin' && myUids.has(id)).map(([id,u])=>`<option value="${id}">${u.nombres} ${u.apellidos||''}</option>`).join('');
 
   container.innerHTML = `
@@ -4883,14 +4941,11 @@ window.cargarEstadisticas = async () => {
   const area = document.getElementById('chartsArea');
   area.innerHTML = '<div class="page-loading"><div class="spinner-lg"></div><span>Cargando datos...</span></div>';
 
-  const [sesSnap, ejSnap, catSnap, usSnap] = await Promise.all([
-    get(ref(db,'sesiones')), get(ref(db,'ejercicios')),
-    get(ref(db,'categorias')), get(ref(db,'usuarios'))
+  const [sesSnap, ejs, cats, users] = await Promise.all([
+    get(ref(db,'sesiones')), dbCache.getEjs(),
+    dbCache.getCats(), dbCache.getUsers()
   ]);
   const sesiones = sesSnap.val()||{};
-  const ejs      = ejSnap.val()||{};
-  const cats     = catSnap.val()||{};
-  const users    = usSnap.val()||{};
 
   const userName = userId ? (users[userId]?.nombres+' '+(users[userId]?.apellidos||'')).trim() : null;
   const labels   = Array.from({length:semFin-semIni+1},(_,i)=>`Sem ${semIni+i}`);
