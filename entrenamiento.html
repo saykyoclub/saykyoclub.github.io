@@ -16,18 +16,19 @@
   --success: #00e5a0;
   --warning: #ffd60a;
   --error: #ff4d6d;
-  --glass-bg: rgba(10,20,45,0.7);
-  --glass-border: rgba(255,255,255,0.1);
-  --text: #e8f4ff;
-  --text-muted: rgba(232,244,255,0.5);
-  --bg-dark: #060c18;
+  --glass-bg: rgba(24,34,62,0.72);
+  --glass-border: rgba(255,255,255,0.12);
+  --text: #eef6ff;
+  --text-muted: rgba(232,244,255,0.55);
+  --bg-dark: #0e1626;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--text); min-height:100vh; }
 
 .bg-scene { position:fixed;inset:0;z-index:0;
-  background:radial-gradient(ellipse at 20% 30%,rgba(0,100,200,0.2) 0%,transparent 50%),
-             radial-gradient(ellipse at 80% 70%,rgba(123,47,255,0.15) 0%,transparent 50%), #060c18;
+  background:radial-gradient(ellipse at 20% 28%,rgba(0,120,220,0.18) 0%,transparent 52%),
+             radial-gradient(ellipse at 80% 72%,rgba(123,47,255,0.14) 0%,transparent 52%),
+             linear-gradient(180deg, #141f34 0%, #0e1626 60%, #0b1220 100%);
 }
 .grid-overlay { position:fixed;inset:0;z-index:0;opacity:0.02;
   background-image:linear-gradient(rgba(0,200,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,1) 1px,transparent 1px);
@@ -37,7 +38,7 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 /* HEADER */
 .header {
   position:sticky;top:0;z-index:100;
-  background:rgba(6,12,28,0.9);backdrop-filter:blur(20px);
+  background:rgba(14,22,38,0.88);backdrop-filter:blur(20px);
   border-bottom:1px solid var(--glass-border);
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 20px;
@@ -657,6 +658,37 @@ select.glass-input option { background:#0d1a35; }
 .pro-summary-chip .lbl { font-size:0.62rem; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; }
 
 </style>
+<style id="saykyo-refresh">
+/* ===== Saykyo · refinamiento visual (más claro, plano y profesional) ===== */
+.glass-card,.training-card,.pro-chart-card,.mini-stats,.notif-sheet-inner{
+  background:linear-gradient(180deg,rgba(32,45,76,0.76),rgba(24,35,61,0.76));
+  border:1px solid rgba(255,255,255,0.10);
+  border-radius:18px;
+  box-shadow:0 12px 34px rgba(5,12,28,0.38);
+}
+.header{background:rgba(18,27,48,0.86) !important;border-bottom:1px solid rgba(255,255,255,0.10);backdrop-filter:blur(22px) saturate(140%);}
+.card-title{letter-spacing:.3px;}
+/* Botones */
+.btn{border-radius:12px;font-weight:600;letter-spacing:.2px;transition:transform .15s ease,box-shadow .2s ease,background .2s ease;}
+.btn-primary{background:linear-gradient(135deg,#0aa2d6,#25c3f2);box-shadow:0 6px 18px rgba(0,200,255,0.26);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(0,200,255,0.32);}
+.btn-secondary{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);}
+.btn-success{background:linear-gradient(135deg,#08a56a,#13d98a);color:#03231a;}
+/* Filas de series / pills */
+.serie-row{background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.09);border-radius:14px;}
+.meta-pill{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);border-radius:999px;}
+.nav-tab{border-radius:12px;}
+.option-btn{border-radius:12px;}
+/* Inputs */
+.glass-input{background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.11);border-radius:12px;}
+.glass-input:focus{border-color:var(--primary);background:rgba(0,200,255,0.07);box-shadow:0 0 0 3px rgba(0,200,255,0.14);}
+/* Bottom sheets */
+.overlay-sheet{box-shadow:0 -12px 40px rgba(5,12,28,0.5);}
+/* Iconos */
+.ico{opacity:.92;}
+.user-notif-btn .ico,.header .ico{width:20px;height:20px;color:white}
+</style>
+
 </head>
 <body>
 <div class="bg-scene"></div>
@@ -665,16 +697,14 @@ select.glass-input option { background:#0d1a35; }
 <div class="header">
   <img src="logo_saykyo.png" alt="Saykyo Club" style="height:60px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,200,255,0.25))">
   <div class="header-user">
-    <button class="user-notif-btn" id="userNotifBtn" onclick="toggleUserNotifSheet()" title="Notificaciones">
-      🔔
-      <span class="user-notif-badge" id="userNotifBadge">0</span>
+    <button class="user-notif-btn" id="userNotifBtn" onclick="toggleUserNotifSheet()" title="Notificaciones"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="user-notif-badge" id="userNotifBadge">0</span>
     </button>
     <img class="header-avatar" id="userAvatar" src="" alt="">
     <div>
       <div class="header-name" id="userName">Usuario</div>
       <div class="header-method" id="userMethod">RPE</div>
     </div>
-    <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;font-size:1.1rem" onclick="logout()">🚪</button>
+    <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;font-size:1.1rem" onclick="logout()"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
   </div>
 </div>
 
@@ -690,13 +720,13 @@ select.glass-input option { background:#0d1a35; }
 <nav class="bottom-nav" id="bottomNav" style="display:none">
   <div class="nav-tab active" data-tab="entrenar" id="navTabEntrenar" onclick="switchTab('entrenar')">
     <span class="session-dot"></span>
-    <span class="tab-icon">💪</span><span class="tab-label">Entrenar</span>
+    <span class="tab-icon"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></span><span class="tab-label">Entrenar</span>
   </div>
   <div class="nav-tab" data-tab="progreso" onclick="switchTab('progreso')">
-    <span class="tab-icon">📈</span><span class="tab-label">Progreso</span>
+    <span class="tab-icon"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span><span class="tab-label">Progreso</span>
   </div>
   <div class="nav-tab" data-tab="perfil" onclick="switchTab('perfil')">
-    <span class="tab-icon">👤</span><span class="tab-label">Perfil</span>
+    <span class="tab-icon"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="tab-label">Perfil</span>
   </div>
 </nav>
 
@@ -825,7 +855,7 @@ function showUserPushToast(n) {
   toast.id = 'userPushToast';
   toast.className = 'push-toast';
   toast.innerHTML = `
-    <div style="font-size:1.3rem;flex-shrink:0">💬</div>
+    <div style="font-size:1.3rem;flex-shrink:0"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
     <div style="flex:1">
       <div style="font-size:0.8rem;font-weight:700;color:var(--primary);margin-bottom:2px">Mensaje de tu entrenador</div>
       <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.4"><strong>${n.deNombre||'Entrenador'}:</strong> ${n.mensaje}</div>
@@ -851,20 +881,20 @@ window.toggleUserNotifSheet = () => {
   sheet.innerHTML = `
     <div class="notif-sheet-inner">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-        <div style="font-size:1.1rem;font-weight:800">🔔 Mis Notificaciones</div>
+        <div style="font-size:1.1rem;font-weight:800">Mis Notificaciones</div>
         <div style="display:flex;gap:8px;align-items:center">
           <button onclick="userMarkAllRead()" style="background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.3);border-radius:8px;padding:4px 10px;color:var(--primary);font-size:0.72rem;cursor:pointer;font-family:'Exo 2',sans-serif">✓ Todo leído</button>
-          <button onclick="userDeleteAllNotifs()" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.3);border-radius:8px;padding:4px 10px;color:#ff4d6d;font-size:0.72rem;cursor:pointer;font-family:'Exo 2',sans-serif">🗑️ Borrar todo</button>
+          <button onclick="userDeleteAllNotifs()" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.3);border-radius:8px;padding:4px 10px;color:#ff4d6d;font-size:0.72rem;cursor:pointer;font-family:'Exo 2',sans-serif">Borrar todo</button>
           <button onclick="document.getElementById('userNotifSheet').remove()" style="background:rgba(255,255,255,0.06);border:none;color:var(--text-muted);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:0.9rem">✕</button>
         </div>
       </div>
       <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08)">
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">📣 Crear Alerta para tu entrenador</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Crear Alerta para tu entrenador</div>
         <textarea id="userAlertMsg" placeholder="Ej: Llego tarde a la sesión, mucho tráfico..." style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:var(--text);font-size:0.88rem;width:100%;min-height:70px;resize:none;outline:none;margin-bottom:8px" onfocus="this.style.borderColor='var(--primary)'"></textarea>
-        <button onclick="sendAlertToAdmins()" class="btn btn-primary btn-sm btn-full" style="width:100%;justify-content:center">⚡ Enviar alerta al entrenador</button>
+        <button onclick="sendAlertToAdmins()" class="btn btn-primary btn-sm btn-full" style="width:100%;justify-content:center">Enviar alerta al entrenador</button>
       </div>
       ${sorted.length===0
-        ? '<div style="text-align:center;padding:32px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:10px">🔔</div>Sin notificaciones aún</div>'
+        ? '<div style="text-align:center;padding:32px;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:10px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>Sin notificaciones aún</div>'
         : sorted.map(([nid,n])=>{
           // Tipos que llegan al usuario desde el entrenador:
           //   'respuesta_admin' → entrenador respondió a su alerta → usuario PUEDE responder (una vez)
@@ -874,21 +904,21 @@ window.toggleUserNotifSheet = () => {
           const isRespAdmin = n.tipo === 'respuesta_admin' || n.tipo === 'respuesta_alerta';
           const isMensaje = n.tipo === 'mensaje';
           const canReply = (isRespAdmin || isMensaje) && !n.respondida && n.deId;
-          const iconLabel = isRespAdmin ? '💬 Respuesta del entrenador'
-            : isMensaje ? '📣 Mensaje de'
-            : '📩 Notificación de';
+          const iconLabel = isRespAdmin ? 'Respuesta del entrenador'
+            : isMensaje ? 'Mensaje de'
+            : 'Notificación de';
           return `
           <div class="notif-item ${n.leida?'':'unread'}" id="unotif_${nid}">
             <div style="display:flex;align-items:flex-start;gap:8px">
               <div style="flex:1;cursor:pointer;min-width:0" onclick="userMarkNotifRead('${nid}',document.getElementById('unotif_${nid}'))">
                 <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">${iconLabel} — <strong>${n.deNombre||'Entrenador'}</strong></div>
-                <div style="font-size:0.9rem;font-weight:600;margin-bottom:6px">${n.mensaje}</div>
-                ${n.respondida ? '<div style="font-size:0.72rem;color:var(--success);font-style:italic;margin-bottom:4px">✅ Ya respondiste</div>' : ''}
+                <div style="font-size:0.9rem;font-weight:600;margin-bottom:6px;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;line-height:1.5;-webkit-overflow-scrolling:touch;overscroll-behavior:contain">${n.mensaje}</div>
+                ${n.respondida ? '<div style="font-size:0.72rem;color:var(--success);font-style:italic;margin-bottom:4px">Ya respondiste</div>' : ''}
                 <div style="font-size:0.7rem;color:var(--text-muted)">${new Date(n.creadaEn).toLocaleString()}${!n.leida?'  <span style="color:var(--primary);font-weight:700">● Sin leer</span>':''}</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:flex-end">
-                ${canReply ? `<button onclick="userReplyNotif('${nid}','${n.deId||''}')" style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);border-radius:8px;color:var(--primary);padding:5px 8px;cursor:pointer;font-size:0.7rem;font-weight:700;white-space:nowrap">💬 Responder</button>` : ''}
-                <button onclick="userDeleteNotif('${nid}')" title="Eliminar" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'">🗑️</button>
+                ${canReply ? `<button onclick="userReplyNotif('${nid}','${n.deId||''}')" style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.3);border-radius:8px;color:var(--primary);padding:5px 8px;cursor:pointer;font-size:0.7rem;font-weight:700;white-space:nowrap">Responder</button>` : ''}
+                <button onclick="userDeleteNotif('${nid}')" title="Eliminar" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.25);border-radius:8px;color:#ff4d6d;width:28px;height:28px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(255,77,109,0.25)'" onmouseout="this.style.background='rgba(255,77,109,0.1)'"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
               </div>
             </div>
           </div>`;
@@ -954,14 +984,14 @@ window.userReplyNotif = (nid, adminId) => {
   overlay.innerHTML = `
     <div style="background:rgba(8,16,36,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:28px;width:95%;max-width:480px;max-height:90vh;overflow-y:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <div style="font-size:1.1rem;font-weight:800">💬 Tu respuesta</div>
+        <div style="font-size:1.1rem;font-weight:800">Tu respuesta</div>
         <button onclick="this.closest('.overlay-backdrop').remove()" style="background:rgba(255,255,255,0.06);border:none;color:var(--text-muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem">✕</button>
       </div>
       <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">Puedes enviar <strong>una sola respuesta</strong> a tu entrenador sobre este mensaje.</div>
       <textarea id="userReplyText" class="glass-input" rows="4" placeholder="Escribe tu respuesta..." style="width:100%;margin-bottom:16px;resize:none"></textarea>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button onclick="this.closest('.overlay-backdrop').remove()" class="btn btn-secondary">Cancelar</button>
-        <button onclick="submitUserReply('${nid}','${adminId}',this.closest('.overlay-backdrop'))" class="btn btn-primary">📤 Enviar respuesta</button>
+        <button onclick="submitUserReply('${nid}','${adminId}',this.closest('.overlay-backdrop'))" class="btn btn-primary">Enviar respuesta</button>
       </div>
     </div>
   `;
@@ -1409,15 +1439,15 @@ async function init() {
                 </div>
               </div>
               <div style="display:flex;justify-content:space-between;font-size:0.8rem">
-                <span style="color:rgba(232,244,255,0.5)">📍 En: <strong style="color:#e8f4ff">${ejNombre}</strong></span>
+                <span style="color:rgba(232,244,255,0.5)">En: <strong style="color:#e8f4ff">${ejNombre}</strong></span>
                 <span style="color:rgba(232,244,255,0.4)">${tiempoStr}</span>
               </div>
-              ${ejsHechos > 0 ? `<div style="margin-top:8px;font-size:0.8rem;color:#00e5a0">✅ ${ejsHechos} ejercicio${ejsHechos!==1?'s':''} ya completado${ejsHechos!==1?'s':''}</div>` : ''}
+              ${ejsHechos > 0 ? `<div style="margin-top:8px;font-size:0.8rem;color:#00e5a0">${ejsHechos} ejercicio${ejsHechos!==1?'s':''} ya completado${ejsHechos!==1?'s':''}</div>` : ''}
             </div>
 
             ${!matchesDay ? `
             <div style="background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:10px;padding:10px;margin-bottom:16px;font-size:0.78rem;color:#ffd60a">
-              ⚠️ Este entrenamiento era del <strong>M${sa.mes}·S${sa.semana}·D${sa.dia}</strong> pero tu progreso actual es <strong>M${mesActual}·S${semanaActual}·D${diaActual}</strong>
+              Este entrenamiento era del <strong>M${sa.mes}·S${sa.semana}·D${sa.dia}</strong> pero tu progreso actual es <strong>M${mesActual}·S${semanaActual}·D${diaActual}</strong>
             </div>` : ''}
 
             <div style="display:flex;flex-direction:column;gap:8px">
@@ -1425,7 +1455,7 @@ async function init() {
                 ▶️ Continuar donde quedé
               </button>
               <button id="swal-nueva" style="width:100%;padding:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:rgba(232,244,255,0.6);font-size:0.85rem;cursor:pointer">
-                🔄 Descartar y empezar nueva sesión
+                Descartar y empezar nueva sesión
               </button>
             </div>
           </div>
@@ -1450,7 +1480,7 @@ async function init() {
             state._pendingSeriesSnapshotChain = pending.currentSeriesSnapshotChain || null;
             state._pendingSessionData     = null;
             updateSessionDot(true);
-            // 🏋️ Notificar al entrenador que retomó el entrenamiento
+            // Notificar al entrenador que retomó el entrenamiento
             const sa = pending.sesionActiva;
             notifyTrainingStart(sa.mes||1, sa.semana||1, sa.dia||1, true);
             // Cambiar tab activo visualmente
@@ -1500,8 +1530,8 @@ function showExpiryBanner(daysLeft, expiryDate) {
 
   const urgency = daysLeft === 0;
   const title = urgency
-    ? '⚠️ Tu suscripción vence HOY'
-    : `⚠️ Suscripción vence en ${daysLeft} día${daysLeft===1?'':'s'}`;
+    ? 'Tu suscripción vence HOY'
+    : `Suscripción vence en ${daysLeft} día${daysLeft===1?'':'s'}`;
   const sub = urgency
     ? 'Contacta a tu entrenador para renovar y no perder el acceso.'
     : `Tu membresía es válida hasta el ${fechaTexto}. Renueva con tu entrenador para continuar.`;
@@ -1628,12 +1658,12 @@ function renderAnamnesisStep() {
       <div style="display:flex;gap:10px;justify-content:space-between">
         ${anamnesisStep>0?`<button class="btn btn-secondary" onclick="anamnesisBack()">← Atrás</button>`:'<div></div>'}
         <button class="btn btn-primary" onclick="anamnesisNext()">
-          ${anamnesisNextVisible(anamnesisStep) >= PREGUNTAS.length?'✅ Completar':'Siguiente →'}
+          ${anamnesisNextVisible(anamnesisStep) >= PREGUNTAS.length?'Completar':'Siguiente →'}
         </button>
       </div>
     </div>
     <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8rem">
-      Este cuestionario nos ayuda a personalizar tu entrenamiento 💪
+      Este cuestionario nos ayuda a personalizar tu entrenamiento
     </div>
   `;
 }
@@ -1678,7 +1708,7 @@ window.anamnesisNext = async () => {
       completada:true, completadaEn:Date.now(), respuestas:anamnesisRespuestas
     });
     await Swal.fire({
-      icon:'success',title:'¡Anamnesis completada! 🎉',
+      icon:'success',title:'¡Anamnesis completada!',
       text:'Tu perfil está listo. ¡A entrenar!',
       background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff',
       timer:2500,showConfirmButton:false
@@ -1818,7 +1848,7 @@ async function renderEntrenar() {
   if(!miRutina) {
     p.innerHTML = `
       <div class="glass-card" style="text-align:center;padding:40px 20px">
-        <div style="font-size:3rem;margin-bottom:16px">🏋️</div>
+        <div style="font-size:3rem;margin-bottom:16px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div>
         <h2 style="margin-bottom:10px">Sin rutina asignada</h2>
         <p style="color:var(--text-muted);font-size:0.9rem">Tu entrenador aún no te ha asignado una rutina.</p>
       </div>`;
@@ -1881,8 +1911,8 @@ async function renderEntrenar() {
     const done  = sesionCompletada(state.historial, mesActual, semanaActual, d);
     const isCur = d === diaActual;
     let bg, border, icon;
-    if(done)       { bg='rgba(0,229,160,0.15)'; border='rgba(0,229,160,0.5)'; icon='✅'; }
-    else if(hasEj) { bg=isCur?'rgba(0,200,255,0.2)':'rgba(255,255,255,0.04)'; border=isCur?'var(--primary)':'rgba(255,255,255,0.1)'; icon='💪'; }
+    if(done)       { bg='rgba(0,229,160,0.15)'; border='rgba(0,229,160,0.5)'; icon=''; }
+    else if(hasEj) { bg=isCur?'rgba(0,200,255,0.2)':'rgba(255,255,255,0.04)'; border=isCur?'var(--primary)':'rgba(255,255,255,0.1)'; icon=''; }
     else           { bg='rgba(255,255,255,0.03)'; border='rgba(255,255,255,0.06)'; icon='😴'; }
     return `<div onclick="irADia(${d})" style="flex:1;border-radius:12px;padding:8px 4px;cursor:pointer;background:${bg};border:2px solid ${border};text-align:center;transition:all 0.2s">
       <div style="font-size:1rem">${icon}</div>
@@ -1899,7 +1929,7 @@ async function renderEntrenar() {
   // Pending alert banner
   const pendingBanner = pendingBefore.length > 0 ? `
     <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.35);border-radius:16px;padding:14px;margin-bottom:12px">
-      <div style="font-weight:700;font-size:0.9rem;color:#ff6b35;margin-bottom:8px">⚠️ Tienes ${pendingBefore.length} día${pendingBefore.length>1?'s':''} pendiente${pendingBefore.length>1?'s':''}</div>
+      <div style="font-weight:700;font-size:0.9rem;color:#ff6b35;margin-bottom:8px">Tienes ${pendingBefore.length} día${pendingBefore.length>1?'s':''} pendiente${pendingBefore.length>1?'s':''}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${pendingBefore.map(p=>`
           <button onclick="irADiaAbs(${p.abs})" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);border-radius:8px;padding:5px 10px;color:#ff6b35;font-size:0.78rem;font-weight:700;cursor:pointer">
@@ -1911,7 +1941,7 @@ async function renderEntrenar() {
 
   p.innerHTML = `
     <div class="progress-widget">
-      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:4px">📋 ${rutina.nombre}</div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:4px">${rutina.nombre}</div>
       <div class="progress-crumbs">
         <span class="crumb">Mes ${mesActual}</span>
         <span class="crumb">Semana ${semanaActual}</span>
@@ -1935,14 +1965,14 @@ async function renderEntrenar() {
       <div style="display:flex;justify-content:space-between;margin-top:10px;gap:8px">
         <button class="btn btn-secondary btn-sm" onclick="retrocederDia()" style="flex:1">← Anterior</button>
         <button class="btn btn-secondary btn-sm" onclick="avanzarDia()" style="flex:1">Siguiente →</button>
-        <button class="btn btn-danger btn-sm" onclick="resetProgreso()" style="padding:7px 10px">🔄</button>
+        <button class="btn btn-danger btn-sm" onclick="resetProgreso()" style="padding:7px 10px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
       </div>
     </div>
 
     <div class="glass-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div class="card-title" style="margin:0">🗓️ ${diaData?.nombre||`Día ${diaActual}`}</div>
-        ${yaCompletado?'<span style="background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:20px;padding:3px 10px;font-size:0.75rem;color:var(--success)">✅ Completado</span>':''}
+        <div class="card-title" style="margin:0">${diaData?.nombre||`Día ${diaActual}`}</div>
+        ${yaCompletado?'<span style="background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);border-radius:20px;padding:3px 10px;font-size:0.75rem;color:var(--success)">Completado</span>':''}
       </div>
       <div class="mini-stats">
         <div class="mini-stat"><div class="val">${ejsDia.length}</div><div class="lbl">Ejercicios</div></div>
@@ -1953,13 +1983,13 @@ async function renderEntrenar() {
         if(yaCompletado) {
           return `
             <div style="text-align:center;padding:12px;background:rgba(0,229,160,0.06);border-radius:12px;margin-bottom:10px">
-              <div style="font-size:0.85rem;color:var(--success);font-weight:600">✅ Ya completaste este día</div>
+              <div style="font-size:0.85rem;color:var(--success);font-weight:600">Ya completaste este día</div>
               <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Puedes repetirlo si lo deseas</div>
             </div>
-            <button class="btn btn-secondary btn-full" onclick="iniciarSesion()">🔁 Repetir entrenamiento</button>`;
+            <button class="btn btn-secondary btn-full" onclick="iniciarSesion()">Repetir entrenamiento</button>`;
         }
         return `
-          <button class="btn btn-primary btn-full" onclick="iniciarSesion()">⚡ INICIAR ENTRENAMIENTO</button>
+          <button class="btn btn-primary btn-full" onclick="iniciarSesion()">INICIAR ENTRENAMIENTO</button>
           <div style="font-size:0.78rem;color:var(--text-muted);text-align:center;margin-top:8px">Tap para empezar tu sesión</div>`;
       })() : `
         <div style="text-align:center;padding:20px;color:var(--text-muted)">
@@ -1972,15 +2002,15 @@ async function renderEntrenar() {
 
     ${ejsDia.length>0 ? `
     <div class="glass-card">
-      <div class="card-title">📋 Ejercicios del día</div>
+      <div class="card-title">Ejercicios del día</div>
       ${ejsDia.map((ej,i)=>{
         const ejInfo = state.ejercicios[ej.ejercicioId]||{};
         return `
           <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
             <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:var(--primary);flex-shrink:0">${i+1}</div>
             <div style="flex:1">
-              <div style="font-weight:600;font-size:0.92rem">${ejInfo.nombre||'Ejercicio'}${ejInfo.biextremidad?'<span style="font-size:0.68rem;background:rgba(0,229,160,0.15);color:var(--success);border-radius:6px;padding:1px 6px;margin-left:6px">🦾 Biext</span>':''}</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">${ej.series} series · ${ej.repsMin}-${ej.repsMax} reps · ${ej.peso}kg · ${currentUser.metodo} ${ej.rirRpe}${ej.metodo?` · <span style="color:#c084fc">⚡ ${ej.metodo}</span>`:''}</div>
+              <div style="font-weight:600;font-size:0.92rem">${ejInfo.nombre||'Ejercicio'}${ejInfo.biextremidad?'<span style="font-size:0.68rem;background:rgba(0,229,160,0.15);color:var(--success);border-radius:6px;padding:1px 6px;margin-left:6px">Biext</span>':''}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${ej.series} series · ${ej.repsMin}-${ej.repsMax} reps · ${ej.peso}kg · ${currentUser.metodo} ${ej.rirRpe}${ej.metodo?` · <span style="color:#c084fc">${ej.metodo}</span>`:''}</div>
             </div>
           </div>`;
       }).join('')}
@@ -2076,7 +2106,7 @@ window.retrocederDia = async () => {
   renderTab('entrenar');
 };
 
-// 🏋️ Notifica a todos los admins del grupo que el usuario inició/retomó entrenamiento.
+// Notifica a todos los admins del grupo que el usuario inició/retomó entrenamiento.
 // ── Helper cacheado: adminIds del grupo del usuario (1 sola lectura a Firebase) ──
 async function getGrupoAdminIds() {
   if(state._grupoAdminIds !== null) return state._grupoAdminIds;
@@ -2220,14 +2250,14 @@ function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, meto
         <div class="serie-num">${i+1}</div>
         <div style="flex:1;font-size:0.8rem;color:var(--text-muted);font-weight:600">
           Serie ${i+1}
-          ${sc?`<span style="font-size:0.7rem;color:rgba(0,229,160,0.6);margin-left:6px">⏱ ${sv(i,'descanso',90)}s descanso</span>`:''}
+          ${sc?`<span style="font-size:0.7rem;color:rgba(0,229,160,0.6);margin-left:6px">${sv(i,'descanso',90)}s descanso</span>`:''}
         </div>
         <button class="serie-done" id="${prefix}done_${i}" onclick="toggleSerieP('${prefix}',${i})">✓</button>
       </div>
       <div class="serie-inputs">
         ${esBiext ? `
         <div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">
-          <div style="grid-column:1/-1;font-size:0.68rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">🦾 Reps por lado</div>
+          <div style="grid-column:1/-1;font-size:0.68rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">Reps por lado</div>
           <div style="display:flex;flex-direction:column;gap:3px">
             <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
             <input type="number" id="${prefix}reps_izq_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
@@ -2252,12 +2282,12 @@ function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, meto
         </div>
         ${esBiext ? `
         <div class="serie-field">
-          <label style="color:#00e5a0">🦾 Izq ${_metodoLabel}</label>
+          <label style="color:#00e5a0">Izq ${_metodoLabel}</label>
           <input type="number" id="${prefix}rpe_izq_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${_metodoMin}" max="${_metodoMax}" value="${sv(i,'rirRpe',0)}"
             style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)">
         </div>
         <div class="serie-field">
-          <label style="color:#ff6b35">🦾 Der ${_metodoLabel}</label>
+          <label style="color:#ff6b35">Der ${_metodoLabel}</label>
           <input type="number" id="${prefix}rpe_der_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${_metodoMin}" max="${_metodoMax}" value="${sv(i,'rirRpe',0)}"
             style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)">
         </div>
@@ -2269,7 +2299,7 @@ function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, meto
         </div>
         `}
       </div>
-      <input type="text" id="${prefix}comentario_${i}" placeholder="💬 Comentario opcional (sensación, forma, ajuste...)"
+      <input type="text" id="${prefix}comentario_${i}" placeholder="Comentario opcional (sensación, forma, ajuste...)"
         style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 12px;color:var(--text-muted);font-size:0.82rem;outline:none;transition:all 0.2s ease"
         onfocus="this.style.borderColor='rgba(0,200,255,0.3)';this.style.color='var(--text)';this.style.background='rgba(0,200,255,0.04)'"
         onblur="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='var(--text-muted)';this.style.background='rgba(255,255,255,0.04)'">
@@ -2475,13 +2505,13 @@ function renderEjercicioActual() {
         ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
         <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
         ${rpeCell}
-        <td style="padding:5px 6px;font-size:0.72rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? '💬 '+s.comentario : ''}</td>
+        <td style="padding:5px 6px;font-size:0.72rem;font-style:italic;color:rgba(167,139,250,0.7)">${s.comentario ? ''+s.comentario : ''}</td>
       </tr>`;
     }).join('');
     ultimoBanner = `
       <div style="background:rgba(123,47,25,0.08);border:1px solid rgba(0,200,255,0.25);border-radius:14px;padding:12px 14px;margin-bottom:12px">
         <div style="font-size:0.68rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-          <span>🅰 Última vez</span> — M${mes}·S${semana}·D${dia} · ${fechaStr}
+          <span>Última vez</span> — M${mes}·S${semana}·D${dia} · ${fechaStr}
         </div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;min-width:200px">
@@ -2552,7 +2582,7 @@ function renderEjercicioActual() {
       // Reps: biextremidad en biserie → izq + der separados; ocultar campo único
       const repsHtml = isBiextRow
         ? '<div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">'
-          + '<div style="grid-column:1/-1;font-size:0.6rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">🦾 Reps por lado</div>'
+          + '<div style="grid-column:1/-1;font-size:0.6rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">Reps por lado</div>'
           + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#00e5a0">Izq reps</label>'
             + '<input type="number" id="' + pfx + 'reps_izq_' + i + '" placeholder="' + sv('repsMin',0) + '" min="0" value="' + sv('repsMin',0) + '" style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none"></div>'
           + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#ff6b35">Der reps</label>'
@@ -2562,18 +2592,18 @@ function renderEjercicioActual() {
         : '<div class="serie-field"><label>Reps</label><input type="number" id="' + pfx + 'reps_' + i + '" placeholder="' + sv('repsMin',0) + '-' + sv('repsMax',0) + '" min="0" value="' + sv('repsMin',0) + '"></div>';
       // RPE/RIR: biextremidad → izq + der separados
       const rpeHtml = isBiextRow
-        ? '<div class="serie-field"><label style="color:#00e5a0">🦾 Izq ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_izq_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)"></div>'
-          + '<div class="serie-field"><label style="color:#ff6b35">🦾 Der ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_der_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)"></div>'
+        ? '<div class="serie-field"><label style="color:#00e5a0">Izq ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_izq_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)"></div>'
+          + '<div class="serie-field"><label style="color:#ff6b35">Der ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_der_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)"></div>'
         : '<div class="serie-field"><label style="color:' + colorBase + '0.9)">' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:' + colorBase + '0.3);background:' + colorBase + '0.05)"></div>';
       return '<div style="background:' + colorBase + '0.04);padding:10px 14px;border-bottom:1px solid ' + colorBase + '0.1)">'
-        + '<div style="font-size:0.6rem;color:' + colorBase + '0.9);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">' + label + ' ' + (inf.nombre||'Ejercicio') + (isBiextRow ? ' <span style="font-size:0.55rem;background:rgba(0,229,160,0.15);color:#00e5a0;border-radius:4px;padding:1px 4px">🦾 Biext</span>' : '') + '</div>'
+        + '<div style="font-size:0.6rem;color:' + colorBase + '0.9);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">' + label + ' ' + (inf.nombre||'Ejercicio') + (isBiextRow ? ' <span style="font-size:0.55rem;background:rgba(0,229,160,0.15);color:#00e5a0;border-radius:4px;padding:1px 4px">Biext</span>' : '') + '</div>'
         + '<div class="serie-inputs">'
         + repsHtml
         + '<div class="serie-field"><label>Peso (kg)</label><input type="number" id="' + pfx + 'peso_' + i + '" placeholder="' + sv('peso',0) + '" min="0" step="0.5" value="' + sv('peso',0) + '"></div>'
         + rpeHtml
         + '</div>'
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px">'
-        + '<input type="text" id="' + pfx + 'comentario_' + i + '" placeholder="💬 Comentario..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 10px;color:var(--text-muted);font-family:\'Exo 2\',sans-serif;font-size:0.78rem;outline:none;margin-right:10px">'
+        + '<input type="text" id="' + pfx + 'comentario_' + i + '" placeholder="Comentario..." style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 10px;color:var(--text-muted);font-family:\'Exo 2\',sans-serif;font-size:0.78rem;outline:none;margin-right:10px">'
         + '<button class="serie-done" id="' + pfx + 'done_' + i + '" onclick="toggleSerieP(\'' + pfx + '\',' + i + ')" style="border-color:' + colorBase + '0.5)">✓ ' + label + '</button>'
         + '</div></div>';
     };
@@ -2585,11 +2615,11 @@ function renderEjercicioActual() {
       return '<div style="background:' + col + '0.06);border:1px solid ' + col + '0.25);border-radius:14px;padding:12px 14px">'
         + '<div style="font-size:0.6rem;color:' + col + '0.9);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:6px">' + lbl + ' ' + (e.info.nombre||'Ejercicio') + '</div>'
         + '<div style="display:flex;flex-wrap:wrap;gap:4px">'
-        + '<span class="meta-pill" style="font-size:0.7rem">🔢 ' + (e.config?.repsMin||'?') + '-' + (e.config?.repsMax||'?') + '</span>'
-        + '<span class="meta-pill" style="background:' + col + '0.15);border-color:' + col + '0.4);color:' + col + '0.9);font-weight:800;font-size:0.75rem">⚖️ ' + (e.config?.peso||0) + 'kg</span>'
-        + (e.config?.metodo ? '<span class="meta-pill" style="font-size:0.68rem;color:#c084fc">⚡ ' + e.config.metodo + '</span>' : '')
+        + '<span class="meta-pill" style="font-size:0.7rem">' + (e.config?.repsMin||'?') + '-' + (e.config?.repsMax||'?') + '</span>'
+        + '<span class="meta-pill" style="background:' + col + '0.15);border-color:' + col + '0.4);color:' + col + '0.9);font-weight:800;font-size:0.75rem">' + (e.config?.peso||0) + 'kg</span>'
+        + (e.config?.metodo ? '<span class="meta-pill" style="font-size:0.68rem;color:#c084fc">' + e.config.metodo + '</span>' : '')
         + '</div>'
-        + (e.config?.anotaciones ? '<div style="margin-top:6px;font-size:0.7rem;color:#ffd60a">📝 ' + e.config.anotaciones + '</div>' : '')
+        + (e.config?.anotaciones ? '<div style="margin-top:6px;font-size:0.7rem;color:#ffd60a">' + e.config.anotaciones + '</div>' : '')
         + '</div>';
     }).join('');
 
@@ -2609,7 +2639,7 @@ function renderEjercicioActual() {
       seriesHtml += '<div style="border:1px solid rgba(255,107,53,0.2);border-radius:14px;overflow:hidden;margin-bottom:12px">'
         + '<div style="background:rgba(255,107,53,0.08);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">'
         + '<span style="font-weight:800;font-size:0.9rem">Serie ' + (si+1) + '</span>'
-        + '<span style="font-size:0.7rem;color:rgba(255,107,53,0.7)">⏱ ' + descansoSeg + 's descanso</span>'
+        + '<span style="font-size:0.7rem;color:rgba(255,107,53,0.7)">' + descansoSeg + 's descanso</span>'
         + '</div>'
         + _chainEjs.map((e, n) => {
             const col = _chainColors[n % _chainColors.length];
@@ -2624,14 +2654,14 @@ function renderEjercicioActual() {
     p.innerHTML = `
       <div style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:0.8rem;color:var(--text-muted)">Paso ${displayCurrent} de ${displayTotal} 🔗 ${nLabel}</span>
+          <span style="font-size:0.8rem;color:var(--text-muted)">Paso ${displayCurrent} de ${displayTotal} ${nLabel}</span>
           <span style="font-size:0.8rem;color:var(--primary);font-weight:600">${pct}% completado</span>
         </div>
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>
 
       <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:0.78rem;color:#ff6b35;font-weight:600">
-        🔗 ${nLabel} — Alterna: ${_chainLabels.slice(0,nInChain).join(' → ')} → descanso → siguiente serie
+        ${nLabel} — Alterna: ${_chainLabels.slice(0,nInChain).join(' → ')} → descanso → siguiente serie
       </div>
 
       <div style="display:grid;grid-template-columns:${gridCols};gap:10px;margin-bottom:14px">
@@ -2643,9 +2673,9 @@ function renderEjercicioActual() {
       </div>
 
       <div class="glass-card">
-        <div class="card-title">📊 Series (alterna ${_chainLabels.slice(0,nInChain).join(' → ')} → descanso)</div>
+        <div class="card-title">Series (alterna ${_chainLabels.slice(0,nInChain).join(' → ')} → descanso)</div>
         ${seriesHtml}
-        <button class="btn btn-success btn-full" onclick="completarEjercicio()">✅ Completar ${nLabel.toLowerCase()}</button>
+        <button class="btn btn-success btn-full" onclick="completarEjercicio()">Completar ${nLabel.toLowerCase()}</button>
         ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
       </div>
     `
@@ -2664,29 +2694,29 @@ function renderEjercicioActual() {
 
       <div class="training-card">
         <div class="training-video" id="trainingVideoWrap">
-          ${ejInfo.urlVideo?`<iframe id="trainingVideoIframe" src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>}`:`<div class="no-video"><div style="font-size:3rem">🏋️</div><div>Sin video disponible</div></div>`}
+          ${ejInfo.urlVideo?`<iframe id="trainingVideoIframe" src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>}`:`<div class="no-video"><div style="font-size:3rem"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div><div>Sin video disponible</div></div>`}
         </div>
         <div class="training-info">
           <div class="training-title">${ejInfo.nombre||'Ejercicio'}</div>
           <div class="training-meta">
-            <span class="meta-pill">📦 ${ejConfig.series} series</span>
-            <span class="meta-pill">🔢 ${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
-            <span class="meta-pill">⚖️ ${ejConfig.peso}kg</span>
+            <span class="meta-pill">${ejConfig.series} series</span>
+            <span class="meta-pill">${ejConfig.repsMin}-${ejConfig.repsMax} reps</span>
+            <span class="meta-pill">${ejConfig.peso}kg</span>
             <span class="meta-pill">${(currentUser.metodo === 'RPE' || esCardio) ? 'RPE' : currentUser.metodo} ${ejConfig.rirRpe}</span>
-            <span class="meta-pill">⏱️ ${ejConfig.seriesConfig ? 'descanso por serie' : ejConfig.descanso+'s descanso'}</span>
-            ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">⚡ ${ejConfig.metodo}</span>`:''}
+            <span class="meta-pill">${ejConfig.seriesConfig ? 'descanso por serie' : ejConfig.descanso+'s descanso'}</span>
+            ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">${ejConfig.metodo}</span>`:''}
           </div>
-          ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">📝 ${ejConfig.anotaciones}</div>`:''}
+          ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">${ejConfig.anotaciones}</div>`:''}
           ${ejInfo.descripcion?`<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">${ejInfo.descripcion}</div>`:''}
         </div>
       </div>
 
       ${ultimoBanner}
       <div class="glass-card">
-        <div class="card-title">📊 Registrar series</div>
+        <div class="card-title">Registrar series</div>
         <div class="series-list">${seriesRows}</div>
         <button class="btn btn-success btn-full" onclick="completarEjercicio()">
-          ✅ Completar ejercicio ${ejConfig.biextremidad?'(Cada lado)':''}
+          Completar ejercicio ${ejConfig.biextremidad?'(Cada lado)':''}
         </button>
         ${state.ejercicioActual>0?`<button class="btn btn-secondary btn-full" style="margin-top:8px" onclick="ejercicioAnterior()">← Ejercicio anterior</button>`:''}
       </div>
@@ -2835,7 +2865,7 @@ function showAutosaveFeedback(anchorEl) {
   const badge = document.createElement('span');
   badge.id = 'autosaveBadge';
   badge.className = 'autosave-badge';
-  badge.innerHTML = '☁️ Guardado';
+  badge.innerHTML = 'Guardado';
   badge.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:700';
   document.body.appendChild(badge);
   setTimeout(() => badge.remove(), 1600);
@@ -3080,7 +3110,7 @@ window.showSessionMapOverlay = () => {
       repsMin: ej.repsMin, repsMax: ej.repsMax, peso: ej.peso, rirRpe: ej.rirRpe
     }));
 
-    let status = isDone ? '✅' : isCurrent ? '▶️' : '⏳';
+    let status = isDone ? '' : isCurrent ? '▶️' : '';
     let borderColor = isDone ? 'rgba(0,229,160,0.4)' : isCurrent ? 'rgba(0,200,255,0.5)' : 'rgba(255,255,255,0.08)';
     let bgColor = isDone ? 'rgba(0,229,160,0.06)' : isCurrent ? 'rgba(0,200,255,0.08)' : 'rgba(255,255,255,0.03)';
 
@@ -3097,7 +3127,7 @@ window.showSessionMapOverlay = () => {
           <span style="font-size:0.9rem">${status}</span>
           <div style="flex:1">
             <div style="font-weight:700;font-size:0.85rem">${ejInfo.nombre||'Ejercicio'}</div>
-            ${esBiset ? `<div style="font-size:0.72rem;color:#ff6b35">🔗 + ${state.ejercicios[ejsDia[ejIdx+1]?.ejercicioId]?.nombre||'Ejercicio B'}</div>` : ''}
+            ${esBiset ? `<div style="font-size:0.72rem;color:#ff6b35">+ ${state.ejercicios[ejsDia[ejIdx+1]?.ejercicioId]?.nombre||'Ejercicio B'}</div>` : ''}
           </div>
           <span style="font-size:0.72rem;font-weight:700;color:${isCurrent?'var(--primary)':'var(--text-muted)'}">
             ${ej.series} series
@@ -3119,7 +3149,7 @@ window.showSessionMapOverlay = () => {
     <div style="background:rgba(6,14,32,0.98);border-radius:24px 24px 0 0;padding:24px 16px 40px;width:100%;max-height:80vh;overflow-y:auto;animation:sheetUp 0.3s cubic-bezier(0.16,1,0.3,1)">
       <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-size:1.05rem;font-weight:800">🗺️ Mapa de sesión</div>
+        <div style="font-size:1.05rem;font-weight:800">Mapa de sesión</div>
         <div style="font-size:0.78rem;color:var(--text-muted)">M${mesActual}·S${semanaActual}·D${diaActual}</div>
       </div>
       ${rows.join('')}
@@ -3153,11 +3183,11 @@ function startRestTimer(totalSecs, nextInfo) {
 
   const getMsg = (rem, tot) => {
     const pct = rem / tot;
-    if(pct > 0.75) return 'Recupera la respiración 💨';
+    if(pct > 0.75) return 'Recupera la respiración';
     if(pct > 0.45) return 'Descansa, lo mereces 🧘';
-    if(pct > 0.15) return 'Casi listo... 💪';
-    if(rem > 0)    return '¡Prepárate! 🔥';
-    return '¡Vamos por la siguiente serie! 🚀';
+    if(pct > 0.15) return 'Casi listo...';
+    if(rem > 0)    return '¡Prepárate!';
+    return '¡Vamos por la siguiente serie!';
   };
 
   const { color, glow } = getColors(remaining, totalSecs);
@@ -3188,21 +3218,21 @@ function startRestTimer(totalSecs, nextInfo) {
       <div class="rt-progress-fill" id="rtProgressFill" style="width:${(remaining/totalSecs)*100}%"></div>
     </div>
 
-    ${nextInfo ? `<div style="background:rgba(255,255,255,0.04);border:1px solid ${nextInfo.isBisetSwitch?'rgba(255,107,53,0.35)':'rgba(0,200,255,0.25)'};border-radius:16px;padding:14px 18px;margin-top:16px;width:90%;max-width:320px;text-align:left">
-      <div style="font-size:0.6rem;color:${nextInfo.isBisetSwitch?'#ff6b35':'var(--primary)'};text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px">
-        ${nextInfo.isBisetSwitch ? '🔗 Siguiente en la biserie' : nextInfo.isNextExercise ? '⏭️ Siguiente ejercicio' : '⏭️ Siguiente serie'}
+    ${nextInfo ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(0,200,255,0.25);border-radius:16px;padding:14px 18px;margin-top:16px;width:90%;max-width:320px;text-align:left">
+      <div style="font-size:0.6rem;color:var(--primary);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px">
+        ${(nextInfo.isBisetSwitch || nextInfo.isNextExercise) ? 'Siguiente ejercicio' : 'Siguiente serie'}
       </div>
       <div style="font-weight:800;font-size:1rem;margin-bottom:8px;color:#e8f4ff">${nextInfo.nombre}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${nextInfo.reps ? `<div style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;font-weight:700;color:#00e5a0">🔢 ${nextInfo.reps}</div>` : ''}
-        ${nextInfo.peso !== null ? `<div style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.35);border-radius:10px;padding:6px 12px;font-size:1.1rem;font-weight:900;color:#00c8ff">⚖️ ${nextInfo.peso} kg</div>` : ''}
+        ${nextInfo.reps ? `<div style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;font-weight:700;color:#00e5a0">${nextInfo.reps}</div>` : ''}
+        ${nextInfo.peso !== null ? `<div style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.35);border-radius:10px;padding:6px 12px;font-size:1.1rem;font-weight:900;color:#00c8ff">${nextInfo.peso} kg</div>` : ''}
         ${nextInfo.metodo ? `<div style="background:rgba(123,47,255,0.1);border:1px solid rgba(123,47,255,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;color:#a78bfa">${nextInfo.metodo}</div>` : ''}
       </div>
-      ${nextInfo.anotaciones ? `<div style="margin-top:8px;font-size:0.75rem;color:#ffd60a;border-top:1px solid rgba(255,255,255,0.07);padding-top:6px">📝 ${nextInfo.anotaciones}</div>` : ''}
+      ${nextInfo.anotaciones ? `<div style="margin-top:8px;font-size:0.75rem;color:#ffd60a;border-top:1px solid rgba(255,255,255,0.07);padding-top:6px">${nextInfo.anotaciones}</div>` : ''}
     </div>` : ''}
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="rt-skip" onclick="skipRestTimer()">Saltar descanso</button>
-      <button class="rt-skip" onclick="showSessionMapOverlay()" style="background:rgba(0,200,255,0.08);border-color:rgba(0,200,255,0.25);color:rgba(0,200,255,0.8)">🗺️ Ver sesión</button>
+      <button class="rt-skip" onclick="showSessionMapOverlay()" style="background:rgba(0,200,255,0.08);border-color:rgba(0,200,255,0.25);color:rgba(0,200,255,0.8)">Ver sesión</button>
     </div>
   `;
 
@@ -3517,17 +3547,17 @@ async function finalizarSesion() {
   }
 
   if(faltantes.length > 0) {
-    const listaHTML = faltantes.map(f => `<li style="margin-bottom:6px">⚠️ <strong>${f.nombre}</strong> — series sin completar</li>`).join('');
+    const listaHTML = faltantes.map(f => `<li style="margin-bottom:6px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>${f.nombre}</strong> — series sin completar</li>`).join('');
     const result = await Swal.fire({
       background: 'rgba(8,16,36,0.98)', color: '#e8f4ff',
-      title: '📋 Series sin completar',
+      title: 'Series sin completar',
       html: `<div style="text-align:left">
         <p style="margin-bottom:12px;color:rgba(232,244,255,0.7)">Los siguientes ejercicios tienen series sin marcar como hechas:</p>
         <ul style="list-style:none;padding:0;font-size:0.88rem">${listaHTML}</ul>
         <p style="margin-top:12px;font-size:0.82rem;color:rgba(232,244,255,0.5)">¿Finalizar así o regresar a completarlas?</p>
       </div>`,
       showCancelButton: true,
-      confirmButtonText: '✅ Finalizar igual',
+      confirmButtonText: 'Finalizar igual',
       cancelButtonText: '← Ir a completarlas',
       confirmButtonColor: '#00c8ff',
       cancelButtonColor: '#7b2fff',
@@ -3607,9 +3637,9 @@ async function finalizarSesion() {
 
   await Swal.fire({
     icon:'success',
-    title:'🎉 ¡Sesión completada!',
+    title:'¡Sesión completada!',
     html:`<div style="color:#e8f4ff">
-      <div style="font-size:2rem;margin:10px 0">💪</div>
+      <div style="font-size:2rem;margin:10px 0"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div>
       <div>Siguiente: Mes ${newMes} · Sem ${newSem} · Día ${newDia}</div>
     </div>`,
     background:'rgba(8,16,36,0.98)', confirmButtonColor:'#00c8ff',
@@ -3649,14 +3679,14 @@ async function showRevisionSemana(mes, semana) {
       <div class="overlay-sheet" style="border-radius:28px 28px 0 0;max-height:95vh;overflow-y:auto">
         <div class="sheet-handle"></div>
         <div style="text-align:center;margin-bottom:20px">
-          <div style="font-size:2rem;margin-bottom:6px">📋</div>
+          <div style="font-size:2rem;margin-bottom:6px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div>
           <div style="font-size:1.1rem;font-weight:800">Revisión Semanal</div>
           <div style="font-size:0.82rem;color:var(--text-muted)">Mes ${mes} · Semana ${semana} — Tómate un momento para reflexionar</div>
         </div>
 
         <!-- DOMS escala -->
         <div class="rev-block">
-          <div class="rev-q">💢 Nivel de DOMS (dolor muscular) durante la semana</div>
+          <div class="rev-q">Nivel de DOMS (dolor muscular) durante la semana</div>
           <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">1 = sin dolor · 10 = dolor muy intenso</div>
           <div class="mini-scale" id="domsScale">
             ${Array.from({length:10},(_,i)=>`<div class="mini-dot" data-field="doms" data-val="${i+1}" onclick="selectRevVal('doms',${i+1})">${i+1}</div>`).join('')}
@@ -3666,7 +3696,7 @@ async function showRevisionSemana(mes, semana) {
 
         <!-- Músculo con más DOMS -->
         <div class="rev-block">
-          <div class="rev-q">🏋️ ¿Qué músculo sintió más DOMS? (>6)</div>
+          <div class="rev-q">¿Qué músculo sintió más DOMS? (>6)</div>
           <input class="glass-input" id="revMuscDoms" placeholder="Ej: Pecho, Cuádriceps...">
         </div>
 
@@ -3694,7 +3724,7 @@ async function showRevisionSemana(mes, semana) {
 
         <!-- Dolor articular -->
         <div class="rev-block">
-          <div class="rev-q">🦴 ¿Presentaste dolor articular o muscular con algún ejercicio?</div>
+          <div class="rev-q">¿Presentaste dolor articular o muscular con algún ejercicio?</div>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;margin-bottom:10px">
             <button class="option-btn" data-field="dolor" data-val="No" onclick="selectRevOpt('dolor','No',this);document.getElementById('dolorDetail').style.display='none'">No</button>
             <button class="option-btn" data-field="dolor" data-val="Si" onclick="selectRevOpt('dolor','Si',this);document.getElementById('dolorDetail').style.display='block'">Sí</button>
@@ -3705,7 +3735,7 @@ async function showRevisionSemana(mes, semana) {
         </div>
 
         <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="guardarRevSemana(${mes},${semana})">
-          ✅ Guardar revisión semanal
+          Guardar revisión semanal
         </button>
       </div>
     `;
@@ -3757,7 +3787,7 @@ window.guardarRevSemana = async (mes, semana) => {
   if(window._revSemanaOverlay) document.body.removeChild(window._revSemanaOverlay);
   // reset temp vars
   ['doms','animo','sueno','dolor'].forEach(k => delete window[`_rev_${k}`]);
-  Swal.fire({icon:'success',title:'✅ Revisión guardada',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  Swal.fire({icon:'success',title:'Revisión guardada',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
   // FIX 9: Notify trainer that user submitted weekly review
   notifyTrainerReview('semanal', mes, semana, data);
   if(window._revSemanaResolve) window._revSemanaResolve();
@@ -3776,13 +3806,13 @@ async function showRevisionMes(mes) {
       <div class="overlay-sheet" style="border-radius:28px 28px 0 0;max-height:95vh;overflow-y:auto">
         <div class="sheet-handle"></div>
         <div style="text-align:center;margin-bottom:20px">
-          <div style="font-size:2rem;margin-bottom:6px">🏆</div>
+          <div style="font-size:2rem;margin-bottom:6px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></div>
           <div style="font-size:1.1rem;font-weight:800">Revisión Mensual — Mes ${mes}</div>
           <div style="font-size:0.82rem;color:var(--text-muted)">¡Terminaste un mes! Cuéntanos cómo te fue</div>
         </div>
 
         <div class="rev-block">
-          <div class="rev-q">📈 ¿Sientes que mejoras en los entrenamientos?</div>
+          <div class="rev-q">¿Sientes que mejoras en los entrenamientos?</div>
           <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">Considera: ${currentUser.metodo}, kg, reps, recuperación...</div>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
             ${['Sí, claramente','Un poco','Regular','No lo siento'].map(s=>`
@@ -3792,12 +3822,12 @@ async function showRevisionMes(mes) {
         </div>
 
         <div class="rev-block">
-          <div class="rev-q">🎯 ¿Algún ejercicio donde sientas que no progresas?</div>
+          <div class="rev-q">¿Algún ejercicio donde sientas que no progresas?</div>
           <input class="glass-input" id="revNoProgresa" placeholder="Ej: Sentadilla, Press banca... o 'Ninguno'">
         </div>
 
         <div class="rev-block">
-          <div class="rev-q">📅 De todos tus días de entrenamiento, ¿cuál te sientes con menos energía o mayor fatiga?</div>
+          <div class="rev-q">De todos tus días de entrenamiento, ¿cuál te sientes con menos energía o mayor fatiga?</div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px">
             ${[1,2,3,4,5].map(d=>`
               <button class="option-btn" data-field="diaMasFatiga" onclick="selectRevOpt('diaMasFatiga','Día ${d}',this)" style="padding:10px 4px">Día ${d}</button>
@@ -3806,7 +3836,7 @@ async function showRevisionMes(mes) {
         </div>
 
         <div class="rev-block">
-          <div class="rev-q">❓ ¿Por qué motivo te sientes así ese día?</div>
+          <div class="rev-q">¿Por qué motivo te sientes así ese día?</div>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;margin-bottom:10px">
             ${['Estrés laboral','Carga académica','Duermes menos','No me gusta esa sesión','Nutrición','Otro'].map(s=>`
               <button class="option-btn" data-field="motivoFatiga" onclick="selectRevOpt('motivoFatiga','${s}',this)">${s}</button>
@@ -3816,7 +3846,7 @@ async function showRevisionMes(mes) {
         </div>
 
         <div class="rev-block">
-          <div class="rev-q">🔄 ¿Algún ejercicio que quieras cambiar, quitar o agregar?</div>
+          <div class="rev-q">¿Algún ejercicio que quieras cambiar, quitar o agregar?</div>
           <textarea class="glass-input" id="revCambioEj" rows="2" placeholder="Ej: Quitar curl de martillo, agregar face pull para hombro posterior..."></textarea>
         </div>
 
@@ -3829,7 +3859,7 @@ async function showRevisionMes(mes) {
         </div>
 
         <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="guardarRevMes(${mes})">
-          🏆 Guardar revisión mensual
+          Guardar revisión mensual
         </button>
       </div>
     `;
@@ -3861,7 +3891,7 @@ window.guardarRevMes = async (mes) => {
   await set(ref(db,`revisiones_mes/${currentUser.id}/m${mes}`), data);
   if(window._revMesOverlay) document.body.removeChild(window._revMesOverlay);
   ['mejora','diaMasFatiga','motivoFatiga','masDescanso'].forEach(k => delete window[`_rev_${k}`]);
-  Swal.fire({icon:'success',title:'🏆 ¡Revisión mensual guardada!',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  Swal.fire({icon:'success',title:'¡Revisión mensual guardada!',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
   // FIX 9: Notify trainer that user submitted monthly review
   notifyTrainerReview('mensual', mes, null, data);
   if(window._revMesResolve) window._revMesResolve();
@@ -3875,13 +3905,13 @@ async function notifyTrainerReview(tipo, mes, semana, data) {
     if(!adminIds.length) return;
 
     const titulo = tipo === 'semanal'
-      ? `📋 Revisión Sem ${semana} (Mes ${mes}) completada`
-      : `🏆 Revisión Mes ${mes} completada`;
+      ? `Revisión Sem ${semana} (Mes ${mes}) completada`
+      : `Revisión Mes ${mes} completada`;
 
     // Build summary of key data points
     let resumen = '';
     if(tipo === 'semanal') {
-      resumen = `DOMS: ${data.doms}/10 · Ánimo: ${data.animo}/5 · Sueño: ${data.sueno}${data.dolor==='Si'?' · ⚠️ Dolor reportado':''}`;
+      resumen = `DOMS: ${data.doms}/10 · Ánimo: ${data.animo}/5 · Sueño: ${data.sueno}${data.dolor==='Si'?' · Dolor reportado':''}`;
     } else {
       resumen = `Mejora: ${data.mejora} · Día más fatiga: ${data.diaMasFatiga} · Motivo: ${data.motivoFatiga}`;
     }
@@ -3970,7 +4000,7 @@ async function showFatigueModal(title, mode) {
     const emojisPre  = ['💀','😵','🥵','😩','😪','😑','😊','😁','⚡','🔥'];
     const labelsPre  = ['1 - Sin energía','2 - Agotado','3 - Muy cansado','4 - Bastante cansado','5 - Cansado','6 - Regular','7 - Bien','8 - Muy bien','9 - Excelente','10 - Súper descansado'];
     const leftPre    = '💀 Sin energía';
-    const rightPre   = 'Súper descansado 🔥';
+    const rightPre   = 'Súper descansado';
 
     const colorsPost = ['#00c8ff','#00e5a0','#4ade80','#a3e635','#ffd60a','#ff6b35','#f97316','#ef4444','#dc2626','#b91c1c'];
     const emojisPost = ['😊','😁','🙂','😐','😑','😓','😩','🥵','😵','💀'];
@@ -4264,7 +4294,7 @@ function renderCalendar(heatmap, year, month, sessionDays, sessionCount) {
     let bg, border, emoji, textColor;
     if(status === 'trained') {
       bg = 'rgba(0,229,160,0.18)'; border = 'rgba(0,229,160,0.5)';
-      emoji = '💪'; textColor = 'var(--success)';
+      emoji = ''; textColor = 'var(--success)';
     } else if(status === 'weekend') {
       bg = 'rgba(123,47,255,0.12)'; border = 'rgba(123,47,255,0.2)';
       emoji = ''; textColor = 'rgba(232,244,255,0.35)';
@@ -4348,7 +4378,7 @@ function renderCalendar(heatmap, year, month, sessionDays, sessionCount) {
 
       <!-- Legend -->
       <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(0,229,160,0.3);border:1px solid rgba(0,229,160,0.5)"></div>💪 Entrenado</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(0,229,160,0.3);border:1px solid rgba(0,229,160,0.5)"></div>Entrenado</div>
         <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(255,77,109,0.2);border:1px solid rgba(255,77,109,0.3)"></div>Perdido</div>
         <div style="display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(123,47,255,0.15);border:1px solid rgba(123,47,255,0.25)"></div>Fin de semana</div>
       </div>
@@ -4389,18 +4419,18 @@ async function renderProgreso() {
   if(sesiones.length===0 && valoraciones.length===0) {
     p.innerHTML = `
       <div class="glass-card" style="text-align:center;padding:40px 20px">
-        <div style="font-size:3rem;margin-bottom:16px">📈</div>
+        <div style="font-size:3rem;margin-bottom:16px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></div>
         <h2 style="margin-bottom:10px">Sin historial aún</h2>
         <p style="color:var(--text-muted)">Completa tu primera sesión para ver tu progreso aquí</p>
-        <button class="btn btn-primary" style="margin-top:16px" onclick="switchTab('entrenar')">💪 Ir a entrenar</button>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="switchTab('entrenar')">Ir a entrenar</button>
       </div>`;
     return;
   }
 
   // ─── Streak ───
   const { current: streakActual, max: streakMax, lastTrained, heatmap } = computeStreak(sesiones, miRutina);
-  const streakEmoji = streakActual >= 30 ? '🔥🔥🔥' : streakActual >= 14 ? '🔥🔥' : streakActual >= 7 ? '🔥' : streakActual >= 3 ? '⚡' : '💪';
-  const streakMessage = streakActual === 0 ? '¡Vuelve a entrenar hoy!' : streakActual === 1 ? '¡Bien! Sigue mañana' : streakActual < 7 ? '¡Vas bien! No pares' : streakActual < 14 ? '¡Semana completa!' : streakActual < 30 ? '¡Racha épica!' : '¡LEYENDA DEL GYM! 🏆';
+  const streakEmoji = streakActual >= 30 ? '' : streakActual >= 14 ? '' : streakActual >= 7 ? '' : streakActual >= 3 ? '' : '';
+  const streakMessage = streakActual === 0 ? '¡Vuelve a entrenar hoy!' : streakActual === 1 ? '¡Bien! Sigue mañana' : streakActual < 7 ? '¡Vas bien! No pares' : streakActual < 14 ? '¡Semana completa!' : streakActual < 30 ? '¡Racha épica!' : '¡LEYENDA DEL GYM!';
 
   // ─── Charts data ───
   const weekMap = {};
@@ -4477,7 +4507,7 @@ async function renderProgreso() {
     };
     return {
       label:name, data, borderColor:color, backgroundColor:color+'20',
-      pointBackgroundColor:color, pointBorderColor:'#060c18',
+      pointBackgroundColor:color, pointBorderColor:'#0e1626',
       pointRadius:4, pointHoverRadius:7, pointBorderWidth:2,
       tension:0.4, fill:false, spanGaps:true, borderWidth:2.5
     };
@@ -4494,7 +4524,7 @@ async function renderProgreso() {
     const hasData = datasets.length>0 && datasets.some(d=>d.data&&d.data.some(v=>v!=null&&!isNaN(v)&&v!==0));
     if(!hasData) {
       const wrap = canvas.parentElement;
-      if(wrap) { wrap.setAttribute('data-canvas',canvasId); wrap.innerHTML=`<div class="pro-chart-empty"><div class="ico">📭</div><span>Sin datos aún</span></div>`; }
+      if(wrap) { wrap.setAttribute('data-canvas',canvasId); wrap.innerHTML=`<div class="pro-chart-empty"><div class="ico"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div><span>Sin datos aún</span></div>`; }
       return;
     }
     const opts = proChartOptions(extraY);
@@ -4658,7 +4688,7 @@ async function renderProgreso() {
     <div class="glass-card" style="position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(123,47,255,0.1),rgba(0,200,255,0.08));border-color:rgba(255,107,53,0.3)">
       <div style="position:absolute;inset:0;pointer-events:none;opacity:0.03;background:radial-gradient(circle at 80% 50%,#ff6b35 0%,transparent 60%)"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div class="card-title" style="margin:0">🔥 Racha de entrenamiento</div>
+        <div class="card-title" style="margin:0">Racha de entrenamiento</div>
         <div style="font-size:0.75rem;color:var(--text-muted)">Fines de semana no cuentan</div>
       </div>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
@@ -4685,7 +4715,7 @@ async function renderProgreso() {
         return `
           <div style="margin-bottom:14px">
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);margin-bottom:5px">
-              <span>Próximo hito: 🎯 ${next} días</span><span>${streakActual}/${next}</span>
+              <span>Próximo hito: ${next} días</span><span>${streakActual}/${next}</span>
             </div>
             <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
               <div style="height:100%;background:linear-gradient(90deg,#ff6b35,#ffd60a);border-radius:4px;width:${pct}%;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 8px rgba(255,107,53,0.5)"></div>
@@ -4704,7 +4734,7 @@ async function renderProgreso() {
 
     <!-- ═══ RESUMEN ═══ -->
     <div class="glass-card">
-      <div class="card-title">🏆 Tu resumen</div>
+      <div class="card-title">Tu resumen</div>
       <div class="mini-stats">
         <div class="mini-stat"><div class="val">${sesiones.length}</div><div class="lbl">Sesiones</div></div>
         <div class="mini-stat"><div class="val">${totalSeriesAll}</div><div class="lbl">Series totales</div></div>
@@ -4716,8 +4746,8 @@ async function renderProgreso() {
     <!-- ═══ VALORACIONES ═══ -->
     ${hasValoraciones ? `
     <div class="glass-card" style="background:linear-gradient(135deg,rgba(0,100,200,0.08),rgba(123,47,255,0.06));border-color:rgba(0,200,255,0.2)">
-      <div class="card-title">⚖️ Mi composición corporal</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div class="card-title">Mi composición corporal</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
         <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);border-radius:14px;padding:12px;text-align:center">
           <div style="font-size:0.65rem;color:rgba(255,107,53,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">% Grasa</div>
           <div style="font-size:1.7rem;font-weight:900;color:#ff6b35">${lastVal.grasa}%</div>
@@ -4734,7 +4764,7 @@ async function renderProgreso() {
           ${valoraciones.length>1?`<div style="font-size:0.72rem;margin-top:2px">${deltaFmt(deltaPeso)}</div>`:''}
         </div>
       </div>
-      ${valoraciones.length===1?`<div style="font-size:0.82rem;color:var(--text-muted);text-align:center;padding:8px;background:rgba(0,200,255,0.04);border-radius:10px;margin-bottom:10px">📊 Tu entrenador agregará más valoraciones para mostrar tu tendencia</div>`:''}
+      ${valoraciones.length===1?`<div style="font-size:0.82rem;color:var(--text-muted);text-align:center;padding:8px;background:rgba(0,200,255,0.04);border-radius:10px;margin-bottom:10px">Tu entrenador agregará más valoraciones para mostrar tu tendencia</div>`:''}
       ${valoraciones.length >= 2 ? `
       <div style="margin-bottom:12px">
         <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px">Tendencia: % Grasa vs % Músculo</div>
@@ -4747,17 +4777,17 @@ async function renderProgreso() {
       ` : ''}
       ${valoraciones.length >= 2 ? `
       <div style="margin-top:14px;padding:12px;background:rgba(0,0,0,0.2);border-radius:12px;border:1px solid rgba(255,255,255,0.05)">
-        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">📈 Cambio total desde inicio</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Cambio total desde inicio</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span style="font-size:0.8rem;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:20px;padding:4px 10px">Grasa: ${deltaFmt(deltaGrasa, true)} % ${deltaGrasa<0?'🎯 ¡Bajó!':deltaGrasa>0?'📈 Subió':' ='}</span>
-          <span style="font-size:0.8rem;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 10px">Músculo: ${deltaFmt(deltaMuscular, false)} % ${deltaMuscular>0?'💪 ¡Ganó!':deltaMuscular<0?'📉 Bajó':' ='}</span>
+          <span style="font-size:0.8rem;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:20px;padding:4px 10px">Grasa: ${deltaFmt(deltaGrasa, true)} % ${deltaGrasa<0?'¡Bajó!':deltaGrasa>0?'Subió':' ='}</span>
+          <span style="font-size:0.8rem;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);border-radius:20px;padding:4px 10px">Músculo: ${deltaFmt(deltaMuscular, false)} % ${deltaMuscular>0?'¡Ganó!':deltaMuscular<0?'Bajó':' ='}</span>
           <span style="font-size:0.8rem;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);border-radius:20px;padding:4px 10px">Peso: ${deltaFmt(deltaPeso, false)} kg</span>
         </div>
       </div>` : ''}
     </div>
     ` : `
     <div class="glass-card" style="text-align:center;padding:20px">
-      <div style="font-size:2rem;margin-bottom:8px">⚖️</div>
+      <div style="font-size:2rem;margin-bottom:8px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M16 2 22 8 8 22 2 16 16 2Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/></svg></div>
       <div style="font-weight:700;margin-bottom:4px">Sin valoraciones aún</div>
       <div style="font-size:0.82rem;color:var(--text-muted)">Tu entrenador agregará valoraciones de composición corporal para ver tu progreso</div>
     </div>`}
@@ -4766,13 +4796,13 @@ async function renderProgreso() {
     ${allSessions.length > 0 ? `
     <div class="glass-card" style="padding:0;overflow:hidden">
       <div style="padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <div class="card-title" style="margin:0">📊 Análisis de rendimiento</div>
+        <div class="card-title" style="margin:0">Análisis de rendimiento</div>
         <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Basado en tus ${allSessions.length} sesión${allSessions.length!==1?'es':''} registradas</div>
       </div>
       <div style="padding:16px">
         <div class="pro-charts-grid">
 
-          ${buildProCard('carga','📈','Carga','Peso prom / semana', ftag('Tus datos'),
+          ${buildProCard('carga','','Carga','Peso prom / semana', ftag('Tus datos'),
             `<select class="pro-chart-select" id="myCarga" onchange="myPcRefresh('carga')">${ejOL}</select>
              <div class="pro-chart-type-btn">
                <button class="active" id="mypct_carga_line" onclick="myPcType('carga','line')">〜</button>
@@ -4781,7 +4811,7 @@ async function renderProgreso() {
             `<div class="pro-chart-canvas-wrap"><canvas id="myChartCarga"></canvas></div>`
           )}
 
-          ${buildProCard('rpe','🔥','Esfuerzo RPE/RIR','Promedio / semana', ftag('Tus datos'),
+          ${buildProCard('rpe','','Esfuerzo RPE/RIR','Promedio / semana', ftag('Tus datos'),
             `<select class="pro-chart-select" id="myRpe" onchange="myPcRefresh('rpe')">${ejOL}</select>
              <div class="pro-chart-type-btn">
                <button class="active" id="mypct_rpe_line" onclick="myPcType('rpe','line')">〜</button>
@@ -4790,7 +4820,7 @@ async function renderProgreso() {
             `<div class="pro-chart-canvas-wrap"><canvas id="myChartRpe"></canvas></div>`
           )}
 
-          ${buildProCard('vol','📦','Volumen','Series por categoría / sem', ftag('Tus datos'),
+          ${buildProCard('vol','','Volumen','Series por categoría / sem', ftag('Tus datos'),
             `<select class="pro-chart-select" id="myVol" onchange="myPcRefresh('vol')">${catOL}</select>
              <div class="pro-chart-type-btn">
                <button class="active" id="mypct_vol_bar" onclick="myPcType('vol','bar')">▮</button>
@@ -4799,7 +4829,7 @@ async function renderProgreso() {
             `<div class="pro-chart-canvas-wrap"><canvas id="myChartVol"></canvas></div>`
           )}
 
-          ${buildProCard('sesint','⚡','Intensidad percibida','Cansancio al finalizar sesión', ftag('Tus datos'),
+          ${buildProCard('sesint','','Intensidad percibida','Cansancio al finalizar sesión', ftag('Tus datos'),
             `<select class="pro-chart-select" id="mySesint" onchange="myPcRefresh('sesint')">${semOL}</select>
              <div class="pro-chart-type-btn">
                <button class="active" id="mypct_sesint_line" onclick="myPcType('sesint','line')">〜</button>
@@ -4808,17 +4838,17 @@ async function renderProgreso() {
             `<div class="pro-chart-canvas-wrap"><canvas id="myChartSesInt"></canvas></div>`
           )}
 
-          ${buildProCard('dur','⏱️','Duración de sesión','Minutos prom / semana', ftag('Tus datos'),
+          ${buildProCard('dur','','Duración de sesión','Minutos prom / semana', ftag('Tus datos'),
             ``,
             `<div class="pro-chart-canvas-wrap"><canvas id="myChartDur"></canvas></div>`
           )}
 
-          ${buildProCard('frec','🗓️','Frecuencia','Sesiones por semana', ftag('Tus datos'),
+          ${buildProCard('frec','','Frecuencia','Sesiones por semana', ftag('Tus datos'),
             ``,
             `<div class="pro-chart-canvas-wrap"><canvas id="myChartFrec"></canvas></div>`
           )}
 
-          ${buildProCard('topej','🏆','Top Ejercicios','Los más entrenados', ftag('Tus datos'),
+          ${buildProCard('topej','','Top Ejercicios','Los más entrenados', ftag('Tus datos'),
             ``,
             `<div class="pro-chart-canvas-wrap"><canvas id="myChartTopEj"></canvas></div>`
           )}
@@ -4847,28 +4877,28 @@ async function renderProgreso() {
       if(!revSemanas.length && !revMeses.length) return '';
       return `
         <div class="glass-card">
-          <div class="card-title">📋 Mis revisiones semanales</div>
+          <div class="card-title">Mis revisiones semanales</div>
           ${revSemanas.length === 0 ? '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:10px">Sin revisiones semanales aún</div>' :
           revSemanas.slice(-4).reverse().map(([key, rev]) => `
             <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:8px">
-              <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:8px">📋 M${rev.mes||'?'} · S${rev.semana||'?'}</div>
+              <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:8px">M${rev.mes||'?'} · S${rev.semana||'?'}</div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
                 <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">DOMS</div><div style="font-weight:800;color:#ff6b35">${rev.doms}/10</div></div>
                 <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">Ánimo</div><div style="font-weight:800;color:var(--primary)">${rev.animo}/5</div></div>
                 <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">Sueño</div><div style="font-weight:800;color:#a78bfa">${rev.sueno||'?'}</div></div>
               </div>
               ${rev.observacionesEntrenador ? `<div style="margin-top:8px;padding:8px;background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.15);border-radius:8px;font-size:0.78rem">
-                <div style="font-size:0.65rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">💬 Observaciones del entrenador</div>
+                <div style="font-size:0.65rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Observaciones del entrenador</div>
                 <div>${rev.observacionesEntrenador}</div>
               </div>` : ''}
             </div>`).join('')}
           ${revMeses.length > 0 ? `
-          <div class="card-title" style="margin-top:16px">📅 Revisiones mensuales</div>
+          <div class="card-title" style="margin-top:16px">Revisiones mensuales</div>
           ${revMeses.slice(-3).reverse().map(([key, rev]) => `
             <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:8px">
-              <div style="font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px">📅 Mes ${rev.mes||'?'}</div>
+              <div style="font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px">Mes ${rev.mes||'?'}</div>
               ${rev.observacionesEntrenador ? `<div style="padding:8px;background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.15);border-radius:8px;font-size:0.78rem">
-                <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">💬 Observaciones del entrenador</div>
+                <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Observaciones del entrenador</div>
                 <div>${rev.observacionesEntrenador}</div>
               </div>` : ''}
             </div>`).join('')}
@@ -4960,7 +4990,7 @@ async function renderProgreso() {
           if(!canvas2) return;
           if(canvas2._proChart){canvas2._proChart.destroy();canvas2._proChart=null;}
           const hasD=ds.some(d=>d.data&&d.data.some(v=>v!=null&&v>0));
-          if(!hasD){ const w=canvas2.parentElement; if(w){w.setAttribute('data-canvas','myChartDesc');w.innerHTML=`<div class="pro-chart-empty"><div class="ico">📭</div><span>Sin datos aún</span></div>`;} return; }
+          if(!hasD){ const w=canvas2.parentElement; if(w){w.setAttribute('data-canvas','myChartDesc');w.innerHTML=`<div class="pro-chart-empty"><div class="ico"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div><span>Sin datos aún</span></div>`;} return; }
           canvas2._proChart = new Chart(canvas2, {type:'line', data:{labels, datasets:ds}, options:optsDesc});
         }
       };
@@ -5008,7 +5038,7 @@ async function renderPerfil() {
             onclick="toggleAvatarPicker()"
             title="Toca para cambiar avatar">
           <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4)"
-            onclick="toggleAvatarPicker()">✏️</div>
+            onclick="toggleAvatarPicker()"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></div>
         </div>
         <div>
           <div style="font-size:1.2rem;font-weight:800">${currentUser.nombres} ${currentUser.apellidos||''}</div>
@@ -5018,11 +5048,11 @@ async function renderPerfil() {
       </div>
       <div style="display:flex;gap:8px;font-size:0.82rem">
         <div style="flex:1;background:rgba(0,229,160,0.08);border-radius:10px;padding:10px;border:1px solid rgba(0,229,160,0.15)">
-          <div style="color:var(--success)">✅ Válido hasta</div>
+          <div style="color:var(--success)">Válido hasta</div>
           <div style="font-weight:700">${currentUser.validoHasta||'—'}</div>
         </div>
         <div style="flex:1;background:rgba(0,200,255,0.08);border-radius:10px;padding:10px;border:1px solid rgba(0,200,255,0.15)">
-          <div style="color:var(--primary)">📊 Método</div>
+          <div style="color:var(--primary)">Método</div>
           <div style="font-weight:700">${currentUser.metodo}</div>
         </div>
       </div>
@@ -5034,12 +5064,12 @@ async function renderPerfil() {
       <div class="avatar-grid-user" id="avatarGrid">${avatarGridHtml}</div>
       <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
         <button class="btn btn-secondary btn-sm" onclick="toggleAvatarPicker(false)">Cancelar</button>
-        <button class="btn btn-primary btn-sm" onclick="saveAvatar()">💾 Guardar avatar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveAvatar()">Guardar avatar</button>
       </div>
     </div>
     
     <div class="glass-card">
-      <div class="card-title">📋 Mi Anamnesis</div>
+      <div class="card-title">Mi Anamnesis</div>
       ${ana.completada?`
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
           ${QLABELS.map((lbl,i)=>`
@@ -5052,7 +5082,7 @@ async function renderPerfil() {
       `:`<div style="text-align:center;padding:20px;color:var(--text-muted)">Sin anamnesis completada</div>`}
     </div>
     <div style="text-align:center;padding:10px">
-      <button class="btn btn-danger btn-sm" onclick="logout()">🚪 Cerrar Sesión</button>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Cerrar Sesión</button>
     </div>
   `;
 
@@ -5151,7 +5181,7 @@ function setupSessionWatcher(uid) {
   _swRef    = ref(db, `usuarios/${uid}`);
   _swBooted = false;
 
-  // ⏱️ Verificar membresía cada 60s para detectar vencimiento automático (sin cambio en DB)
+  // Verificar membresía cada 60s para detectar vencimiento automático (sin cambio en DB)
   if (_membershipCheckInterval) clearInterval(_membershipCheckInterval);
   _membershipCheckInterval = setInterval(checkMembershipExpiry, 60000);
 
@@ -5275,14 +5305,14 @@ onAuthStateChanged(auth, (user) => {
   if (!window._initDone) {
     window._initDone = true;
     setupUserNotifListener();
-    setupSessionWatcher(user.uid); // 🔒 expulsión en tiempo real si admin cambia estado
+    setupSessionWatcher(user.uid); // expulsión en tiempo real si admin cambia estado
     init();
   }
 });
 </script>
 
 <a class="help-fab" id="helpFab" href="manual.html" title="Abrir manual">?</a>
-<div class="help-fab-tooltip" id="helpFabTooltip">📖 Manual de uso</div>
+<div class="help-fab-tooltip" id="helpFabTooltip">Manual de uso</div>
 
 <script>
 (function(){
