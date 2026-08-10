@@ -1474,8 +1474,87 @@ body [style*="solid rgba(255,255,255,0.15)"]{
 
 /* ── 6. Texto seleccionable y legible ────────────────────────────*/
 ::selection{ background:rgba(0,153,230,.22); color:#0d1b2a; }
-/* Palabras largas (URLs, nombres de ejercicio) no deben desbordar */
-p, td, li, .card-title, .training-title, .rev-q{ overflow-wrap:anywhere; }
+/* Palabras largas no deben desbordar, pero NUNCA dentro de tablas:
+   `overflow-wrap:anywhere` en td partía los nombres de ejercicio por la
+   mitad y quebraba las píldoras de estado en dos líneas. */
+p, li, .card-title, .training-title, .rev-q{ overflow-wrap:anywhere; }
+
+/* ── TABLAS: legibilidad de celdas y píldoras ────────────────────
+   Las píldoras (Activo, RPE, Atleta, SuperAdmin) son texto en línea:
+   si la columna es estrecha se parten y el fondo redondeado se corta.
+   Se vuelven bloques que no se rompen nunca. */
+.badge, .badge-active, .badge-inactive, .badge-rpe, .badge-rir,
+.data-table .badge, .page table .badge{
+  display:inline-block !important;
+  white-space:nowrap !important;
+  overflow-wrap:normal !important;
+  word-break:keep-all !important;
+  line-height:1.5 !important;
+  vertical-align:middle;
+}
+
+/* Las celdas cortas no se parten: mejor scroll horizontal que texto roto */
+.data-table td, .data-table th,
+.page table td, .page table th{
+  white-space:nowrap;
+  overflow-wrap:normal !important;
+  word-break:normal !important;
+}
+
+/* Las columnas de nombre sí pueden ocupar dos líneas, pero cortando
+   solo entre palabras, nunca a mitad de una. */
+.data-table td:first-child, .page table td:first-child,
+.data-table td.col-nombre, .page table td.col-nombre{
+  white-space:normal;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  min-width:150px;
+  max-width:280px;
+}
+
+/* El contenedor desplaza en horizontal en lugar de comprimir columnas */
+.table-wrap, .tbl-wrap, .table-container{
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.data-table, .page table{ min-width:720px; }
+
+/* Las tablas del panel van envueltas en un div con overflow-x en línea,
+   sin clase. Se alcanza con :has() para darle scroll suave y el degradado
+   que avisa de que hay más columnas a la derecha. */
+div[style*="overflow-x:auto"]:has(> .data-table),
+div[style*="overflow-x: auto"]:has(> .data-table){
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  border-radius:12px;
+}
+@media (max-width:900px){
+  div[style*="overflow-x:auto"]:has(> .data-table),
+  div[style*="overflow-x: auto"]:has(> .data-table),
+  .table-wrap, .tbl-wrap, .table-container{
+    -webkit-mask-image:linear-gradient(90deg,#000 94%,rgba(0,0,0,.45));
+    mask-image:linear-gradient(90deg,#000 94%,rgba(0,0,0,.45));
+  }
+}
+
+/* Barra de desplazamiento visible: sin ella nadie descubre que hay
+   más columnas. En móvil suele estar oculta por defecto. */
+div[style*="overflow-x:auto"]::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar, .tbl-wrap::-webkit-scrollbar{ height:6px; }
+div[style*="overflow-x:auto"]::-webkit-scrollbar-thumb,
+.table-wrap::-webkit-scrollbar-thumb, .tbl-wrap::-webkit-scrollbar-thumb{
+  background:rgba(0,85,165,.28); border-radius:3px;
+}
+div[style*="overflow-x:auto"]::-webkit-scrollbar-track{ background:rgba(0,85,165,.06); border-radius:3px; }
+
+/* La columna de acciones queda fija a la derecha al desplazar */
+.data-table th:last-child, .data-table td:last-child{
+  position:sticky; right:0; z-index:1;
+  box-shadow:-6px 0 10px -8px rgba(13,27,42,.25);
+}
+.data-table td:last-child{ background:#fff; }
+.data-table tbody tr:nth-child(even) td:last-child{ background:#f8fafc; }
+.data-table thead th:last-child{ background:#0055a5; }
 
 /* ── 7. Estados deshabilitados perceptibles ──────────────────────*/
 button:disabled, .btn:disabled, input:disabled, select:disabled{
@@ -1543,7 +1622,7 @@ button:disabled, .btn:disabled, input:disabled, select:disabled{
 <div class="grid-overlay"></div>
 
 <div class="header">
-  <img src="logo_saykyo.png?v=20260810-005" alt="Saykyo Club" style="height:60px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,200,255,0.25))">
+  <img src="logo_saykyo.png?v=20260810-010" alt="Saykyo Club" style="height:60px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,200,255,0.25))">
   <div class="header-user">
     <button class="user-notif-btn" id="userNotifBtn" onclick="toggleUserNotifSheet()" title="Notificaciones"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="user-notif-badge" id="userNotifBadge">0</span>
     </button>

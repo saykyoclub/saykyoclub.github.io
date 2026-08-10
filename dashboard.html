@@ -1376,8 +1376,87 @@ body [style*="solid rgba(255,255,255,0.15)"]{
 
 /* ── 6. Texto seleccionable y legible ────────────────────────────*/
 ::selection{ background:rgba(0,153,230,.22); color:#0d1b2a; }
-/* Palabras largas (URLs, nombres de ejercicio) no deben desbordar */
-p, td, li, .card-title, .training-title, .rev-q{ overflow-wrap:anywhere; }
+/* Palabras largas no deben desbordar, pero NUNCA dentro de tablas:
+   `overflow-wrap:anywhere` en td partía los nombres de ejercicio por la
+   mitad y quebraba las píldoras de estado en dos líneas. */
+p, li, .card-title, .training-title, .rev-q{ overflow-wrap:anywhere; }
+
+/* ── TABLAS: legibilidad de celdas y píldoras ────────────────────
+   Las píldoras (Activo, RPE, Atleta, SuperAdmin) son texto en línea:
+   si la columna es estrecha se parten y el fondo redondeado se corta.
+   Se vuelven bloques que no se rompen nunca. */
+.badge, .badge-active, .badge-inactive, .badge-rpe, .badge-rir,
+.data-table .badge, .page table .badge{
+  display:inline-block !important;
+  white-space:nowrap !important;
+  overflow-wrap:normal !important;
+  word-break:keep-all !important;
+  line-height:1.5 !important;
+  vertical-align:middle;
+}
+
+/* Las celdas cortas no se parten: mejor scroll horizontal que texto roto */
+.data-table td, .data-table th,
+.page table td, .page table th{
+  white-space:nowrap;
+  overflow-wrap:normal !important;
+  word-break:normal !important;
+}
+
+/* Las columnas de nombre sí pueden ocupar dos líneas, pero cortando
+   solo entre palabras, nunca a mitad de una. */
+.data-table td:first-child, .page table td:first-child,
+.data-table td.col-nombre, .page table td.col-nombre{
+  white-space:normal;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  min-width:150px;
+  max-width:280px;
+}
+
+/* El contenedor desplaza en horizontal en lugar de comprimir columnas */
+.table-wrap, .tbl-wrap, .table-container{
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.data-table, .page table{ min-width:720px; }
+
+/* Las tablas del panel van envueltas en un div con overflow-x en línea,
+   sin clase. Se alcanza con :has() para darle scroll suave y el degradado
+   que avisa de que hay más columnas a la derecha. */
+div[style*="overflow-x:auto"]:has(> .data-table),
+div[style*="overflow-x: auto"]:has(> .data-table){
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  border-radius:12px;
+}
+@media (max-width:900px){
+  div[style*="overflow-x:auto"]:has(> .data-table),
+  div[style*="overflow-x: auto"]:has(> .data-table),
+  .table-wrap, .tbl-wrap, .table-container{
+    -webkit-mask-image:linear-gradient(90deg,#000 94%,rgba(0,0,0,.45));
+    mask-image:linear-gradient(90deg,#000 94%,rgba(0,0,0,.45));
+  }
+}
+
+/* Barra de desplazamiento visible: sin ella nadie descubre que hay
+   más columnas. En móvil suele estar oculta por defecto. */
+div[style*="overflow-x:auto"]::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar, .tbl-wrap::-webkit-scrollbar{ height:6px; }
+div[style*="overflow-x:auto"]::-webkit-scrollbar-thumb,
+.table-wrap::-webkit-scrollbar-thumb, .tbl-wrap::-webkit-scrollbar-thumb{
+  background:rgba(0,85,165,.28); border-radius:3px;
+}
+div[style*="overflow-x:auto"]::-webkit-scrollbar-track{ background:rgba(0,85,165,.06); border-radius:3px; }
+
+/* La columna de acciones queda fija a la derecha al desplazar */
+.data-table th:last-child, .data-table td:last-child{
+  position:sticky; right:0; z-index:1;
+  box-shadow:-6px 0 10px -8px rgba(13,27,42,.25);
+}
+.data-table td:last-child{ background:#fff; }
+.data-table tbody tr:nth-child(even) td:last-child{ background:#f8fafc; }
+.data-table thead th:last-child{ background:#0055a5; }
 
 /* ── 7. Estados deshabilitados perceptibles ──────────────────────*/
 button:disabled, .btn:disabled, input:disabled, select:disabled{
@@ -1426,7 +1505,7 @@ button:disabled, .btn:disabled, input:disabled, select:disabled{
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <img src="logo_saykyo.png?v=20260810-005" alt="Saykyo Club" style="height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(0,200,255,0.25))">
+    <img src="logo_saykyo.png?v=20260810-010" alt="Saykyo Club" style="height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(0,200,255,0.25))">
   </div>
   <div class="admin-info">
     <img class="admin-avatar" id="adminAvatar" src="" alt="admin"
@@ -1903,7 +1982,7 @@ async function renderHome(container) {
   container.innerHTML = `
     <div class="dashboard-grid">
       <div class="stat-card" style="--card-accent:var(--primary);position:relative;overflow:hidden;min-height:140px;background:none;" onclick="navTo('grupos')">
-		  <div style="position:absolute;inset:0;background-image:url('./img/4.jpg?v=20260810-005');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
+		  <div style="position:absolute;inset:0;background-image:url('./img/4.jpg?v=20260810-010');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
 		  <div style="position:absolute;inset:0;z-index:1;"></div>
 		  <div style="position:relative;z-index:2;display:flex;flex-direction:column;gap:4px;">
 			<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:20px;padding:3px 10px;width:fit-content;">
@@ -1915,7 +1994,7 @@ async function renderHome(container) {
 		  </div>
 	  </div>
       <div class="stat-card" style="--card-accent:var(--success);position:relative;overflow:hidden;min-height:140px;background:none;" onclick="navTo('usuarios')">
-		  <div style="position:absolute;inset:0;background-image:url('./img/5.jpg?v=20260810-005');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
+		  <div style="position:absolute;inset:0;background-image:url('./img/5.jpg?v=20260810-010');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
 		  <div style="position:absolute;inset:0;z-index:1;"></div>
 		  <div style="position:relative;z-index:2;display:flex;flex-direction:column;gap:4px;">
 			<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:20px;padding:3px 10px;width:fit-content;">
@@ -1927,7 +2006,7 @@ async function renderHome(container) {
 		  </div>
 	  </div>
       <div class="stat-card" style="--card-accent:var(--accent);position:relative;overflow:hidden;min-height:140px;background:none;" onclick="navTo('ejercicios')">
-		  <div style="position:absolute;inset:0;background-image:url('./img/7.jpg?v=20260810-005');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
+		  <div style="position:absolute;inset:0;background-image:url('./img/7.jpg?v=20260810-010');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
 		  <div style="position:absolute;inset:0;z-index:1;"></div>
 		  <div style="position:relative;z-index:2;display:flex;flex-direction:column;gap:4px;">
 			<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:20px;padding:3px 10px;width:fit-content;">
@@ -1939,7 +2018,7 @@ async function renderHome(container) {
 		  </div>
 	  </div>
      <div class="stat-card" style="--card-accent:var(--accent2);position:relative;overflow:hidden;min-height:140px;background:none;" onclick="navTo('rutinas')">
-		  <div style="position:absolute;inset:0;background-image:url('./img/9.jpg?v=20260810-005');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
+		  <div style="position:absolute;inset:0;background-image:url('./img/9.jpg?v=20260810-010');background-size:cover;background-position:center;filter:brightness(0.62) saturate(1.5);z-index:0;"></div>
 		  <div style="position:absolute;inset:0;z-index:1;"></div>
 		  <div style="position:relative;z-index:2;display:flex;flex-direction:column;gap:4px;">
 			<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:20px;padding:3px 10px;width:fit-content;">
@@ -1957,7 +2036,7 @@ async function renderHome(container) {
       <div style="border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);background:#fff">
         <!-- Header foto — mismo lenguaje que las stat cards -->
         <div style="position:relative;height:76px;overflow:hidden">
-          <div style="position:absolute;inset:0;background-image:url('./img/8.jpg?v=20260810-005');background-size:cover;background-position:center;filter:brightness(0.52) saturate(1.3)"></div>
+          <div style="position:absolute;inset:0;background-image:url('./img/8.jpg?v=20260810-010');background-size:cover;background-position:center;filter:brightness(0.52) saturate(1.3)"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,0.45),rgba(0,0,0,0.2))"></div>
           <div style="position:relative;z-index:2;padding:14px 18px;display:flex;align-items:center;gap:10px;height:100%">
             <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.25)">
@@ -1994,7 +2073,7 @@ async function renderHome(container) {
       <div style="border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);background:#fff">
         <!-- Header foto -->
         <div style="position:relative;height:76px;overflow:hidden">
-          <div style="position:absolute;inset:0;background-image:url('./img/9.jpg?v=20260810-005');background-size:cover;background-position:center top;filter:brightness(0.52) saturate(1.3)"></div>
+          <div style="position:absolute;inset:0;background-image:url('./img/9.jpg?v=20260810-010');background-size:cover;background-position:center top;filter:brightness(0.52) saturate(1.3)"></div>
           <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,0.45),rgba(0,0,0,0.2))"></div>
           <div style="position:relative;z-index:2;padding:14px 18px;display:flex;align-items:center;gap:10px;height:100%">
             <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.25)">
@@ -7858,8 +7937,8 @@ function buildBodyMapSVG(val) {
       }
     </style>
     <div style="display:flex;flex-direction:column;gap:16px;align-items:center">
-      ${imgBlock('body.png?v=20260810-005',      'FRONTAL',   frontDots, 'bodyImgWrapper')}
-      ${imgBlock('body_back.png?v=20260810-005', 'POSTERIOR', backDots,  'bodyImgWrapperBack')}
+      ${imgBlock('body.png?v=20260810-010',      'FRONTAL',   frontDots, 'bodyImgWrapper')}
+      ${imgBlock('body_back.png?v=20260810-010', 'POSTERIOR', backDots,  'bodyImgWrapperBack')}
     </div>`;
 }
 
@@ -9268,8 +9347,8 @@ window.exportValoracionPDF = async (uid, specificVid) => {
     ...PLIEGUES_ZONES.filter(z=>z.side==='back'&&v.pliegues?.[z.key]!=null)
   ];
   const [bodyFrontImg,bodyBackImg]=await Promise.all([
-    renderBodyCanvas('body.png?v=20260810-005',frontZonesPDF),
-    renderBodyCanvas('body_back.png?v=20260810-005',backZonesPDF)
+    renderBodyCanvas('body.png?v=20260810-010',frontZonesPDF),
+    renderBodyCanvas('body_back.png?v=20260810-010',backZonesPDF)
   ]);
 
   // ── jsPDF setup ──
@@ -9353,7 +9432,7 @@ window.exportValoracionPDF = async (uid, specificVid) => {
   const logoData=await(()=>new Promise(resolve=>{
     const img=new Image();
     img.onload=()=>{const lc=document.createElement('canvas');lc.width=img.naturalWidth;lc.height=img.naturalHeight;lc.style.cssText='position:fixed;left:-9999px';document.body.appendChild(lc);lc.getContext('2d').drawImage(img,0,0);resolve({dataUrl:lc.toDataURL('image/png'),w:lc.width,h:lc.height});document.body.removeChild(lc);};
-    img.onerror=()=>resolve(null);img.src='logo_saykyo.png?v=20260810-005';
+    img.onerror=()=>resolve(null);img.src='logo_saykyo.png?v=20260810-010';
   }))();
 
   const adminSnap=await get(ref(db,`usuarios/${auth.currentUser?.uid}`));
