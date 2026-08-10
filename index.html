@@ -6,372 +6,415 @@
 <title>SAYKYO CLUB - Login</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
-  :root {
-    --primary: #00c8ff;
-    --primary-dark: #0088cc;
-    --accent: #7b2fff;
-    --glass-bg: rgba(255,255,255,0.06);
-    --glass-border: rgba(255,255,255,0.15);
-    --glass-shadow: rgba(0,200,255,0.1);
-    --text: #eef6ff;
-    --text-muted: rgba(232,244,255,0.55);
-    --bg-dark: #0e1626;
-    --error: #ff4d6d;
-    --success: #00e5a0;
-  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  
+
   body {
-    font-family: 'Exo 2', sans-serif;
-    background: var(--bg-dark);
+    font-family: 'Inter', sans-serif;
+    background: #F7F8FA;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    color: var(--text);
+    color: #0F172A;
   }
 
-  /* Animated background */
+  /* Subtle background gradients */
   .bg-scene {
     position: fixed; inset: 0; z-index: 0;
-    background: radial-gradient(ellipse at 20% 45%, rgba(0,120,220,0.28) 0%, transparent 58%),
-                radial-gradient(ellipse at 82% 18%, rgba(123,47,255,0.22) 0%, transparent 52%),
-                radial-gradient(ellipse at 60% 85%, rgba(0,200,255,0.12) 0%, transparent 55%),
-                linear-gradient(180deg, #131f33 0%, #0e1626 55%, #0b1220 100%);
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(74,144,217,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 20%, rgba(124,58,237,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 90%, rgba(124,58,237,0.05) 0%, transparent 50%),
+      #F7F8FA;
   }
-  .orb {
-    position: absolute; border-radius: 50%;
-    filter: blur(60px); animation: drift 8s ease-in-out infinite;
-  }
-  .orb-1 { width:400px;height:400px;background:rgba(0,150,255,0.18);top:-10%;left:-10%;animation-delay:0s; }
-  .orb-2 { width:300px;height:300px;background:rgba(123,47,255,0.2);bottom:10%;right:-5%;animation-delay:-3s; }
-  .orb-3 { width:200px;height:200px;background:rgba(0,229,160,0.12);top:60%;left:30%;animation-delay:-5s; }
-  @keyframes drift {
-    0%,100% { transform: translate(0,0) scale(1); }
-    33% { transform: translate(30px,-20px) scale(1.05); }
-    66% { transform: translate(-20px,30px) scale(0.95); }
-  }
-
-  /* Grid lines */
-  .grid-overlay {
-    position: fixed; inset: 0; z-index: 0; opacity: 0.04;
-    background-image: linear-gradient(rgba(0,200,255,1) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(0,200,255,1) 1px, transparent 1px);
-    background-size: 50px 50px;
-  }
-
-  .login-wrapper {
-    position: relative; z-index: 10;
-    width: 100%; max-width: 420px;
-    padding: 16px 24px;
-    animation: slideUp 0.8s cubic-bezier(0.16,1,0.3,1) both;
-    max-height: 100vh;
-    overflow-y: auto;
-  }
-  @keyframes slideUp {
-    from { opacity:0; transform: translateY(40px); }
-    to { opacity:1; transform: translateY(0); }
-  }
-
-  /* Liquid Glass Card */
-  .glass-card {
-    background: rgba(20,30,54,0.62);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 28px;
-    padding: 36px 40px 32px;
-    box-shadow: 
-      0 0 0 1px rgba(0,200,255,0.05),
-      0 20px 60px rgba(0,0,0,0.5),
-      inset 0 1px 0 rgba(255,255,255,0.1),
-      0 0 80px rgba(0,100,200,0.08);
-    position: relative;
-    overflow: hidden;
-  }
-  .glass-card::before {
-    content:'';
-    position:absolute; top:0;left:0;right:0;height:1px;
-    background: linear-gradient(90deg, transparent, rgba(0,200,255,0.6), rgba(123,47,255,0.6), transparent);
-  }
-  .glass-card::after {
-    content:''; position:absolute;
-    top:-100px;left:-100px;width:300px;height:300px;
-    background:radial-gradient(circle, rgba(0,150,255,0.08) 0%, transparent 70%);
-    pointer-events:none;
-  }
-
-  .logo-area { text-align:center; margin-bottom: 20px; }
-  .logo-text {
-    font-family: 'Space Mono', monospace;
-    font-size: 2.4rem; font-weight: 700;
-    letter-spacing: 6px;
-    background: linear-gradient(135deg, #fff 0%, var(--primary) 50%, var(--accent) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: none;
-  }
-  .logo-sub {
-    font-size: 0.7rem; letter-spacing: 8px;
-    color: var(--primary); text-transform: uppercase;
-    margin-top: 4px; opacity: 0.8;
-  }
-  .logo-tagline {
-    font-size: 0.85rem; color: var(--text-muted);
-    margin-top: 12px; font-weight: 300; letter-spacing: 1px;
-  }
-
-  /* Mascots */
-  .mascots {
-    display: flex; justify-content: center;
-    margin-bottom: 18px;
-  }
-  .mascot-img {
-    width: 190px; height: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 0 20px rgba(0,200,255,0.25));
-  }
-
-  /* Form */
-  .form-group { margin-bottom: 12px; position: relative; }
-  .form-group label {
-    display: block; font-size: 0.75rem;
-    color: var(--text-muted); letter-spacing: 1px;
-    text-transform: uppercase; margin-bottom: 6px;
-  }
-  .glass-input {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 14px 18px;
-    color: var(--text); font-family: 'Exo 2', sans-serif;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    outline: none;
-  }
-  .glass-input:focus {
-    border-color: var(--primary);
-    background: rgba(0,200,255,0.08);
-    box-shadow: 0 0 0 3px rgba(0,200,255,0.12), inset 0 0 20px rgba(0,200,255,0.04);
-  }
-  .glass-input::placeholder { color: rgba(232,244,255,0.3); }
-
-  .icon-input { position: relative; }
-  .icon-input input { padding-left: 46px; }
-  .icon-input .input-icon {
-    position: absolute; left: 16px; top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted); font-size: 1rem;
-  }
-
-  .btn-primary {
-    width: 100%; padding: 15px;
-    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-    border: none; border-radius: 14px;
-    color: #fff; font-family: 'Exo 2', sans-serif;
-    font-size: 1rem; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase;
-    cursor: pointer; margin-top: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 20px rgba(0,200,255,0.3);
-    position: relative; overflow: hidden;
-  }
-  .btn-primary::before {
-    content:''; position:absolute; inset:0;
-    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.5s ease;
-  }
-  .btn-primary:hover::before { transform: translateX(100%); }
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0,200,255,0.5);
-  }
-  .btn-primary:active { transform: translateY(0); }
-
-  .loading-state {
-    display: none; align-items: center; justify-content: center; gap: 8px;
-  }
-  .spinner {
-    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff; border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .credits {
-    text-align: center; margin-top: 18px;
-    color: var(--text-muted); font-size: 0.75rem;
-  }
-  .credits strong { color: var(--primary); }
-
-  /* Eye toggle */
-  .pass-wrapper { position: relative; }
-  .pass-wrapper input { padding-right: 46px; }
-  .eye-btn {
-    position: absolute; right: 14px; top: 50%;
-    transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: var(--text-muted); font-size: 1rem;
-    padding: 4px; line-height: 1;
-    transition: color 0.2s ease;
-  }
-  .eye-btn:hover { color: var(--primary); }
-
-  /* Remember me */
-  .remember-row {
-    display: flex; align-items: center; gap: 10px;
-    margin-top: 4px; margin-bottom: 4px;
-    cursor: pointer;
-  }
-  .remember-check {
-    width: 18px; height: 18px;
-    accent-color: var(--primary);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .remember-label {
-    font-size: 0.82rem; color: var(--text-muted);
-    cursor: pointer; user-select: none;
-    transition: color 0.2s;
-  }
-  .remember-row:hover .remember-label { color: var(--text); }
 
   /* Floating particles */
   .particle {
     position: fixed; pointer-events: none;
     width: 3px; height: 3px;
     border-radius: 50%;
-    background: var(--primary);
+    background: #7C3AED;
     animation: float-up linear infinite;
     opacity: 0;
   }
   @keyframes float-up {
-    0% { transform: translateY(100vh) translateX(0); opacity:0; }
-    10% { opacity: 0.6; }
-    90% { opacity: 0.3; }
-    100% { transform: translateY(-10vh) translateX(var(--drift)); opacity:0; }
+    0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10%  { opacity: 0.4; }
+    90%  { opacity: 0.2; }
+    100% { transform: translateY(-10vh) translateX(var(--drift)); opacity: 0; }
   }
 
-  @media (max-width: 480px) {
-    .glass-card { padding: 36px 24px 32px; }
-    .logo-text { font-size: 2rem; }
+  /* Loading screen */
+  #loadingScreen {
+    display: flex;
+    position: fixed; inset: 0; z-index: 200;
+    background: #F7F8FA;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
   }
+  .load-spinner {
+    width: 56px; height: 56px;
+    border: 3px solid rgba(124,58,237,0.15);
+    border-top-color: #7C3AED;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .load-text {
+    font-size: 1rem; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    background: linear-gradient(135deg, #4A90D9, #7C3AED);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .load-sub { font-size: 0.8rem; color: #64748B; }
+
+  /* Wrapper */
+  .login-wrapper {
+    position: relative; z-index: 10;
+    width: 100%; max-width: 380px;
+    padding: 16px;
+    animation: slideUp 0.7s cubic-bezier(0.16,1,0.3,1) both;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(36px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── THE CARD ─── */
+  .sk-card {
+    position: relative;
+    background: #FFFFFF;
+    border: 0.5px solid rgba(0,0,0,0.08);
+    border-radius: 24px;
+    overflow: hidden;
+    padding: 2rem 1.75rem 0;
+    box-shadow: 0 20px 60px rgba(124,58,237,0.12), 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  /* Decorative blob — perfect circle, anchored bottom-right */
+  .sk-blob {
+    position: absolute;
+    bottom: -70px; right: -70px;
+    width: 200px; height: 200px;
+    background: #C8B4E8;
+    border-radius: 50%;
+    opacity: 0.42;
+    z-index: 0;
+  }
+
+
+
+  /* Logo — centered */
+  .sk-logo {
+    position: relative; z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1.75rem;
+  }
+  .sk-logo img {
+    height: 46px; width: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  /* Headline */
+  .sk-headline {
+    position: relative; z-index: 1;
+    margin-bottom: 0;
+  }
+  .sk-headline h2 {
+    font-size: 20px; font-weight: 700;
+    color: #0F172A; margin: 0; line-height: 1.2;
+  }
+  .sk-headline p {
+    font-size: 12px; color: #64748B;
+    margin: 0.35rem 0 0; font-weight: 400;
+  }
+
+  /* Form */
+  .sk-form {
+    position: relative; z-index: 1;
+    margin-top: 1.4rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+
+  /* Field */
+  .sk-field { display: flex; flex-direction: column; gap: 4px; }
+  .sk-field label {
+    font-size: 10px; font-weight: 600;
+    color: #64748B;
+    letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .sk-fi {
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1.5px solid rgba(0,0,0,0.14);
+    padding: 7px 0;
+    transition: border-color 0.2s;
+  }
+  .sk-fi:focus-within { border-bottom-color: #7C3AED; }
+  .sk-fi:focus-within i { color: #7C3AED; }
+  .sk-fi i {
+    font-size: 15px; color: #94A3B8; flex-shrink: 0;
+  }
+  .sk-fi input {
+    border: none !important; outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; color: #0F172A;
+    flex: 1; padding: 0 !important; height: auto !important;
+  }
+  .sk-fi input::placeholder { color: #94A3B8; }
+
+  /* Eye toggle */
+  .sk-eye {
+    background: none; border: none; cursor: pointer;
+    padding: 0; color: #94A3B8; display: flex;
+    transition: color 0.2s;
+  }
+  .sk-eye:hover { color: #7C3AED; }
+  .sk-eye i { font-size: 15px; }
+
+  /* Remember row */
+  .remember-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: -0.35rem; cursor: pointer;
+  }
+  .remember-check {
+    width: 16px; height: 16px;
+    accent-color: #7C3AED; cursor: pointer; flex-shrink: 0;
+  }
+  .remember-label {
+    font-size: 11px; color: #64748B;
+    cursor: pointer; user-select: none;
+  }
+
+  /* Forgot */
+  .sk-forgot {
+    text-align: right; margin-top: -0.5rem;
+  }
+  .sk-forgot a {
+    font-size: 11px; color: #7C3AED;
+    text-decoration: none; font-weight: 500;
+  }
+
+  /* CTA Button */
+  .btn-primary {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, #4A90D9 0%, #7C3AED 100%);
+    color: #fff; border: none; border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; margin-top: 0.25rem;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 16px rgba(124,58,237,0.30);
+    position: relative; overflow: hidden;
+  }
+  .btn-primary::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+  }
+  .btn-primary:hover::before { transform: translateX(100%); }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* Loading state inside button */
+  .loading-state {
+    display: none; align-items: center;
+    justify-content: center; gap: 8px;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* Divider */
+  .sk-div {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sk-div span { font-size: 11px; color: #94A3B8; white-space: nowrap; }
+  .sk-div::before, .sk-div::after {
+    content: ''; flex: 1; height: 0.5px;
+    background: rgba(0,0,0,0.1);
+  }
+
+  /* Social buttons */
+  .sk-social { display: flex; gap: 10px; }
+  .sk-sb {
+    flex: 1; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+    padding: 9px; border-radius: 10px;
+    border: 0.5px solid rgba(0,0,0,0.12);
+    background: #F7F8FA; cursor: pointer;
+    font-size: 12px; font-weight: 500;
+    color: #475569; font-family: 'Inter', sans-serif;
+    transition: background 0.15s;
+  }
+  .sk-sb:hover { background: #EEF0F3; }
+  .sk-sb i { font-size: 15px; }
+
+  /* Bottom section */
+  .sk-bottom {
+    position: relative; z-index: 1;
+    margin-top: 1.25rem;
+  }
+
+  /* Coaches centered */
+  .sk-coaches {
+    display: flex;
+    justify-content: center;
+  }
+  .sk-coaches img {
+    height: 160px; width: auto; display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 -6px 14px rgba(124,58,237,0.22));
+  }
+
+  /* Credits */
+  .sk-credits {
+    position: relative; z-index: 1;
+    text-align: center;
+    font-size: 11px; color: #94A3B8;
+    padding: 0.5rem 0 1.2rem;
+  }
+  .sk-credits strong { color: #7C3AED; }
 
   /* Sotelo badge */
   .sotelo-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: inline-flex; align-items: center; gap: 5px;
     text-decoration: none;
-    padding: 5px 14px 5px 14px;
+    padding: 4px 12px;
     border-radius: 20px;
-    background: rgba(10, 20, 40, 0.55);
-    border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(15,23,42,0.06);
+    border: 1px solid rgba(0,0,0,0.07);
     transition: all 0.3s ease;
-    opacity: 0.6;
-    margin-top: 10px;
+    margin-top: 6px;
   }
   .sotelo-badge:hover {
-    opacity: 1;
-    border-color: rgba(0,200,255,0.35);
-    box-shadow: 0 0 16px rgba(0,200,255,0.15);
-    transform: translateY(-2px);
+    background: rgba(124,58,237,0.08);
+    border-color: rgba(124,58,237,0.25);
+    transform: translateY(-1px);
   }
-  .sotelo-badge .sotelo-label {
-    font-size: 0.7rem;
-    color: rgba(232,244,255,0.5);
-    font-family: 'Exo 2', sans-serif;
-    letter-spacing: 0.5px;
-    line-height: 1;
-    margin-right: 2px;
-  }
+  .sotelo-label { font-size: 0.65rem; color: #94A3B8; letter-spacing: 0.3px; }
   .sotelo-wordmark {
-    font-family: 'Georgia', 'Times New Roman', serif;
-    font-size: 1.05rem;
-    font-weight: 400;
-    letter-spacing: 2px;
-    line-height: 1;
-    color: rgba(232, 244, 255, 0.88);
+    font-family: 'Georgia', serif;
+    font-size: 0.95rem; font-weight: 400;
+    letter-spacing: 1.5px; color: #475569;
   }
   .sotelo-wordmark .t-letter {
-    background: linear-gradient(160deg, #a78bfa 0%, #7b2fff 60%, #c4b5fd 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-style: italic;
+    background: linear-gradient(160deg, #4A90D9, #7C3AED);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; font-style: italic;
+  }
+
+
+
+  @media (max-width: 420px) {
+    .sk-card { padding: 1.75rem 1.25rem 0; }
+    .sk-headline h2 { font-size: 18px; }
   }
 </style>
 </head>
 <body>
 
-<div class="bg-scene">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
-</div>
-<div class="grid-overlay"></div>
+<div class="bg-scene"></div>
 
 <!-- LOADING SCREEN -->
-<div id="loadingScreen" style="display:flex;position:fixed;inset:0;z-index:200;background:var(--bg-dark);flex-direction:column;align-items:center;justify-content:center;gap:20px">
-  <div style="width:80px;height:80px;border:4px solid rgba(0,200,255,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite"></div>
-  <div style="font-size:1.2rem;font-weight:700;letter-spacing:2px;background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Iniciando tu sesión...</div>
-  <div style="font-size:0.85rem;color:var(--text-muted)">Por favor espera</div>
+<div id="loadingScreen">
+  <div class="load-spinner"></div>
+  <div class="load-text">Iniciando sesión…</div>
+  <div class="load-sub">Por favor espera</div>
 </div>
 
+<!-- LOGIN CARD -->
 <div class="login-wrapper" id="loginWrapper" style="display:none">
-  <div class="glass-card">
-    <div class="logo-area">
-      <img src="logo_saykyo.png" alt="Saykyo Club" style="height:90px;object-fit:contain;filter:drop-shadow(0 0 16px rgba(0,200,255,0.3))">
-      <div class="logo-tagline">Entrena · Progresa · Supera tus límites</div>
+  <div class="sk-card">
+    <div class="sk-blob"></div>
+
+    <!-- Logo -->
+    <div class="sk-logo">
+      <img src="logo_saykyo.png" alt="Saykyo Club">
     </div>
 
-    <div class="mascots">
-      <img class="mascot-img" src="boss.png" alt="Saykyo">
+    <!-- Headline -->
+    <div class="sk-headline">
+      <h2>Bienvenido de vuelta</h2>
+      <p>Inicia sesión para continuar tu entrenamiento</p>
     </div>
 
-    <form id="loginForm" autocomplete="off">
-      <div class="form-group">
-        <div class="icon-input">
-          <span class="input-icon"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-          <input type="text" id="usuario" class="glass-input" placeholder="Email" autocomplete="off" required>
+    <!-- Form -->
+    <form class="sk-form" id="loginForm" autocomplete="off">
+
+      <!-- Email -->
+      <div class="sk-field">
+        <label>Correo electrónico</label>
+        <div class="sk-fi">
+          <i class="ti ti-mail" aria-hidden="true"></i>
+          <input type="email" id="usuario" placeholder="tu@email.com" autocomplete="off" required>
         </div>
       </div>
-      <div class="form-group">
-        <div class="icon-input pass-wrapper">
-          <span class="input-icon"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-          <input type="password" id="contrasena" class="glass-input" placeholder="Contraseña" required style="padding-left:46px">
-          <button type="button" class="eye-btn" id="eyeBtn" onclick="toggleEye()" title="Ver contraseña" aria-label="Ver contraseña"><svg id="eyeIcon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+
+      <!-- Password -->
+      <div class="sk-field">
+        <label>Contraseña</label>
+        <div class="sk-fi">
+          <i class="ti ti-lock" aria-hidden="true"></i>
+          <input type="password" id="contrasena" placeholder="••••••••" required>
+          <button type="button" class="sk-eye" id="eyeBtn" onclick="toggleEye()" aria-label="Mostrar contraseña">
+            <i class="ti ti-eye" id="eyeIcon" aria-hidden="true"></i>
+          </button>
         </div>
       </div>
-      <div class="remember-row">
-        <input type="checkbox" class="remember-check" id="rememberMe">
-        <label class="remember-label" for="rememberMe">Recordarme en este dispositivo</label>
+
+      <!-- Remember + Forgot -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:-0.25rem;">
+        <label class="remember-row">
+          <input type="checkbox" class="remember-check" id="rememberMe">
+          <span class="remember-label">Recordarme</span>
+        </label>
       </div>
+
+      <!-- CTA -->
       <button type="submit" class="btn-primary" id="loginBtn">
         <span id="btnText">ENTRAR</span>
         <span class="loading-state" id="btnLoading">
           <span class="spinner"></span> Verificando...
         </span>
       </button>
+
     </form>
 
-    <div class="credits">
-      By: <strong>Sebas Moreno</strong> y <strong>Caro Muñoz</strong>
-      <br>
-      <a href="https://yhardanysotelo.github.io/" target="_blank" rel="noopener noreferrer" class="sotelo-badge" title="Diseñado por Sotelo">
-        <span class="sotelo-label">Diseñado por</span>
-        <span class="sotelo-wordmark">So<span class="t-letter">t</span>elo</span>
-      </a>
+    <!-- Bottom: coaches + credits -->
+    <div class="sk-bottom">
+      <div class="sk-coaches">
+        <img src="boss.png" alt="Entrenadores Saykyo">
+      </div>
+      <div class="sk-credits">
+        By: <strong>Caro Muñoz</strong> y <strong>Sebas Moreno</strong><br>
+        <a href="https://yhardanysotelo.github.io/" target="_blank" rel="noopener noreferrer" class="sotelo-badge" title="Diseñado por Sotelo">
+          <span class="sotelo-label">Diseñado por</span>
+          <span class="sotelo-wordmark">So<span class="t-letter">t</span>elo</span>
+        </a>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -395,20 +438,17 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 // Eye toggle
-const _eyeOpen  = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
-const _eyeClosed = '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M6.61 6.61A18.5 18.5 0 0 0 2 12s3.5 7 10 7a9.12 9.12 0 0 0 3.06-.53"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="2" y1="2" x2="22" y2="22"/>';
 window.toggleEye = () => {
-  const inp = document.getElementById('contrasena');
-  const btn = document.getElementById('eyeBtn');
+  const inp  = document.getElementById('contrasena');
   const icon = document.getElementById('eyeIcon');
   if (inp.type === 'password') {
     inp.type = 'text';
-    if (icon) icon.innerHTML = _eyeClosed;
-    btn.title = 'Ocultar contraseña';
+    icon.className = 'ti ti-eye-off';
+    document.getElementById('eyeBtn').title = 'Ocultar contraseña';
   } else {
     inp.type = 'password';
-    if (icon) icon.innerHTML = _eyeOpen;
-    btn.title = 'Ver contraseña';
+    icon.className = 'ti ti-eye';
+    document.getElementById('eyeBtn').title = 'Ver contraseña';
   }
 };
 
@@ -417,19 +457,33 @@ const remembered = localStorage.getItem('saykyo_remember');
 if (remembered) {
   try {
     const { email, password } = JSON.parse(remembered);
-    document.getElementById('usuario').value = email || '';
+    document.getElementById('usuario').value    = email    || '';
     document.getElementById('contrasena').value = password || '';
     document.getElementById('rememberMe').checked = true;
   } catch(e) {}
 }
 
+// Floating particles
+for (let i = 0; i < 18; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.cssText = `
+    left: ${Math.random()*100}%;
+    animation-duration: ${6+Math.random()*10}s;
+    animation-delay: ${-Math.random()*16}s;
+    --drift: ${(Math.random()-0.5)*80}px;
+    width: ${1+Math.random()*2.5}px;
+    height: ${1+Math.random()*2.5}px;
+  `;
+  document.body.appendChild(p);
+}
+
 // Bandera para evitar que onAuthStateChanged redirija mientras el formulario maneja el login
 let loginEnProgreso = false;
 
-// Check if already logged in (sesión previa)
+// Check if already logged in
 auth.onAuthStateChanged(async (user) => {
   if (user && !loginEnProgreso) {
-    // Mantener pantalla de carga visible mientras se verifica
     const snapshot = await get(ref(db, 'usuarios/' + user.uid));
     if (snapshot.exists()) {
       const userData = snapshot.val();
@@ -438,167 +492,108 @@ auth.onAuthStateChanged(async (user) => {
       else window.location.href = 'entrenamiento.html';
     }
   } else {
-    // No hay sesión activa, mostrar el login
     document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('loginWrapper').style.display = 'block';
+    document.getElementById('loginWrapper').style.display  = 'block';
   }
 });
 
-// Create floating particles
-for (let i = 0; i < 20; i++) {
-  const p = document.createElement('div');
-  p.className = 'particle';
-  p.style.cssText = `
-    left: ${Math.random()*100}%;
-    animation-duration: ${5+Math.random()*10}s;
-    animation-delay: ${-Math.random()*15}s;
-    --drift: ${(Math.random()-0.5)*100}px;
-    width: ${1+Math.random()*3}px;
-    height: ${1+Math.random()*3}px;
-    opacity: ${0.2+Math.random()*0.4};
-  `;
-  document.body.appendChild(p);
-}
-
+// Submit
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   loginEnProgreso = true;
 
-  const email = document.getElementById('usuario').value.trim();
+  const email    = document.getElementById('usuario').value.trim();
   const password = document.getElementById('contrasena').value;
 
-  document.getElementById('btnText').style.display = 'none';
+  document.getElementById('btnText').style.display    = 'none';
   document.getElementById('btnLoading').style.display = 'flex';
 
   try {
-
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-
     const snapshot = await get(ref(db, 'usuarios/' + user.uid));
 
-    if (!snapshot.exists()) {
-      throw new Error("Usuario no configurado correctamente.");
-    }
+    if (!snapshot.exists()) throw new Error("Usuario no configurado correctamente.");
 
     const userData = snapshot.val();
 
-    if (!userData.activo) {
-      throw new Error("Tu cuenta está desactivada. Contacta a tu entrenador.");
-    }
+    if (!userData.activo) throw new Error("Tu cuenta está desactivada. Contacta a tu entrenador.");
 
     if (userData.validoHasta) {
-      const now = new Date();
-      // Parsear la fecha como LOCAL (no UTC) para que "2026-02-28" signifique
-      // el fin del día 28 en la zona horaria del usuario, no las 19:00 del 27.
       const [vy, vm, vd] = userData.validoHasta.split('-').map(Number);
-      const valid = new Date(vy, vm - 1, vd, 23, 59, 59, 999); // fin del día local
-      if (now > valid) {
-        throw new Error("Tu suscripción ha vencido.");
-      }
+      const valid = new Date(vy, vm - 1, vd, 23, 59, 59, 999);
+      if (new Date() > valid) throw new Error("Tu suscripción ha vencido.");
     }
 
-    // Handle remember me
     if (document.getElementById('rememberMe').checked) {
       localStorage.setItem('saykyo_remember', JSON.stringify({ email, password }));
     } else {
       localStorage.removeItem('saykyo_remember');
     }
 
-    sessionStorage.setItem('saykyo_user', JSON.stringify({
-      ...userData,
-      uid: user.uid,
-      id: user.uid
-    }));
+    sessionStorage.setItem('saykyo_user', JSON.stringify({ ...userData, uid: user.uid, id: user.uid }));
 
     await Swal.fire({
       icon: 'success',
       title: `¡Bienvenido(a), ${userData.nombres}!`,
       text: userData.rol === 'superadmin' ? 'Acceso Super Admin' : userData.rol === 'admin' ? 'Acceso de administrador' : 'Listo para entrenar',
-      background: 'rgba(10,20,40,0.95)',
-      color: '#e8f4ff',
-      confirmButtonColor: '#00c8ff',
-      timer: 1500,
-      showConfirmButton: false,
-      backdrop: 'rgba(0,0,0,0.7)'
+      background: '#FFFFFF', color: '#0F172A',
+      confirmButtonColor: '#7C3AED',
+      timer: 1500, showConfirmButton: false,
+      backdrop: 'rgba(15,23,42,0.4)'
     });
 
-    if (userData.rol === 'admin' || userData.rol === 'superadmin') {
-      window.location.href = 'dashboard.html';
-    } else {
-      window.location.href = 'entrenamiento.html';
-    }
+    if (userData.rol === 'admin' || userData.rol === 'superadmin') window.location.href = 'dashboard.html';
+    else window.location.href = 'entrenamiento.html';
 
   } catch (err) {
     loginEnProgreso = false;
-    document.getElementById('btnText').style.display = '';
+    document.getElementById('btnText').style.display    = '';
     document.getElementById('btnLoading').style.display = 'none';
-
-    // Asegurar que el login está visible si hay error
     document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('loginWrapper').style.display = 'block';
+    document.getElementById('loginWrapper').style.display  = 'block';
 
-    // Determinar título y mensaje según el tipo de error
     let titulo = 'Acceso denegado';
     let mensaje = 'Ocurrió un error inesperado. Intenta de nuevo.';
-    let icono = 'error';
+    let icono   = 'error';
 
     const code = err.code || '';
     const msg  = err.message || '';
 
     if (msg === 'Tu cuenta está desactivada. Contacta a tu entrenador.') {
-      titulo  = 'Cuenta inactiva';
+      titulo = 'Cuenta inactiva'; icono = 'warning';
       mensaje = 'Tu cuenta está desactivada. Comunícate con tu entrenador para reactivarla.';
-      icono   = 'warning';
     } else if (msg === 'Tu suscripción ha vencido.') {
-      titulo  = 'Membresía vencida';
+      titulo = 'Membresía vencida'; icono = 'warning';
       mensaje = 'Tu suscripción ha expirado. Renueva tu membresía con tu entrenador para continuar.';
-      icono   = 'warning';
     } else if (msg === 'Usuario no configurado correctamente.') {
-      titulo  = 'Usuario no encontrado';
+      titulo = 'Usuario no encontrado';
       mensaje = 'No encontramos tu perfil en el sistema. Contacta a tu entrenador.';
-      icono   = 'error';
-    } else if (
-      code === 'auth/wrong-password' ||
-      code === 'auth/invalid-credential' ||
-      code === 'auth/invalid-password'
-    ) {
-      titulo  = 'Contraseña incorrecta';
+    } else if (code === 'auth/wrong-password' || code === 'auth/invalid-credential' || code === 'auth/invalid-password') {
+      titulo = 'Contraseña incorrecta';
       mensaje = 'La contraseña que ingresaste no es correcta. Verifica e intenta de nuevo.';
-      icono   = 'error';
-    } else if (
-      code === 'auth/user-not-found' ||
-      code === 'auth/invalid-email'
-    ) {
-      titulo  = 'Usuario no encontrado';
+    } else if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
+      titulo = 'Usuario no encontrado';
       mensaje = 'No existe una cuenta con ese correo. Verifica el email ingresado.';
-      icono   = 'error';
     } else if (code === 'auth/too-many-requests') {
-      titulo  = 'Demasiados intentos';
-      mensaje = 'Bloqueamos temporalmente tu acceso por múltiples intentos fallidos. Espera unos minutos o restablece tu contraseña.';
-      icono   = 'warning';
+      titulo = 'Demasiados intentos'; icono = 'warning';
+      mensaje = 'Bloqueamos temporalmente tu acceso por múltiples intentos fallidos. Espera unos minutos.';
     } else if (code === 'auth/network-request-failed') {
-      titulo  = 'Sin conexión';
+      titulo = 'Sin conexión'; icono = 'warning';
       mensaje = 'No hay conexión a internet. Verifica tu red e intenta de nuevo.';
-      icono   = 'warning';
     } else if (code === 'auth/user-disabled') {
-      titulo  = 'Cuenta deshabilitada';
+      titulo = 'Cuenta deshabilitada'; icono = 'warning';
       mensaje = 'Tu cuenta fue deshabilitada. Contacta a tu entrenador.';
-      icono   = 'warning';
     }
 
     Swal.fire({
-      icon: icono,
-      title: titulo,
-      text: mensaje,
-      background: 'rgba(10,20,40,0.95)',
-      color: '#e8f4ff',
-      confirmButtonColor: '#ff4d6d',
-      backdrop: 'rgba(0,0,0,0.7)'
+      icon: icono, title: titulo, text: mensaje,
+      background: '#FFFFFF', color: '#0F172A',
+      confirmButtonColor: '#7C3AED',
+      backdrop: 'rgba(15,23,42,0.4)'
     });
   }
 });
 </script>
 </body>
 </html>
-  

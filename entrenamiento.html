@@ -19,7 +19,7 @@
   --glass-bg: rgba(24,34,62,0.72);
   --glass-border: rgba(255,255,255,0.12);
   --text: #eef6ff;
-  --text-muted: rgba(232,244,255,0.55);
+  --text-muted: #5a6e84;
   --bg-dark: #0e1626;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -210,7 +210,7 @@ body { font-family:'Exo 2',sans-serif; background:var(--bg-dark); color:var(--te
 /* FORMS */
 .glass-input { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.9rem;outline:none;width:100%;transition:all 0.3s ease; }
 .glass-input:focus { border-color:var(--primary);background:rgba(0,200,255,0.08);box-shadow:0 0 0 3px rgba(0,200,255,0.1); }
-.glass-input::placeholder { color:rgba(232,244,255,0.25); }
+.glass-input::placeholder { color:#a0b4c8; }
 select.glass-input option { background:#0d1a35; }
 .form-group { margin-bottom:14px; }
 .form-label { display:block;font-size:0.75rem;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px; }
@@ -301,7 +301,7 @@ select.glass-input option { background:#0d1a35; }
   font-family:'Space Mono',monospace;
   font-size:0.72rem; letter-spacing:5px;
   text-transform:uppercase;
-  color:rgba(232,244,255,0.35);
+  color:#8ea4b8;
   margin-bottom:32px;
 }
 
@@ -372,14 +372,14 @@ select.glass-input option { background:#0d1a35; }
 @keyframes rtCountPop { from{transform:scale(1.15)} to{transform:scale(1)} }
 .rt-secs-label {
   font-size:0.7rem; letter-spacing:3px;
-  color:rgba(232,244,255,0.3);
+  color:#93a9bd;
   text-transform:uppercase;
 }
 
 /* Status message */
 .rt-msg {
   font-size:1.15rem; font-weight:700;
-  color:rgba(232,244,255,0.75);
+  color:#3d5166;
   letter-spacing:0.5px;
   margin-bottom:10px;
   min-height:1.6em;
@@ -407,7 +407,7 @@ select.glass-input option { background:#0d1a35; }
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.12);
   border-radius:50px; padding:12px 36px;
-  color:rgba(232,244,255,0.5);
+  color:#5a6e84;
   font-family:'Exo 2',sans-serif;
   font-size:0.88rem; font-weight:600; letter-spacing:1px;
   cursor:pointer;
@@ -416,7 +416,7 @@ select.glass-input option { background:#0d1a35; }
 .rt-skip:hover {
   background:rgba(255,255,255,0.1);
   border-color:rgba(255,255,255,0.25);
-  color:rgba(232,244,255,0.9);
+  color:#1c2b3a;
   transform:scale(1.03);
 }
 .rt-skip:active { transform:scale(0.97); }
@@ -482,12 +482,12 @@ select.glass-input option { background:#0d1a35; }
   100% { box-shadow:0 0 0 0 rgba(255,107,53,0); }
 }
 .expiry-banner-text { flex:1; min-width:0; }
-.expiry-banner-title { font-size:0.82rem; font-weight:800; color:#ff6b35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.expiry-banner-title { font-size:0.82rem; font-weight:800; color:#ea580c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .expiry-banner-sub { font-size:0.72rem; color:rgba(255,180,140,0.8); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .expiry-banner-close {
   background:rgba(255,107,53,0.15); border:1px solid rgba(255,107,53,0.35);
   border-radius:8px; padding:5px 10px;
-  color:#ff6b35; font-family:'Exo 2',sans-serif; font-size:0.72rem; font-weight:700;
+  color:#ea580c; font-family:'Exo 2',sans-serif; font-size:0.72rem; font-weight:700;
   cursor:pointer; white-space:nowrap; flex-shrink:0;
   transition:all 0.2s ease;
 }
@@ -643,7 +643,7 @@ select.glass-input option { background:#0d1a35; }
 .pro-chart-filter-tags { display:flex; gap:6px; flex-wrap:wrap; padding:8px 18px 0; min-height:24px; }
 .pro-filter-tag {
   font-size:0.62rem; letter-spacing:0.5px; padding:2px 9px; border-radius:20px;
-  background:rgba(123,47,255,0.13); color:#b090ff; border:1px solid rgba(123,47,255,0.22);
+  background:rgba(123,47,255,0.13); color:#6d28d9; border:1px solid rgba(123,47,255,0.22);
 }
 .pro-chart-body { padding:12px 12px 10px; }
 .pro-chart-canvas-wrap { position:relative; height:220px; }
@@ -689,6 +689,854 @@ select.glass-input option { background:#0d1a35; }
 .user-notif-btn .ico,.header .ico{width:20px;height:20px;color:white}
 </style>
 
+<style id="saykyo-light-theme">
+/* =====================================================================
+   SAYKYO CLUB · Light Theme  —  app del atleta (entrenamiento.html)
+   Espejo exacto de la paleta, radios, sombras y tipografía del
+   dashboard del entrenador. Este bloque va al final del <head>:
+   gana por orden y por !important sobre el tema oscuro original.
+   ===================================================================== */
+
+/* ══ VARIABLES — idénticas al dashboard ══ */
+:root {
+  --primary:      #0077cc;
+  --primary-dark: #0055a5;
+  --primary-light:#0099e6;
+  --accent:       #0077cc;
+  --accent2:      #0055a5;
+  --success:      #059669;
+  --warning:      #d97706;
+  --error:        #dc2626;
+
+  --text:         #0d1b2a;
+  --text-muted:   #5a6e84;
+  --glass-bg:     #ffffff;
+  --glass-border: rgba(0,0,0,0.08);
+  --bg-dark:      #f2f4f8;
+
+  --grad-blue:    linear-gradient(135deg,#0055a5 0%,#0099e6 100%);
+  --grad-green:   linear-gradient(135deg,#065f46 0%,#059669 100%);
+  --grad-red:     linear-gradient(135deg,#991b1b 0%,#dc2626 100%);
+  --grad-amber:   linear-gradient(135deg,#92400e 0%,#d97706 100%);
+}
+
+/* ══ BASE ══ */
+body { background:#f2f4f8 !important; color:#0d1b2a !important; }
+.bg-scene   { display:none !important; }
+.grid-overlay { display:none !important; }
+
+/* ══ HEADER ══ */
+.header {
+  background:#ffffff !important;
+  border-bottom:1.5px solid rgba(0,85,165,0.1) !important;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06) !important;
+  backdrop-filter:none !important;
+}
+.header-logo {
+  background:linear-gradient(135deg,#0055a5,#0099e6) !important;
+  -webkit-background-clip:text !important; background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+}
+.header-name   { color:#0d1b2a !important; font-weight:700 !important; }
+.header-method { color:#0077cc !important; font-weight:700 !important; text-transform:uppercase !important; }
+.header-avatar { border-color:#0099e6 !important; box-shadow:0 0 0 3px rgba(0,153,230,0.15) !important; }
+.header .ico   { color:#4a6275 !important; }
+
+/* ══ TARJETAS ══ */
+.glass-card,
+.training-card,
+.pro-chart-card,
+.notif-sheet-inner {
+  background:#ffffff !important;
+  border:1px solid rgba(0,0,0,0.07) !important;
+  box-shadow:0 4px 20px rgba(0,0,0,0.08) !important;
+  backdrop-filter:none !important;
+  border-radius:16px !important;
+}
+.card-title { color:#0d1b2a !important; font-weight:800 !important; letter-spacing:-0.01em !important; }
+
+/* ══ WIDGET DE PROGRESO ══ */
+.progress-widget {
+  background:linear-gradient(135deg,#0055a5 0%,#0099e6 100%) !important;
+  border:none !important;
+  box-shadow:0 10px 30px rgba(0,85,165,0.28) !important;
+  border-radius:16px !important;
+  color:#ffffff !important;
+}
+.progress-widget::before { display:none !important; }
+.progress-widget * { color:#ffffff !important; }
+.crumb {
+  background:rgba(255,255,255,0.18) !important;
+  border:1px solid rgba(255,255,255,0.3) !important;
+  color:#ffffff !important; font-weight:700 !important;
+}
+.progress-label { color:rgba(255,255,255,0.85) !important; }
+.progress-bar  { background:rgba(255,255,255,0.25) !important; }
+.progress-fill { background:#ffffff !important; }
+
+/* ══ BOTONES — idénticos al dashboard ══ */
+.btn { border-radius:12px !important; font-weight:700 !important; letter-spacing:0.2px !important; }
+.btn-primary {
+  background:linear-gradient(135deg,#0077cc,#0099e6) !important;
+  color:#ffffff !important;
+  box-shadow:0 6px 20px rgba(0,153,230,0.35) !important;
+}
+.btn-primary:hover { transform:translateY(-1px) !important; box-shadow:0 10px 28px rgba(0,153,230,0.45) !important; }
+.btn-secondary {
+  background:#f0f4f9 !important; border:1.5px solid rgba(0,0,0,0.11) !important;
+  color:#4a6275 !important;
+}
+.btn-secondary:hover { background:#e4eaf2 !important; color:#0d1b2a !important; }
+.btn-success {
+  background:linear-gradient(135deg,#065f46,#059669) !important;
+  color:#ffffff !important; box-shadow:0 6px 20px rgba(5,150,105,0.3) !important;
+}
+.btn-danger {
+  background:rgba(220,38,38,0.09) !important; border:1.5px solid rgba(220,38,38,0.28) !important;
+  color:#dc2626 !important;
+}
+
+
+/* ══ RED DE SEGURIDAD ANTI-OSCURO ══
+   Cualquier elemento inyectado en <body> (hojas, overlays, avisos) que
+   conserve un fondo del tema antiguo se aclara automáticamente. Se aplica
+   a todo el documento, no solo a .page, porque varios overlays se cuelgan
+   directamente del body y quedaban fuera de alcance.
+   El reproductor de vídeo queda excluido: ahí el fondo oscuro es correcto. */
+body [style*="background:rgba(6,14,32,"],
+body [style*="background:rgba(8,16,36,"],
+body [style*="background:rgba(8,18,40,"],
+body [style*="background:rgba(10,20,40,"],
+body [style*="background:rgba(10,20,45,"],
+body [style*="background:rgba(14,22,38,"],
+body [style*="background:rgba(15,25,50,"],
+body [style*="background:rgba(18,27,48,"],
+body [style*="background:rgba(24,34,62,"],
+body [style*="background:rgba(24,35,61,"] {
+  background:#ffffff !important;
+  color:#0d1b2a !important;
+  border-color:rgba(0,85,165,0.14) !important;
+}
+body [style*="background:rgba(0,0,0,0.2)"],
+body [style*="background:rgba(0,0,0,0.25)"],
+body [style*="background:rgba(0,0,0,0.3)"],
+body [style*="background:rgba(0,0,0,0.35)"],
+body [style*="background:rgba(0,0,0,0.4)"] {
+  background:#f4f7fb !important;
+}
+/* Fondos de velo: se aclaran pero siguen siendo velos */
+body > [style*="background:rgba(0,0,0,0.75)"],
+body > [style*="background:rgba(0,0,0,0.8)"],
+body > [style*="background:rgba(0,0,0,0.85)"],
+body > [style*="background:rgba(0,0,0,0.9)"] {
+  background:rgba(13,27,42,0.45) !important;
+}
+/* Excepción: el marco del reproductor sí debe ser oscuro */
+.training-video { background:#0d1b2a !important; }
+.training-video iframe, .training-video video { background:#000 !important; }
+
+
+
+
+/* Aviso: el video en línea es una vista reducida; la emergente es la buena */
+.training-video[data-vsrc]::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+}
+.video-theater-btn { animation:vtPulse 2.6s ease-in-out 1s 3; }
+@keyframes vtPulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(0,153,230,0); }
+  50%     { box-shadow:0 0 0 6px rgba(0,153,230,0.28); }
+}
+
+/* Alternador de formato del modo teatro */
+.vt-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.vt-ratio {
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+  height:38px; padding:0 12px; border-radius:12px;
+  background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.28);
+  color:#fff; font-family:'Exo 2',sans-serif; font-weight:800; font-size:0.78rem;
+  letter-spacing:0.5px; transition:.16s;
+}
+.vt-ratio:hover { background:rgba(0,119,204,0.85); border-color:rgba(255,255,255,0.5); }
+.vt-ratio-ico {
+  width:14px; height:9px; border:2px solid currentColor; border-radius:2px;
+  transition:.18s; flex-shrink:0;
+}
+.video-theater.is-vertical .vt-ratio-ico { width:9px; height:14px; }
+.video-theater.is-wide .vt-ratio-ico { width:16px; height:9px; }
+.vt-hint {
+  text-align:center; color:rgba(255,255,255,0.55); font-size:0.72rem;
+  padding:0 16px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  flex-shrink:0;
+}
+
+
+/* ══ OBSERVACIONES DEL ENTRENADOR (vista Progreso) ══
+   Un texto largo o una palabra sin espacios (una URL, por ejemplo)
+   desbordaba la tarjeta y rompía la maquetación. Se acota la altura con
+   scroll propio y se fuerza el corte de palabras largas. */
+.obs-texto {
+  max-height: 150px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
+  line-height: 1.55;
+  white-space: pre-wrap;      /* respeta los saltos de línea del entrenador */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.obs-texto::-webkit-scrollbar { width: 5px; }
+.obs-texto::-webkit-scrollbar-track { background: transparent; }
+.obs-texto::-webkit-scrollbar-thumb {
+  background: rgba(0,85,165,0.25); border-radius: 3px;
+}
+.obs-texto::-webkit-scrollbar-thumb:hover { background: rgba(0,85,165,0.45); }
+/* Aviso visual de que hay más texto abajo */
+.obs-wrap { position: relative; }
+.obs-wrap::after {
+  content: ''; position: absolute; left: 0; right: 6px; bottom: 0; height: 18px;
+  background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0));
+  pointer-events: none; border-radius: 0 0 8px 8px;
+}
+@media (max-width: 700px) { .obs-texto { max-height: 120px; } }
+
+/* ══ VÍDEO VERTICAL (9:16) ══
+   El marco adopta la proporción real del vídeo. En vertical se limita el
+   alto para que la ficha del ejercicio siga siendo usable: el vídeo se
+   centra sobre una banda oscura y ocupa todo el alto disponible. */
+.training-video.is-vertical {
+  padding-bottom:0 !important;
+  height:min(58vh, 460px);
+  display:flex; align-items:center; justify-content:center;
+  background:#0d1b2a !important;
+}
+.training-video.is-vertical iframe,
+.training-video.is-vertical video {
+  position:relative !important; inset:auto !important;
+  height:100% !important; width:auto !important;
+  aspect-ratio:9 / 16; max-width:100%;
+}
+@media (max-width:700px){
+  .training-video.is-vertical { height:min(62vh, 420px); }
+  .chain-videos .training-video.is-vertical { height:min(46vh, 340px); }
+}
+
+/* Botón "ver en grande" */
+.video-theater-btn {
+  position:absolute; right:10px; bottom:10px; z-index:3;
+  width:34px; height:34px; border-radius:10px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(13,27,42,0.72); color:#fff;
+  border:1px solid rgba(255,255,255,0.3);
+  backdrop-filter:blur(4px); transition:.16s;
+}
+.video-theater-btn:hover { background:rgba(0,119,204,0.9); border-color:rgba(255,255,255,0.5); transform:scale(1.06); }
+
+/* ══ MODO TEATRO ══ */
+.video-theater {
+  position:fixed; inset:0; z-index:9500;
+  background:rgba(8,14,24,0.94);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  display:flex; flex-direction:column;
+  animation:vtIn .18s ease-out;
+}
+@keyframes vtIn { from{opacity:0} to{opacity:1} }
+.vt-bar {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
+  color:#fff; flex-shrink:0;
+}
+.vt-title {
+  font-weight:800; font-size:0.95rem; letter-spacing:0.2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.vt-close {
+  width:38px; height:38px; flex-shrink:0; border-radius:12px; cursor:pointer;
+  background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.28);
+  color:#fff; font-size:1.05rem; line-height:1; transition:.16s;
+}
+.vt-close:hover { background:rgba(255,255,255,0.26); }
+.vt-stage {
+  flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
+  padding:0 12px calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+/* Por defecto el marco OCUPA TODO el escenario, sin proporción fija.
+   Es la clave: en un celular en vertical el escenario ya es alto y
+   estrecho, así que un video vertical se ve grande sin necesidad de
+   detectar nada. El reproductor de YouTube se ajusta solo dentro. */
+.vt-frame {
+  background:#000; border-radius:14px; overflow:hidden;
+  box-shadow:0 20px 70px rgba(0,0,0,0.55);
+  width:100%; height:100%;
+}
+/* Proporciones forzadas desde el alternador */
+.video-theater.is-vertical .vt-frame {
+  aspect-ratio:9 / 16;
+  height:100%; width:auto; max-width:100%;
+}
+.video-theater.is-wide .vt-frame {
+  aspect-ratio:16 / 9;
+  width:100%; height:auto; max-height:100%;
+}
+
+/* ══ VÍDEO DEL EJERCICIO ══ */
+.training-video { background:#0d1b2a !important; }
+.training-video .no-video { color:#8ea4b8 !important; background:#f0f4f9 !important; }
+.training-title { color:#0d1b2a !important; }
+.meta-pill {
+  background:rgba(0,153,230,0.09) !important;
+  border:1px solid rgba(0,153,230,0.22) !important;
+  color:#0077cc !important; font-weight:700 !important;
+}
+.video-expand-btn { background:rgba(13,27,42,0.72) !important; border-color:rgba(255,255,255,0.3) !important; }
+
+/* ══ SERIES ══ */
+.serie-row {
+  background:#f8fafc !important;
+  border:1px solid rgba(0,85,165,0.12) !important;
+  border-radius:14px !important;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04) !important;
+}
+.serie-header  { border-bottom:1px solid rgba(0,85,165,0.1) !important; }
+.serie-num {
+  background:linear-gradient(135deg,#0077cc,#0099e6) !important;
+  border:none !important; color:#ffffff !important;
+  box-shadow:0 2px 8px rgba(0,153,230,0.3) !important;
+}
+.serie-field label { color:#5a6e84 !important; font-weight:700 !important; }
+.serie-field input {
+  background:#ffffff !important;
+  border:1.5px solid rgba(0,0,0,0.12) !important;
+  color:#0d1b2a !important;
+}
+.serie-field input:focus {
+  border-color:#0099e6 !important;
+  background:#ffffff !important;
+  box-shadow:0 0 0 3px rgba(0,153,230,0.13) !important;
+}
+/* Botón de serie completada — idéntico al del admin */
+.serie-done {
+  background:rgba(5,150,105,0.08) !important;
+  border:2px solid rgba(5,150,105,0.35) !important;
+  color:#047857 !important;
+}
+.serie-done:hover {
+  background:rgba(5,150,105,0.18) !important;
+  border-color:rgba(5,150,105,0.6) !important;
+  color:#065f46 !important;
+}
+.serie-done.checked {
+  background:#059669 !important; border-color:#047857 !important;
+  color:#ffffff !important;
+  box-shadow:0 4px 16px rgba(5,150,105,0.4) !important;
+}
+
+/* ══ ESCALAS DE ESFUERZO / FATIGA ══ */
+.effort-option {
+  background:#f5f8fc !important;
+  border:2px solid rgba(0,0,0,0.07) !important;
+}
+.effort-option .effort-label { color:#5a6e84 !important; }
+.effort-option:hover { background:rgba(0,153,230,0.09) !important; border-color:rgba(0,153,230,0.35) !important; }
+.effort-option.selected {
+  background:rgba(0,153,230,0.13) !important; border-color:#0099e6 !important;
+  box-shadow:0 4px 16px rgba(0,153,230,0.2) !important;
+}
+.effort-option.selected .effort-label { color:#0077cc !important; font-weight:700 !important; }
+.fatigue-dot {
+  background:#f5f8fc !important;
+  border:1px solid rgba(0,0,0,0.09) !important;
+  color:#3d5166 !important;
+}
+.fatigue-dot.active { box-shadow:0 3px 12px rgba(0,153,230,0.28) !important; }
+.mini-dot {
+  background:#f5f8fc !important;
+  border:1.5px solid rgba(0,0,0,0.1) !important;
+  color:#3d5166 !important; font-weight:700 !important;
+}
+.mini-dot:hover { background:rgba(0,153,230,0.12) !important; border-color:rgba(0,153,230,0.35) !important; }
+
+/* ══ FORMULARIOS ══ */
+.glass-input {
+  background:#f5f8fc !important;
+  border:1.5px solid rgba(0,0,0,0.11) !important;
+  color:#0d1b2a !important;
+  border-radius:12px !important;
+}
+.glass-input:focus {
+  border-color:#0099e6 !important; background:#ffffff !important;
+  box-shadow:0 0 0 3px rgba(0,153,230,0.13) !important;
+}
+.glass-input::placeholder { color:#a0b4c8 !important; }
+select.glass-input option { background:#ffffff !important; color:#0d1b2a !important; }
+.form-label { color:#5a6e84 !important; font-weight:700 !important; }
+
+/* ══ NAVEGACIÓN INFERIOR ══ */
+.bottom-nav {
+  background:#ffffff !important;
+  border-top:1.5px solid rgba(0,85,165,0.1) !important;
+  box-shadow:0 -2px 16px rgba(0,0,0,0.07) !important;
+  backdrop-filter:none !important;
+}
+.nav-tab .tab-label { color:#8ea4b8 !important; font-weight:600 !important; }
+.nav-tab .ico       { color:#8ea4b8 !important; }
+.nav-tab.active .tab-label { color:#0077cc !important; font-weight:800 !important; }
+.nav-tab.active .ico       { color:#0077cc !important; }
+.nav-tab.active { background:rgba(0,153,230,0.08) !important; }
+.nav-tab .session-dot { background:#059669 !important; box-shadow:0 0 8px rgba(5,150,105,0.7) !important; }
+
+/* ══ ANAMNESIS / CUESTIONARIOS ══ */
+.q-number { color:#0077cc !important; font-weight:800 !important; }
+.q-text   { color:#0d1b2a !important; }
+.step-dot { background:#dfe7ef !important; }
+.step-dot.done    { background:#0099e6 !important; }
+.step-dot.current { background:rgba(0,153,230,0.5) !important; }
+.option-btn {
+  background:#ffffff !important;
+  border:1.5px solid rgba(0,0,0,0.1) !important;
+  color:#3d5166 !important;
+  box-shadow:0 1px 4px rgba(0,0,0,0.05) !important;
+  border-radius:12px !important;
+}
+.option-btn:hover, .option-btn.selected {
+  background:rgba(0,153,230,0.1) !important;
+  border-color:#0099e6 !important; color:#0077cc !important; font-weight:700 !important;
+}
+
+/* ══ HOJAS / MODALES ══ */
+.overlay-backdrop { background:rgba(13,27,42,0.45) !important; backdrop-filter:blur(6px) !important; }
+.overlay-sheet {
+  background:#ffffff !important;
+  border:none !important;
+  box-shadow:0 -18px 60px rgba(0,0,0,0.22) !important;
+}
+.overlay-sheet, .overlay-sheet * { color:inherit; }
+.sheet-handle { background:#d3dde7 !important; }
+
+/* ══ MINI STATS ══ */
+.mini-stats { background:transparent !important; box-shadow:none !important; border:none !important; }
+.mini-stat {
+  background:#ffffff !important;
+  border:1px solid rgba(0,0,0,0.07) !important;
+  box-shadow:0 4px 16px rgba(0,0,0,0.07) !important;
+  border-radius:14px !important;
+}
+.mini-stat .val { color:#0077cc !important; }
+.mini-stat .lbl { color:#8ea4b8 !important; font-weight:700 !important; }
+
+/* ══ BLOQUES DE REVISIÓN ══ */
+.rev-block {
+  background:#f8fafc !important;
+  border:1px solid rgba(0,85,165,0.12) !important;
+}
+.rev-q { color:#0d1b2a !important; }
+
+/* ══ NOTIFICACIONES ══ */
+.user-notif-btn {
+  background:rgba(0,153,230,0.07) !important;
+  border:1px solid rgba(0,153,230,0.18) !important;
+  color:#0077cc !important;
+}
+.user-notif-btn:hover { background:rgba(0,153,230,0.14) !important; border-color:rgba(0,153,230,0.32) !important; }
+.user-notif-badge { background:#dc2626 !important; border:2px solid #ffffff !important; box-shadow:none !important; }
+.notif-sheet { background:rgba(13,27,42,0.45) !important; backdrop-filter:blur(6px) !important; }
+.notif-sheet-inner { border-radius:24px 24px 0 0 !important; }
+.notif-item {
+  background:#f6f9fc !important;
+  border:1px solid rgba(0,85,165,0.1) !important;
+  border-radius:12px !important;
+}
+.notif-item.unread { background:rgba(0,85,165,0.05) !important; border-color:rgba(0,85,165,0.2) !important; }
+.notif-item.unread::before { display:none !important; }
+.push-toast {
+  background:#ffffff !important;
+  border:1px solid rgba(0,153,230,0.3) !important;
+  box-shadow:0 12px 40px rgba(0,0,0,0.16) !important;
+  color:#0d1b2a !important;
+}
+
+/* ══ TEMPORIZADOR DE DESCANSO — idéntico al del admin ══ */
+#restTimerOverlay {
+  background:rgba(240,244,249,0.97) !important;
+  backdrop-filter:blur(20px) !important;
+  -webkit-backdrop-filter:blur(20px) !important;
+  overflow-y:auto !important;
+  justify-content:flex-start !important;
+  padding:env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) !important;
+}
+.rt-label      { color:rgba(13,27,42,0.35) !important; margin-top:24px !important; }
+.rt-secs-label { color:rgba(13,27,42,0.3) !important; }
+.rt-msg        { color:rgba(13,27,42,0.75) !important; }
+.rt-series-badge {
+  background:rgba(5,150,105,0.1) !important;
+  border-color:rgba(5,150,105,0.28) !important;
+  color:#047857 !important;
+}
+.rt-ring-bg    { stroke:rgba(0,0,0,0.07) !important; }
+.rt-ring-track { stroke:rgba(0,0,0,0.04) !important; }
+.rt-ring-wrap svg { filter:drop-shadow(0 0 14px var(--rt-glow, rgba(0,119,204,0.35))) !important; }
+.rt-count      { text-shadow:0 2px 18px rgba(0,119,204,0.18) !important; }
+.rt-progress-bar { background:rgba(0,0,0,0.08) !important; }
+.rt-skip {
+  background:#ffffff !important;
+  border:1.5px solid rgba(0,0,0,0.12) !important;
+  color:rgba(13,27,42,0.6) !important;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08) !important;
+}
+.rt-skip:hover { color:#0d1b2a !important; border-color:rgba(0,153,230,0.4) !important; background:#f7fbff !important; }
+
+/* ══ AUTOSAVE ══ */
+.autosave-badge {
+  background:rgba(5,150,105,0.12) !important;
+  border-color:rgba(5,150,105,0.3) !important;
+  color:#047857 !important;
+}
+
+/* ══ BANNER DE VENCIMIENTO ══ */
+#expiryBanner {
+  background:linear-gradient(90deg,#fff7ed 0%,#ffedd5 100%) !important;
+  border-bottom:2px solid rgba(217,119,6,0.55) !important;
+  box-shadow:0 4px 16px rgba(217,119,6,0.15) !important;
+}
+.expiry-banner-pulse { background:#d97706 !important; }
+.expiry-banner-title { color:#b45309 !important; }
+.expiry-banner-sub   { color:#92400e !important; }
+.expiry-banner-close {
+  background:rgba(217,119,6,0.14) !important;
+  border:1px solid rgba(217,119,6,0.4) !important;
+  color:#b45309 !important;
+}
+
+/* ══ GRÁFICAS PRO ══ */
+.pro-chart-header { border-bottom:1.5px solid rgba(0,85,165,0.08) !important; background:#ffffff !important; }
+.pro-chart-title  { color:#0d1b2a !important; font-weight:800 !important; }
+.pro-chart-badge  { background:rgba(0,119,204,0.1) !important; color:#0077cc !important; border-color:rgba(0,119,204,0.22) !important; }
+.pro-chart-select { background:#f5f8fc !important; border:1px solid rgba(0,0,0,0.1) !important; color:#4a6275 !important; }
+.pro-chart-select:hover, .pro-chart-select:focus { border-color:rgba(0,153,230,0.4) !important; color:#0d1b2a !important; }
+.pro-chart-select option { background:#ffffff !important; color:#0d1b2a !important; }
+.pro-chart-type-btn { background:#f5f8fc !important; border:1px solid rgba(0,0,0,0.09) !important; }
+.pro-chart-type-btn button { color:#5a6e84 !important; }
+.pro-chart-type-btn button.active { background:rgba(0,153,230,0.16) !important; color:#0077cc !important; font-weight:700 !important; }
+.pro-filter-tag   { background:rgba(0,119,204,0.09) !important; color:#0077cc !important; border-color:rgba(0,119,204,0.22) !important; }
+.pro-summary-chip { background:linear-gradient(135deg,rgba(0,153,230,0.08),rgba(0,198,255,0.05)) !important; border-color:rgba(0,153,230,0.18) !important; }
+.pro-summary-chip .val { color:#0077cc !important; }
+.pro-summary-chip .lbl { color:#8ea4b8 !important; }
+.pro-chart-empty  { color:#a0b4c8 !important; }
+.pro-chart-canvas-wrap { background:#ffffff; border-radius:12px; }
+.pro-chart-canvas-wrap canvas { background:transparent !important; }
+
+/* ══ AVATARES ══ */
+.av-opt { background:#f0f4f9 !important; }
+.av-opt:hover   { border-color:rgba(0,153,230,0.55) !important; }
+.av-opt.selected{ border-color:#0099e6 !important; box-shadow:0 0 18px rgba(0,153,230,0.35) !important; }
+
+/* ══ CARGANDO / VACÍOS ══ */
+.loading-box { color:#8ea4b8 !important; }
+.spinner, .spinner-sm { border-color:rgba(0,153,230,0.18) !important; border-top-color:#0099e6 !important; }
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar-thumb { background:rgba(0,85,165,0.2) !important; border-radius:4px !important; }
+::-webkit-scrollbar-thumb:hover { background:rgba(0,85,165,0.4) !important; }
+::selection { background:rgba(0,153,230,0.2); color:#0d1b2a; }
+
+/* ══ FAB DE AYUDA ══ */
+.help-fab {
+  background:linear-gradient(135deg,#0055a5,#0099e6) !important;
+  border-color:rgba(0,153,230,0.5) !important;
+  box-shadow:0 4px 20px rgba(0,153,230,0.45) !important;
+}
+.help-fab-tooltip {
+  background:#ffffff !important; border-color:rgba(0,153,230,0.25) !important;
+  color:#4a6275 !important; box-shadow:0 4px 16px rgba(0,0,0,0.12) !important;
+}
+
+
+/* ══ VÍDEO DEL EJERCICIO ══ */
+.training-card > .training-video:first-child { border-radius:16px 16px 0 0 !important; overflow:hidden; }
+.training-video {
+  position:relative; width:100%; padding-bottom:56.25%;
+  background:#0d1b2a !important; overflow:hidden;
+}
+.training-video iframe,
+.training-video video {
+  position:absolute !important; inset:0 !important;
+  width:100% !important; height:100% !important;
+  border:0; display:block; background:#000;
+}
+.training-video .no-video {
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:8px;
+  background:#eef3f9 !important; color:#8ea4b8 !important; text-align:center;
+}
+
+/* Biserie / triserie: un reproductor por ejercicio */
+.chain-videos {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:12px; margin-bottom:14px;
+}
+.chain-video-card {
+  background:#ffffff; border:1.5px solid rgba(0,85,165,0.16);
+  border-radius:14px; overflow:hidden;
+  box-shadow:0 3px 14px rgba(0,0,0,0.07);
+}
+.chain-video-head {
+  padding:8px 12px; font-size:0.68rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.chain-video-card .training-video { border-radius:0 !important; }
+
+/* Móvil: apilar en una columna y compactar el espaciado.
+   Cada tarjeta conserva su 16:9, sin huecos ni recortes. */
+@media (max-width:700px){
+  .chain-videos { grid-template-columns:1fr; gap:10px; margin-bottom:12px; }
+  .chain-video-head { padding:7px 11px; font-size:0.64rem; }
+}
+@media (max-width:420px){
+  .chain-videos { gap:8px; }
+  .training-info { padding:16px !important; }
+}
+
+/* ══ TABLAS (idénticas al dashboard) ══ */
+table.data-table, .page table {
+  width:100%; border-collapse:collapse;
+  border-radius:12px; overflow:hidden;
+  border:1px solid rgba(0,85,165,0.14) !important;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06) !important;
+}
+.data-table thead tr, .page table thead tr { background:linear-gradient(135deg,#0055a5,#0077cc) !important; }
+.data-table th, .page table th {
+  color:#ffffff !important; border-bottom:none !important;
+  font-weight:800 !important; font-size:0.7rem !important;
+  letter-spacing:1px !important; text-transform:uppercase !important;
+  padding:11px 14px !important; text-align:left;
+}
+.data-table tbody tr:nth-child(even) td, .page table tbody tr:nth-child(even) td { background:#f8fafc !important; }
+.data-table tbody tr:nth-child(odd) td,  .page table tbody tr:nth-child(odd) td  { background:#ffffff !important; }
+.data-table td, .page table td {
+  color:#0d1b2a !important;
+  border-bottom:1px solid rgba(0,136,204,0.08) !important;
+  padding:12px 14px !important;
+}
+.data-table tbody tr:hover td, .page table tbody tr:hover td { background:rgba(0,85,165,0.07) !important; }
+
+/* ══ RESTOS DE TEMA OSCURO EN HTML GENERADO ══ */
+/* Fondos blancos translúcidos que quedaban planos sobre blanco */
+.page [style*="background:rgba(255,255,255,0.03)"],
+.page [style*="background:rgba(255,255,255,0.04)"],
+.page [style*="background:rgba(255,255,255,0.05)"],
+.page [style*="background:rgba(255,255,255,0.06)"],
+.overlay-sheet [style*="background:rgba(255,255,255,0.03)"],
+.overlay-sheet [style*="background:rgba(255,255,255,0.04)"],
+.overlay-sheet [style*="background:rgba(255,255,255,0.05)"],
+.overlay-sheet [style*="background:rgba(255,255,255,0.06)"],
+.swal2-html-container [style*="background:rgba(255,255,255,0.04)"],
+.swal2-html-container [style*="background:rgba(255,255,255,0.06)"] {
+  background:#f4f7fb !important;
+}
+.page [style*="background:rgba(0,0,0,0.2)"],
+.page [style*="background:rgba(0,0,0,0.3)"],
+.page [style*="background:rgba(0,0,0,0.35)"],
+.overlay-sheet [style*="background:rgba(0,0,0,0.2)"],
+.overlay-sheet [style*="background:rgba(0,0,0,0.3)"] {
+  background:#f0f4f9 !important;
+}
+/* Bordes blancos translúcidos → azul tenue visible */
+.page [style*="solid rgba(255,255,255,0.07)"],
+.page [style*="solid rgba(255,255,255,0.08)"],
+.page [style*="solid rgba(255,255,255,0.1)"],
+.page [style*="solid rgba(255,255,255,0.12)"],
+.page [style*="solid rgba(255,255,255,0.15)"],
+.overlay-sheet [style*="solid rgba(255,255,255,0.07)"],
+.overlay-sheet [style*="solid rgba(255,255,255,0.08)"],
+.overlay-sheet [style*="solid rgba(255,255,255,0.1)"],
+.overlay-sheet [style*="solid rgba(255,255,255,0.12)"],
+.swal2-html-container [style*="solid rgba(255,255,255,0.12)"] {
+  border-color:rgba(0,85,165,0.14) !important;
+}
+
+/* ══ SWEETALERT2 — idéntico al dashboard ══ */
+.swal2-popup {
+  border-radius:20px !important;
+  box-shadow:0 24px 80px rgba(0,0,0,0.22) !important;
+  font-family:'Exo 2',sans-serif !important;
+}
+.swal2-title          { color:#0d1b2a !important; font-weight:800 !important; }
+.swal2-html-container { color:#3d5166 !important; }
+.swal2-styled.swal2-confirm {
+  border-radius:12px !important; font-weight:700 !important;
+  background:linear-gradient(135deg,#0077cc,#0099e6) !important;
+  box-shadow:0 6px 20px rgba(0,153,230,0.32) !important;
+}
+.swal2-styled.swal2-cancel {
+  border-radius:12px !important; font-weight:700 !important;
+  background:#eef2f7 !important; color:#4a6275 !important;
+}
+.swal2-popup select,
+.swal2-popup input[type="text"],
+.swal2-popup input[type="number"],
+.swal2-popup textarea {
+  background:#f5f8fc !important; color:#0d1b2a !important;
+  border:1.5px solid rgba(0,136,204,0.25) !important;
+  border-radius:12px !important;
+  font-family:'Exo 2',sans-serif !important;
+}
+.swal2-popup select option { background:#ffffff !important; color:#0d1b2a !important; }
+.swal2-popup input:focus, .swal2-popup textarea:focus, .swal2-popup select:focus {
+  border-color:#0099e6 !important;
+  box-shadow:0 0 0 3px rgba(0,153,230,0.12) !important;
+  background:#ffffff !important;
+}
+
+</style>
+<style id="saykyo-audit">
+/* ═══════════════════════════════════════════════════════════════
+   AUDITORÍA UX/UI · correcciones de accesibilidad y contraste
+   Solo afecta a la presentación. Ninguna regla cambia comportamiento.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Foco visible para teclado ────────────────────────────────
+   No existía ninguna regla de foco: quien navegue con Tab no veía
+   dónde estaba. Se usa :focus-visible para que el anillo aparezca
+   con teclado pero no al hacer clic con el ratón. */
+:focus-visible{
+  outline:3px solid rgba(0,153,230,.65) !important;
+  outline-offset:2px !important;
+  border-radius:8px;
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[onclick]:focus-visible{
+  outline:3px solid rgba(0,153,230,.65) !important;
+  outline-offset:3px !important;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible{
+  outline:2px solid rgba(0,153,230,.55) !important;
+  outline-offset:1px !important;
+}
+/* El foco dentro de zonas oscuras necesita otro color */
+.training-video :focus-visible,
+.video-theater :focus-visible,
+.rt-skip:focus-visible{
+  outline-color:#ffffff !important;
+}
+
+/* ── 2. Respetar la preferencia de menos movimiento ──────────────
+   Usuarios con vértigo o sensibilidad vestibular. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+/* ── 3. Piso tipográfico ─────────────────────────────────────────
+   Por debajo de 0.62rem (≈10 px) el texto deja de ser legible en
+   pantallas pequeñas, sobre todo en etiquetas en mayúsculas. */
+[style*="font-size:0.5"], [style*="font-size:0.52rem"],
+[style*="font-size:0.55rem"], [style*="font-size:0.56rem"],
+[style*="font-size:0.58rem"]{
+  font-size:.66rem !important;
+  letter-spacing:.3px;
+}
+@media (max-width:700px){
+  [style*="font-size:0.6rem"], [style*="font-size:0.62rem"]{ font-size:.68rem !important; }
+}
+
+/* ── 4. Zonas táctiles ───────────────────────────────────────────
+   Recomendación de 44×44 px. Se amplía el área sensible con un
+   pseudoelemento, sin alterar el tamaño visual del control. */
+button, .btn, [onclick]{ touch-action:manipulation; }
+/* Se amplía el control en sí, no con una capa invisible encima:
+   un pseudoelemento de 44px flotando puede tapar al vecino y robarle
+   el clic, que es peor que el problema que resuelve. */
+.mini-dot, .fatigue-dot, .effort-option{ min-width:40px; min-height:40px; }
+.btn-sm, .btn.btn-sm{ min-height:34px; padding-top:7px; padding-bottom:7px; }
+
+/* ── 5. Bordes invisibles heredados del tema oscuro ──────────────
+   Un borde blanco translúcido sobre fondo blanco no separa nada:
+   las tarjetas se fundían entre sí. */
+body [style*="solid rgba(255,255,255,0.05)"],
+body [style*="solid rgba(255,255,255,0.06)"],
+body [style*="solid rgba(255,255,255,0.07)"],
+body [style*="solid rgba(255,255,255,0.08)"],
+body [style*="solid rgba(255,255,255,0.1)"],
+body [style*="solid rgba(255,255,255,0.12)"],
+body [style*="solid rgba(255,255,255,0.15)"]{
+  border-color:rgba(0,85,165,.14) !important;
+}
+
+/* ── 6. Texto seleccionable y legible ────────────────────────────*/
+::selection{ background:rgba(0,153,230,.22); color:#0d1b2a; }
+/* Palabras largas (URLs, nombres de ejercicio) no deben desbordar */
+p, td, li, .card-title, .training-title, .rev-q{ overflow-wrap:anywhere; }
+
+/* ── 7. Estados deshabilitados perceptibles ──────────────────────*/
+button:disabled, .btn:disabled, input:disabled, select:disabled{
+  opacity:.55 !important; cursor:not-allowed !important; filter:grayscale(.3);
+}
+
+/* ── 8. Jerarquía de sombras coherente ───────────────────────────
+   Había sombras de 4 profundidades distintas mezcladas. Se unifican
+   en tres niveles: reposo, elevado y flotante. */
+.glass-card, .training-card, .pro-chart-card, .mini-stat, .accordion-item{
+  box-shadow:0 2px 8px rgba(13,27,42,.06), 0 8px 24px rgba(13,27,42,.05) !important;
+}
+.overlay-sheet, .swal2-popup, .notif-sheet-inner{
+  box-shadow:0 -8px 40px rgba(13,27,42,.18), 0 2px 8px rgba(13,27,42,.08) !important;
+}
+
+/* ── 9. Impresión ────────────────────────────────────────────────*/
+@media print{
+  .bottom-nav, .help-fab, .header, .sidebar, .video-theater, .overlay-backdrop{ display:none !important; }
+  body{ background:#fff !important; }
+  .glass-card, .training-card{ box-shadow:none !important; border:1px solid #ccc !important; break-inside:avoid; }
+}
+
+/* ── Específico de la app del atleta ─────────────────────────────*/
+
+/* La barra inferior tapaba el último elemento en pantallas cortas */
+.page, .page-wrap{ padding-bottom:calc(84px + env(safe-area-inset-bottom, 0px)) !important; }
+
+/* Las pestañas necesitan 44 px reales de alto */
+.nav-tab{ min-height:56px; }
+
+/* El botón de serie completada es el control más pulsado de la app:
+   se garantiza su tamaño mínimo y se refuerza el estado activo. */
+.serie-done{ min-width:44px; min-height:44px; }
+.serie-done.checked{ position:relative; }
+
+/* Los campos numéricos abren el teclado correcto y no muestran
+   las flechitas, que en móvil roban espacio al valor. */
+.serie-field input[type="number"]::-webkit-outer-spin-button,
+.serie-field input[type="number"]::-webkit-inner-spin-button{
+  -webkit-appearance:none; margin:0;
+}
+.serie-field input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
+
+/* En móvil, un input con menos de 16px provoca zoom automático en iOS
+   y descuadra la vista de entrenamiento. */
+@media (max-width:700px){
+  .serie-field input, .glass-input, input[type="number"], input[type="text"], select, textarea{
+    font-size:16px !important;
+  }
+}
+
+/* Los títulos largos de ejercicio partían la tarjeta */
+.training-title{ line-height:1.3; overflow-wrap:anywhere; }
+
+/* El temporizador debe poder leerse también en horizontal */
+@media (max-height:520px) and (orientation:landscape){
+  .rt-ring-wrap{ transform:scale(.72); margin:-14px 0; }
+  .rt-label{ margin-top:8px !important; }
+}
+</style>
 </head>
 <body>
 <div class="bg-scene"></div>
@@ -965,7 +1813,7 @@ window.userDeleteAllNotifs = async () => {
     text:'Esta acción no se puede deshacer.',
     showCancelButton:true, confirmButtonText:'Sí, borrar todo',
     cancelButtonText:'Cancelar', confirmButtonColor:'#ff4d6d',
-    background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+    background:'#ffffff', color:'#0f1923'
   });
   if(!res.isConfirmed) return;
   await remove(ref(db,`notificaciones/${currentUser.id}`));
@@ -981,11 +1829,12 @@ window.userReplyNotif = (nid, adminId) => {
   // Show reply overlay
   const overlay = document.createElement('div');
   overlay.className = 'overlay-backdrop';
+  overlay.style.alignItems = 'center';
   overlay.innerHTML = `
-    <div style="background:rgba(8,16,36,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:28px;width:95%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="background:#ffffff;border:none;border-radius:24px;padding:28px;width:95%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.22)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <div style="font-size:1.1rem;font-weight:800">Tu respuesta</div>
-        <button onclick="this.closest('.overlay-backdrop').remove()" style="background:rgba(255,255,255,0.06);border:none;color:var(--text-muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem">✕</button>
+        <div style="font-size:1.1rem;font-weight:800;color:#0d1b2a">Tu respuesta</div>
+        <button onclick="this.closest('.overlay-backdrop').remove()" style="background:#f0f4f9;border:none;color:#4a6275;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem">✕</button>
       </div>
       <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px">Puedes enviar <strong>una sola respuesta</strong> a tu entrenador sobre este mensaje.</div>
       <textarea id="userReplyText" class="glass-input" rows="4" placeholder="Escribe tu respuesta..." style="width:100%;margin-bottom:16px;resize:none"></textarea>
@@ -1001,7 +1850,7 @@ window.userReplyNotif = (nid, adminId) => {
 
 window.submitUserReply = async (nid, adminId, overlayEl) => {
   const msg = document.getElementById('userReplyText')?.value?.trim();
-  if(!msg) return Swal.fire({icon:'warning',title:'Escribe tu respuesta',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+  if(!msg) return Swal.fire({icon:'warning',title:'Escribe tu respuesta',background:'#ffffff',color:'#0f1923',confirmButtonColor:'#0099e6'});
 
   // Send notification to admin as 'respuesta_usuario' — hilo cerrado, admin no puede responder
   const notif = {
@@ -1027,18 +1876,18 @@ window.submitUserReply = async (nid, adminId, overlayEl) => {
 
   await Promise.all(tasks);
   if(overlayEl) overlayEl.remove();
-  Swal.fire({icon:'success',title:'¡Respuesta enviada!',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  Swal.fire({icon:'success',title:'¡Respuesta enviada!',timer:2000,showConfirmButton:false,background:'#ffffff',color:'#0f1923'});
 };
 
 window.sendAlertToAdmins = async () => {
   const msg = document.getElementById('userAlertMsg')?.value?.trim();
   if(!msg) {
-    Swal.fire({icon:'warning',title:'Escribe tu alerta',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    Swal.fire({icon:'warning',title:'Escribe tu alerta',background:'#ffffff',color:'#0f1923',confirmButtonColor:'#0099e6'});
     return;
   }
   const adminIds = await getGrupoAdminIds();
   if(!adminIds.length) {
-    Swal.fire({icon:'info',title:'No estás en ningún grupo',text:'Contacta a tu entrenador para que te asigne a un grupo.',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    Swal.fire({icon:'info',title:'No estás en ningún grupo',text:'Contacta a tu entrenador para que te asigne a un grupo.',background:'#ffffff',color:'#0f1923',confirmButtonColor:'#0099e6'});
     return;
   }
   
@@ -1054,7 +1903,7 @@ window.sendAlertToAdmins = async () => {
   await Promise.all(adminIds.map(aid => push(ref(db,`notificaciones/${aid}`), notif)));
 
   document.getElementById('userNotifSheet')?.remove();
-  Swal.fire({icon:'success',title:'¡Alerta enviada!',text:`Notificación enviada a ${adminIds.length} entrenador(es)`,timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  Swal.fire({icon:'success',title:'¡Alerta enviada!',text:`Notificación enviada a ${adminIds.length} entrenador(es)`,timer:2000,showConfirmButton:false,background:'#ffffff',color:'#0f1923'});
 };
 
 // Biblioteca de avatares (131 combinaciones únicas)
@@ -1216,10 +2065,91 @@ let state = {
 // cambio de dispositivo, cierre de app, apagón de celular, etc.
 // Ruta: sesiones_pendientes/{uid}
 // ═══════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// CAPA DE CACHÉ DE LECTURA — rendimiento con varios atletas a la vez
+// ───────────────────────────────────────────────────────────────
+// Problema original: nodos pesados y compartidos ('rutinas',
+// 'ejercicios', 'categorias') se descargaban COMPLETOS varias veces
+// por sesión, y el historial hasta 4 veces. Con 5 atletas entrenando
+// simultáneamente eso multiplicaba el ancho de banda y bloqueaba la UI.
+//
+// Solución: caché en memoria con TTL + deduplicación de peticiones en
+// vuelo. Devuelve un objeto con la MISMA interfaz que un DataSnapshot
+// (.val() / .exists()), por lo que los puntos de uso no cambian.
+// No modifica rutas ni requiere permisos nuevos.
+// ═══════════════════════════════════════════════════════════════
+const DB_TTL = {
+  'ejercicios'  : 10 * 60 * 1000,  // catálogo: cambia muy poco
+  'categorias'  : 10 * 60 * 1000,
+  'rutinas'     :  3 * 60 * 1000,  // la asigna el entrenador
+  '_default'    :  2 * 60 * 1000
+};
+
+const dbCache = {
+  _store: Object.create(null),
+
+  _ttlFor(path) {
+    return DB_TTL[path] != null ? DB_TTL[path] : DB_TTL._default;
+  },
+
+  _wrap(data) {
+    return {
+      val:    () => data,
+      exists: () => data != null && !(typeof data === 'object' && Object.keys(data).length === 0)
+    };
+  },
+
+  // Lee `path` devolviendo un snapshot-like. Reutiliza caché válida y
+  // fusiona llamadas concurrentes en una sola petición de red.
+  async snap(path, ttl) {
+    const life = ttl != null ? ttl : this._ttlFor(path);
+    const e = this._store[path];
+
+    if (e) {
+      if (e.inflight) return e.inflight;                    // ya se está pidiendo
+      if (Date.now() - e.ts < life) return this._wrap(e.data); // caché fresca
+    }
+
+    const req = get(ref(db, path))
+      .then(sn => {
+        const v = sn.val();
+        this._store[path] = { ts: Date.now(), data: v, inflight: null };
+        return this._wrap(v);
+      })
+      .catch(err => {
+        // Ante un fallo, dejamos la caché anterior utilizable si existía
+        const prev = this._store[path];
+        if (prev) prev.inflight = null; else delete this._store[path];
+        if (prev && prev.ts) return this._wrap(prev.data);
+        throw err;
+      });
+
+    this._store[path] = {
+      ts:   e ? e.ts   : 0,
+      data: e ? e.data : null,
+      inflight: req
+    };
+    return req;
+  },
+
+  // Fuerza relectura la próxima vez (tras escribir en ese nodo)
+  invalidate(path) { delete this._store[path]; },
+
+  // Actualiza la caché sin ir a la red (tras una escritura conocida)
+  put(path, data) { this._store[path] = { ts: Date.now(), data, inflight: null }; },
+
+  clear() { this._store = Object.create(null); }
+};
+
+// Ruta del historial del usuario actual (se usa en varios sitios)
+const HIST_PATH = () => `sesiones/${currentUser.id}/historial`;
+
 const PENDING_REF = () => ref(db, `sesiones_pendientes/${currentUser.id}`);
 
 // ── Debounce: evita múltiples writes a Firebase por cambios rápidos de input ──
 let _savePendingTimer = null;
+let _lastPendingSig   = null;  // firma del último payload escrito (anti-duplicados)
 const savePendingSessionDebounced = () => {
   clearTimeout(_savePendingTimer);
   _savePendingTimer = setTimeout(() => savePendingSession(), 1500);
@@ -1307,15 +2237,24 @@ async function savePendingSession() {
     currentSeriesSnapshotChain = null;
   }
 
+  const _payload = {
+    sesionActiva: state.sesionActiva,
+    ejercicioActual: state.ejercicioActual,
+    currentSeriesSnapshot,
+    ...(currentSeriesSnapshotB ? { currentSeriesSnapshotB } : {}),
+    ...(currentSeriesSnapshotChain ? { currentSeriesSnapshotChain } : {})
+  };
+
+  // OPTIMIZACIÓN: marcar series, cambiar de ejercicio y volver de background
+  // disparaban writes con contenido IDÉNTICO. Comparamos el payload (sin la
+  // marca de tiempo) y omitimos la escritura si nada cambió realmente.
+  let _sig;
+  try { _sig = JSON.stringify(_payload); } catch(e) { _sig = null; }
+  if (_sig && _sig === _lastPendingSig) return;
+
   try {
-    await set(PENDING_REF(), {
-      sesionActiva: state.sesionActiva,
-      ejercicioActual: state.ejercicioActual,
-      currentSeriesSnapshot,
-      ...(currentSeriesSnapshotB ? { currentSeriesSnapshotB } : {}),
-      ...(currentSeriesSnapshotChain ? { currentSeriesSnapshotChain } : {}),
-      savedAt: Date.now()
-    });
+    await set(PENDING_REF(), { ..._payload, savedAt: Date.now() });
+    _lastPendingSig = _sig;
   } catch(e) { console.warn('savePendingSession error:', e); }
 }
 
@@ -1334,6 +2273,7 @@ async function loadPendingSession() {
 }
 
 async function clearPendingSession() {
+  _lastPendingSig = null;
   try { await remove(PENDING_REF()); } catch(e) {}
 }
 
@@ -1342,9 +2282,9 @@ async function init() {
   const [anaSnap, progresoSnap, ejSnap, catSnap, histSnap, pendingSnap] = await Promise.all([
     get(ref(db,`anamnesis/${currentUser.id}`)),
     get(ref(db,`sesiones/${currentUser.id}/progreso`)),
-    get(ref(db,'ejercicios')),
-    get(ref(db,'categorias')),
-    get(ref(db,`sesiones/${currentUser.id}/historial`)),
+    dbCache.snap('ejercicios'),
+    dbCache.snap('categorias'),
+    dbCache.snap(HIST_PATH()),
     get(PENDING_REF())
   ]);
   state.ejercicios = ejSnap.val()||{};
@@ -1398,7 +2338,7 @@ async function init() {
       let ejNombre = `Ejercicio ${ejActualIdx + 1}`;
       if(state.ejercicios && matchesDay) {
         const progreso = state.progreso;
-        const rutSnap = await get(ref(db, `rutinas`));
+        const rutSnap = await dbCache.snap('rutinas');
         const rutinas = rutSnap.val()||{};
         const rutActiva = Object.values(rutinas).find(r => r.usuario === currentUser.id && r.activa);
         if(rutActiva) {
@@ -1409,8 +2349,8 @@ async function init() {
       }
 
       const result = await Swal.fire({
-        background: 'rgba(8,16,36,0.98)',
-        color: '#e8f4ff',
+        background: '#ffffff',
+        color: '#0f1923',
         width: '360px',
         showConfirmButton: false,
         allowOutsideClick: false,
@@ -1418,43 +2358,43 @@ async function init() {
         html: `
           <div style="text-align:left">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-              <div style="width:12px;height:12px;border-radius:50%;background:#00c8ff;box-shadow:0 0 12px #00c8ff;animation:pulse-dot 1.4s infinite;flex-shrink:0"></div>
-              <div style="font-size:1.1rem;font-weight:800;color:#00c8ff">Entrenamiento en curso</div>
+              <div style="width:12px;height:12px;border-radius:50%;background:#0099e6;box-shadow:0 0 12px rgba(0,153,230,0.6);animation:pulse-dot 1.4s infinite;flex-shrink:0"></div>
+              <div style="font-size:1.1rem;font-weight:800;color:#0077cc">Entrenamiento en curso</div>
             </div>
 
             <div style="background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.15);border-radius:14px;padding:16px;margin-bottom:16px">
-              <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:rgba(232,244,255,0.4);margin-bottom:10px">Donde quedaste</div>
+              <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:#8ea4b8;margin-bottom:10px">Donde quedaste</div>
               <div style="display:flex;gap:10px;margin-bottom:12px">
                 <div style="flex:1;background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.2);border-radius:10px;padding:10px;text-align:center">
-                  <div style="font-size:1.4rem;font-weight:900;color:#00c8ff">${sa.mes}</div>
-                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:rgba(232,244,255,0.45);margin-top:2px">Mes</div>
+                  <div style="font-size:1.4rem;font-weight:900;color:#0077cc">${sa.mes}</div>
+                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:#7d93a8;margin-top:2px">Mes</div>
                 </div>
                 <div style="flex:1;background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.2);border-radius:10px;padding:10px;text-align:center">
-                  <div style="font-size:1.4rem;font-weight:900;color:#a78bfa">${sa.semana}</div>
-                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:rgba(232,244,255,0.45);margin-top:2px">Semana</div>
+                  <div style="font-size:1.4rem;font-weight:900;color:#7c3aed">${sa.semana}</div>
+                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:#7d93a8;margin-top:2px">Semana</div>
                 </div>
                 <div style="flex:1;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:10px;text-align:center">
-                  <div style="font-size:1.4rem;font-weight:900;color:#00e5a0">${sa.dia}</div>
-                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:rgba(232,244,255,0.45);margin-top:2px">Día</div>
+                  <div style="font-size:1.4rem;font-weight:900;color:#059669">${sa.dia}</div>
+                  <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:#7d93a8;margin-top:2px">Día</div>
                 </div>
               </div>
               <div style="display:flex;justify-content:space-between;font-size:0.8rem">
-                <span style="color:rgba(232,244,255,0.5)">En: <strong style="color:#e8f4ff">${ejNombre}</strong></span>
-                <span style="color:rgba(232,244,255,0.4)">${tiempoStr}</span>
+                <span style="color:#5a6e84">En: <strong style="color:#0f1923">${ejNombre}</strong></span>
+                <span style="color:#8ea4b8">${tiempoStr}</span>
               </div>
-              ${ejsHechos > 0 ? `<div style="margin-top:8px;font-size:0.8rem;color:#00e5a0">${ejsHechos} ejercicio${ejsHechos!==1?'s':''} ya completado${ejsHechos!==1?'s':''}</div>` : ''}
+              ${ejsHechos > 0 ? `<div style="margin-top:8px;font-size:0.8rem;color:#059669">${ejsHechos} ejercicio${ejsHechos!==1?'s':''} ya completado${ejsHechos!==1?'s':''}</div>` : ''}
             </div>
 
             ${!matchesDay ? `
-            <div style="background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:10px;padding:10px;margin-bottom:16px;font-size:0.78rem;color:#ffd60a">
+            <div style="background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:10px;padding:10px;margin-bottom:16px;font-size:0.78rem;color:#b45309">
               Este entrenamiento era del <strong>M${sa.mes}·S${sa.semana}·D${sa.dia}</strong> pero tu progreso actual es <strong>M${mesActual}·S${semanaActual}·D${diaActual}</strong>
             </div>` : ''}
 
             <div style="display:flex;flex-direction:column;gap:8px">
-              <button id="swal-continuar" style="width:100%;padding:13px;background:linear-gradient(135deg,#0088cc,#00c8ff);border:none;border-radius:12px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.5px">
+              <button id="swal-continuar" style="width:100%;padding:13px;background:linear-gradient(135deg,#0077cc,#0099e6);border:none;border-radius:12px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;letter-spacing:0.5px;box-shadow:0 6px 20px rgba(0,153,230,0.35)">
                 ▶️ Continuar donde quedé
               </button>
-              <button id="swal-nueva" style="width:100%;padding:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:rgba(232,244,255,0.6);font-size:0.85rem;cursor:pointer">
+              <button id="swal-nueva" style="width:100%;padding:11px;background:#f0f4f9;border:1.5px solid rgba(0,0,0,0.11);border-radius:12px;color:#4a6275;font-size:0.85rem;font-weight:600;cursor:pointer">
                 Descartar y empezar nueva sesión
               </button>
             </div>
@@ -1464,7 +2404,7 @@ async function init() {
           document.getElementById('swal-continuar').onclick = async () => {
             // Cargar la rutina si aún no está disponible (ANTES de cerrar el Swal)
             if(!state.rutinaData) {
-              const rutSnap = await get(ref(db,'rutinas'));
+              const rutSnap = await dbCache.snap('rutinas');
               const rutinas = rutSnap.val()||{};
               const rutActiva = Object.values(rutinas).find(r => r.usuario === currentUser.id && r.activa);
               if(rutActiva) {
@@ -1688,7 +2628,7 @@ window.anamnesisNext = async () => {
   }
   
   if(!val && val!==0) {
-    return Swal.fire({icon:'warning',title:'Responde la pregunta',text:'Esta información es importante para tu plan personalizado',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    return Swal.fire({icon:'warning',title:'Responde la pregunta',text:'Esta información es importante para tu plan personalizado',background:'#ffffff',color:'#0f1923',confirmButtonColor:'#0099e6'});
   }
   
   anamnesisRespuestas[`p${anamnesisStep}`] = val;
@@ -1710,7 +2650,7 @@ window.anamnesisNext = async () => {
     await Swal.fire({
       icon:'success',title:'¡Anamnesis completada!',
       text:'Tu perfil está listo. ¡A entrenar!',
-      background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff',
+      background:'#ffffff',color:'#0f1923',confirmButtonColor:'#0099e6',
       timer:2500,showConfirmButton:false
     });
     state.progreso = {mesActual:1,semanaActual:1,diaActual:1};
@@ -1767,35 +2707,83 @@ async function checkRevisionesPendientes() {
   };
   await checkAdminRegisteredSessions();
 
-  // Revisión mensual pendiente (inicio de mes nuevo)
-  if(semanaActual === 1 && mesActual > 1) {
-    const mesPrev = mesActual - 1;
-    // Solo pedir si las 4 semanas del mes anterior fueron completadas
-    const mesCompleto = [1,2,3,4].every(s => semanaTotalmenteCompletada(mesPrev, s));
-    if(mesCompleto) {
-      const revMes = await get(ref(db, `revisiones_mes/${currentUser.id}/m${mesPrev}`));
-      if(!revMes.exists()) {
-        await showRevisionMes(mesPrev);
-        return true;
-      }
-    }
+  // ── Control NO retroactivo ──────────────────────────────────────
+  // Solo se mira la posición ACTUAL del progreso, nunca semanas o meses
+  // anteriores. La revisión de una semana se pide cuando esa semana queda
+  // cerrada, no cuando ya se está en la siguiente; y la mensual, cuando se
+  // cierra el último día del mes.
+  //
+  // Esto funciona porque `finalizarSesion` retiene el progreso en el último
+  // día de la semana terminada mientras falte su revisión: el atleta nunca
+  // llega a la semana nueva debiendo nada. Si alguien quedó con una deuda
+  // antigua de antes de esta regla, no se le bloquea.
+
+  // Última semana configurada del mes actual (no se asume que sean 4)
+  const _semanasMes = Object.keys(state.rutinaData?.meses?.[mesActual]?.semanas || {}).map(Number);
+  const _ultimaSemana = _semanasMes.length ? Math.max(..._semanasMes) : 4;
+
+  // 1) ¿Está cerrado el MES actual completo? Entonces toca la mensual.
+  const mesActualCerrado = _semanasMes.length > 0 &&
+    _semanasMes.every(sem => semanaTotalmenteCompletada(mesActual, sem));
+
+  if(mesActualCerrado && semanaActual >= _ultimaSemana) {
+    const revMes = await get(ref(db, `revisiones_mes/${currentUser.id}/m${mesActual}`));
+    if(!revMes.exists()) return { tipo:'mes', mes:mesActual };
   }
 
-  // Revisión semanal pendiente de la semana anterior
-  let mesPend = mesActual, semPend = semanaActual - 1;
-  if(semPend < 1) { mesPend = mesActual - 1; semPend = 4; }
-  if(mesPend >= 1) {
-    // Solo pedir si esa semana fue completada realmente
-    if(semanaTotalmenteCompletada(mesPend, semPend)) {
-      const revSem = await get(ref(db, `revisiones_semana/${currentUser.id}/m${mesPend}s${semPend}`));
-      if(!revSem.exists()) {
-        await showRevisionSemana(mesPend, semPend);
-        return true;
-      }
-    }
+  // 2) ¿Está cerrada la SEMANA actual? Entonces toca la semanal.
+  if(semanaTotalmenteCompletada(mesActual, semanaActual)) {
+    const revSem = await get(ref(db, `revisiones_semana/${currentUser.id}/m${mesActual}s${semanaActual}`));
+    if(!revSem.exists()) return { tipo:'semana', mes:mesActual, semana:semanaActual };
   }
-  return false;
+
+  return null;
 }
+
+// ── Pantalla de bloqueo ────────────────────────────────────────
+// Sustituye a la vista de entrenamiento mientras haya una revisión sin
+// registrar. No hay forma de saltarla desde la interfaz.
+function renderBloqueoRevision(pend) {
+  const esMes = pend.tipo === 'mes';
+  const etiqueta = esMes ? `Mes ${pend.mes}` : `Mes ${pend.mes} · Semana ${pend.semana}`;
+  const p = document.getElementById('mainPage');
+  if(!p) return;
+  updateSessionDot(false);
+  p.innerHTML = `
+    <div class="glass-card" style="text-align:center;padding:34px 22px">
+      <div style="width:64px;height:64px;margin:0 auto 16px;border-radius:50%;
+                  background:rgba(217,119,6,0.12);border:2px solid rgba(217,119,6,0.35);
+                  display:flex;align-items:center;justify-content:center">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#b45309"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <h2 style="margin-bottom:8px;font-size:1.15rem">Revisión ${esMes?'mensual':'semanal'} pendiente</h2>
+      <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:6px">
+        Para empezar ${esMes?'el mes nuevo':'la semana nueva'} necesitas registrar tu revisión de <strong>${etiqueta}</strong>.
+      </p>
+      <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:20px">
+        Son unas pocas preguntas sobre cómo te sentiste. Tu entrenador las usa para ajustar tus cargas.
+      </p>
+      <button class="btn btn-primary btn-full" onclick="abrirRevisionPendiente()">
+        Registrar mi revisión
+      </button>
+    </div>`;
+}
+
+window.abrirRevisionPendiente = async () => {
+  const pend = await checkRevisionesPendientes();
+  if(!pend) { renderTab('entrenar'); return; }
+  if(pend.tipo === 'mes') await showRevisionMes(pend.mes);
+  else                    await showRevisionSemana(pend.mes, pend.semana);
+  // Solo se sale del bloqueo si la revisión quedó realmente guardada
+  const sigue = await checkRevisionesPendientes();
+  if(sigue) renderBloqueoRevision(sigue);
+  else      renderTab('entrenar');
+};
 
 async function renderTab(tab) {
   if(tab==='entrenar') {
@@ -1805,7 +2793,11 @@ async function renderTab(tab) {
       renderEjercicioActual();
       return;
     }
-    await checkRevisionesPendientes();
+    // Si hay una revisión pendiente, no se entra a entrenar: se muestra
+    // una pantalla de bloqueo. Antes se ignoraba el resultado y bastaba con
+    // cerrar el formulario para seguir entrenando.
+    const pend = await checkRevisionesPendientes();
+    if(pend) { renderBloqueoRevision(pend); return; }
     await renderEntrenar();
   }
   else if(tab==='progreso') await renderProgreso();
@@ -1841,7 +2833,7 @@ async function renderEntrenar() {
     return;
   }
 
-  const rutSnap = await get(ref(db,'rutinas'));
+  const rutSnap = await dbCache.snap('rutinas');
   const rutinas = rutSnap.val()||{};
   const miRutina = Object.entries(rutinas).find(([,r])=>r.usuario===currentUser.id && r.activa);
 
@@ -1861,7 +2853,7 @@ async function renderEntrenar() {
 
   // Historial: solo cargar si no está ya en state o lleva más de 5 min sin actualizar
   if(!state._historialLoadedAt || Date.now() - state._historialLoadedAt > 5*60*1000) {
-    const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
+    const histSnap = await dbCache.snap(HIST_PATH());
     state.historial = histSnap.val()||{};
     state._historialLoadedAt = Date.now();
   }
@@ -1929,10 +2921,10 @@ async function renderEntrenar() {
   // Pending alert banner
   const pendingBanner = pendingBefore.length > 0 ? `
     <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.35);border-radius:16px;padding:14px;margin-bottom:12px">
-      <div style="font-weight:700;font-size:0.9rem;color:#ff6b35;margin-bottom:8px">Tienes ${pendingBefore.length} día${pendingBefore.length>1?'s':''} pendiente${pendingBefore.length>1?'s':''}</div>
+      <div style="font-weight:700;font-size:0.9rem;color:#ea580c;margin-bottom:8px">Tienes ${pendingBefore.length} día${pendingBefore.length>1?'s':''} pendiente${pendingBefore.length>1?'s':''}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${pendingBefore.map(p=>`
-          <button onclick="irADiaAbs(${p.abs})" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);border-radius:8px;padding:5px 10px;color:#ff6b35;font-size:0.78rem;font-weight:700;cursor:pointer">
+          <button onclick="irADiaAbs(${p.abs})" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);border-radius:8px;padding:5px 10px;color:#ea580c;font-size:0.78rem;font-weight:700;cursor:pointer">
             M${p.mes}·S${p.semana}·D${p.dia}
           </button>
         `).join('')}
@@ -2010,7 +3002,7 @@ async function renderEntrenar() {
             <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:var(--primary);flex-shrink:0">${i+1}</div>
             <div style="flex:1">
               <div style="font-weight:600;font-size:0.92rem">${ejInfo.nombre||'Ejercicio'}${ejInfo.biextremidad?'<span style="font-size:0.68rem;background:rgba(0,229,160,0.15);color:var(--success);border-radius:6px;padding:1px 6px;margin-left:6px">Biext</span>':''}</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">${ej.series} series · ${ej.repsMin}-${ej.repsMax} reps · ${ej.peso}kg · ${currentUser.metodo} ${ej.rirRpe}${ej.metodo?` · <span style="color:#c084fc">${ej.metodo}</span>`:''}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${ej.series} series · ${ej.repsMin}-${ej.repsMax} reps · ${ej.peso}kg · ${currentUser.metodo} ${ej.rirRpe}${ej.metodo?` · <span style="color:#7c3aed">${ej.metodo}</span>`:''}</div>
             </div>
           </div>`;
       }).join('')}
@@ -2037,10 +3029,10 @@ window.irADia = async (dia) => {
       const res = await Swal.fire({
         icon:'warning',
         title:'Días pendientes',
-        html:`<div style="color:#e8f4ff">Saltarás el Día ${pendingInBetween.join(', Día ')} que tiene${pendingInBetween.length>1?'n':''} ejercicios sin completar.<br><br>¿Deseas continuar igual?</div>`,
+        html:`<div style="color:#0f1923">Saltarás el Día ${pendingInBetween.join(', Día ')} que tiene${pendingInBetween.length>1?'n':''} ejercicios sin completar.<br><br>¿Deseas continuar igual?</div>`,
         showCancelButton:true, confirmButtonText:'Sí, saltar',
         cancelButtonText:'No, completar primero',
-        confirmButtonColor:'#ff6b35', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+        confirmButtonColor:'#ff6b35', background:'#ffffff', color:'#0f1923'
       });
       if(!res.isConfirmed) return;
     }
@@ -2070,10 +3062,10 @@ window.irASemana = async (semana) => {
     if(pending.length > 0) {
       const res = await Swal.fire({
         icon:'warning', title:'Días pendientes en Semana ' + semanaActual,
-        html:`<div style="color:#e8f4ff">Quedan días con ejercicios sin completar: <strong>${pending.join(', ')}</strong><br><br>¿Avanzar a la Semana ${semana} de todas formas?</div>`,
+        html:`<div style="color:#0f1923">Quedan días con ejercicios sin completar: <strong>${pending.join(', ')}</strong><br><br>¿Avanzar a la Semana ${semana} de todas formas?</div>`,
         showCancelButton:true, confirmButtonText:'Sí, avanzar',
         cancelButtonText:'Completar primero',
-        confirmButtonColor:'#ff6b35', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+        confirmButtonColor:'#ff6b35', background:'#ffffff', color:'#0f1923'
       });
       if(!res.isConfirmed) return;
     }
@@ -2146,8 +3138,8 @@ window.iniciarSesion = async () => {
   const ejsDia = Object.values(diaData?.ejercicios||{});
   if(ejsDia.length===0) return;
 
-  // Refrescar historial
-  const histSnap = await get(ref(db,`sesiones/${currentUser.id}/historial`));
+  // Refrescar historial (caché corta: evita releer en cada arranque de sesión)
+  const histSnap = await dbCache.snap(HIST_PATH(), 60 * 1000);
   state.historial = histSnap.val()||{};
 
   // ── Caso 1: Hay sesión pendiente en Firebase → RETOMAR ──
@@ -2198,8 +3190,8 @@ window.descartarSesionPendiente = async () => {
     confirmButtonText: 'Sí, empezar nueva',
     cancelButtonText: 'Cancelar',
     confirmButtonColor: '#ff6b35',
-    background: 'rgba(10,20,40,0.98)',
-    color: '#e8f4ff'
+    background: '#ffffff',
+    color: '#0f1923'
   });
   if(!res.isConfirmed) return;
   state._pendingSessionData = null;
@@ -2257,16 +3249,16 @@ function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, meto
       <div class="serie-inputs">
         ${esBiext ? `
         <div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">
-          <div style="grid-column:1/-1;font-size:0.68rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">Reps por lado</div>
+          <div style="grid-column:1/-1;font-size:0.68rem;color:#059669;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">Reps por lado</div>
           <div style="display:flex;flex-direction:column;gap:3px">
-            <label style="font-size:0.65rem;color:#00e5a0">Izq reps</label>
+            <label style="font-size:0.65rem;color:#059669">Izq reps</label>
             <input type="number" id="${prefix}reps_izq_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
-              style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none">
+              style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#0f1923;font-size:0.88rem;width:100%;outline:none">
           </div>
           <div style="display:flex;flex-direction:column;gap:3px">
-            <label style="font-size:0.65rem;color:#ff6b35">Der reps</label>
+            <label style="font-size:0.65rem;color:#ea580c">Der reps</label>
             <input type="number" id="${prefix}reps_der_${i}" placeholder="${sv(i,'repsMin',0)}" min="0" value="${sv(i,'repsMin',0)}"
-              style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none">
+              style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#0f1923;font-size:0.88rem;width:100%;outline:none">
           </div>
         </div>
         <div class="serie-field" style="display:none"><input type="number" id="${prefix}reps_${i}" value="${sv(i,'repsMin',0)}"></div>
@@ -2282,12 +3274,12 @@ function _buildSeriesRows(ejConfig, ejInfo, prefix, metodoLabel, metodoMin, meto
         </div>
         ${esBiext ? `
         <div class="serie-field">
-          <label style="color:#00e5a0">Izq ${_metodoLabel}</label>
+          <label style="color:#059669">Izq ${_metodoLabel}</label>
           <input type="number" id="${prefix}rpe_izq_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${_metodoMin}" max="${_metodoMax}" value="${sv(i,'rirRpe',0)}"
             style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)">
         </div>
         <div class="serie-field">
-          <label style="color:#ff6b35">Der ${_metodoLabel}</label>
+          <label style="color:#ea580c">Der ${_metodoLabel}</label>
           <input type="number" id="${prefix}rpe_der_${i}" placeholder="${sv(i,'rirRpe',0)}" min="${_metodoMin}" max="${_metodoMax}" value="${sv(i,'rirRpe',0)}"
             style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)">
         </div>
@@ -2430,6 +3422,7 @@ function renderEjercicioActual() {
     finalizarSesion();
     return;
   }
+  
 
   const ejConfig = ejsDia[state.ejercicioActual];
   const ejInfo = state.ejercicios[ejConfig.ejercicioId]||{};
@@ -2492,16 +3485,16 @@ function renderEjercicioActual() {
     const esBiextUlt = series.some(s => s.rirRpeIzq != null);
     const fechaStr   = new Date(fecha).toLocaleDateString('es-CO', {day:'2-digit', month:'short'});
     const thSt = 'padding:4px 6px;font-size:0.68rem;color:rgba(167,139,250,0.6);font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:0.5px;';
-    const tdSt = 'padding:5px 6px;font-size:0.84rem;font-weight:700;color:#e8f4ff;';
+    const tdSt = 'padding:5px 6px;font-size:0.84rem;font-weight:700;color:#0f1923;';
     const thRpe = esBiextUlt
-      ? `<th style="${thSt}color:#00e5a0">Izq reps</th><th style="${thSt}color:#ff6b35">Der reps</th><th style="${thSt}color:#00e5a0">Izq ${currentUser.metodo}</th><th style="${thSt}color:#ff6b35">Der ${currentUser.metodo}</th>`
-      : `<th style="${thSt}color:#a78bfa">${currentUser.metodo}</th>`;
+      ? `<th style="${thSt}color:#059669">Izq reps</th><th style="${thSt}color:#ea580c">Der reps</th><th style="${thSt}color:#059669">Izq ${currentUser.metodo}</th><th style="${thSt}color:#ea580c">Der ${currentUser.metodo}</th>`
+      : `<th style="${thSt}color:#7c3aed">${currentUser.metodo}</th>`;
     const filas = series.map((s, i) => {
       const rpeCell = esBiextUlt
-        ? `<td style="${tdSt}"><span style="color:#00e5a0">${s.repsIzq??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.repsDer??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#00e5a0">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ff6b35">${s.rirRpeDer??'—'}</span></td>`
-        : `<td style="${tdSt};color:#a78bfa">${s.rirRpe??'—'}</td>`;
+        ? `<td style="${tdSt}"><span style="color:#059669">${s.repsIzq??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#ea580c">${s.repsDer??s.reps??'—'}</span></td><td style="${tdSt}"><span style="color:#059669">${s.rirRpeIzq??'—'}</span></td><td style="${tdSt}"><span style="color:#ea580c">${s.rirRpeDer??'—'}</span></td>`
+        : `<td style="${tdSt};color:#7c3aed">${s.rirRpe??'—'}</td>`;
       return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-        <td style="${tdSt};color:#a78bfa;font-weight:700">${i+1}</td>
+        <td style="${tdSt};color:#7c3aed;font-weight:700">${i+1}</td>
         ${esBiextUlt ? '' : `<td style="${tdSt}">${s.reps??'—'}</td>`}
         <td style="${tdSt}">${s.peso ? s.peso+' kg' : '—'}</td>
         ${rpeCell}
@@ -2532,7 +3525,8 @@ function renderEjercicioActual() {
 
   if(esBiset) {
     // ── SERIE COMPUESTA (N ejercicios) ──
-    const _chainColors = ['rgba(0,200,255,', 'rgba(123,47,255,', 'rgba(0,229,160,', 'rgba(255,107,53,', 'rgba(255,214,10,'];
+    // Paleta de la cadena con contraste sobre blanco (biserie/triserie)
+    const _chainColors = ['rgba(0,119,204,', 'rgba(124,58,237,', 'rgba(5,150,105,', 'rgba(234,88,12,', 'rgba(180,83,9,'];
     const _chainLabels = ['A','B','C','D','E'];
     const nInChain = _chainEjs.length;
     const nSeries  = Math.max(..._chainEjs.map(e => e.config?.series||3));
@@ -2549,15 +3543,15 @@ function renderEjercicioActual() {
       const { series: sr, fecha: fe, mes: me, semana: se2, dia: di } = reg;
       const fStr = new Date(fe).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
       const thS = 'padding:3px 5px;font-size:0.62rem;color:' + colorBase + '0.6);font-weight:600;text-align:left;';
-      const tdS = 'padding:4px 5px;font-size:0.8rem;font-weight:700;color:#e8f4ff;';
+      const tdS = 'padding:4px 5px;font-size:0.8rem;font-weight:700;color:#0f1923;';
       const esBiextUlt = sr.some(s => s.rirRpeIzq != null || s.repsIzq != null);
       const metodoColLabel = _usedMetodo === 'RPE' ? 'RPE' : 'RIR/RPE';
       const filas = sr.map((s,i) => {
         const repsCell = esBiextUlt
-          ? '<span style="color:#00e5a0">' + (s.repsIzq ?? s.reps ?? '—') + '</span>/<span style="color:#ff6b35">' + (s.repsDer ?? s.reps ?? '—') + '</span>'
+          ? '<span style="color:#059669">' + (s.repsIzq ?? s.reps ?? '—') + '</span>/<span style="color:#ea580c">' + (s.repsDer ?? s.reps ?? '—') + '</span>'
           : (s.reps ?? '—');
         const rpeCell = esBiextUlt
-          ? '<span style="color:#00e5a0">' + (s.rirRpeIzq ?? '—') + '</span>/<span style="color:#ff6b35">' + (s.rirRpeDer ?? '—') + '</span>'
+          ? '<span style="color:#059669">' + (s.rirRpeIzq ?? '—') + '</span>/<span style="color:#ea580c">' + (s.rirRpeDer ?? '—') + '</span>'
           : (s.rirRpe ?? '—');
         return '<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">'
           + '<td style="' + tdS + ';color:' + colorBase + '0.8)">' + (i+1) + '</td>'
@@ -2582,21 +3576,21 @@ function renderEjercicioActual() {
       // Reps: biextremidad en biserie → izq + der separados; ocultar campo único
       const repsHtml = isBiextRow
         ? '<div class="serie-field" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,229,160,0.05);border-radius:10px;padding:6px;border:1px solid rgba(0,229,160,0.15)">'
-          + '<div style="grid-column:1/-1;font-size:0.6rem;color:#00e5a0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">Reps por lado</div>'
-          + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#00e5a0">Izq reps</label>'
-            + '<input type="number" id="' + pfx + 'reps_izq_' + i + '" placeholder="' + sv('repsMin',0) + '" min="0" value="' + sv('repsMin',0) + '" style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none"></div>'
-          + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#ff6b35">Der reps</label>'
-            + '<input type="number" id="' + pfx + 'reps_der_' + i + '" placeholder="' + sv('repsMin',0) + '" min="0" value="' + sv('repsMin',0) + '" style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#e8f4ff;font-size:0.88rem;width:100%;outline:none"></div>'
+          + '<div style="grid-column:1/-1;font-size:0.6rem;color:#059669;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px">Reps por lado</div>'
+          + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#059669">Izq reps</label>'
+            + '<input type="number" id="' + pfx + 'reps_izq_' + i + '" placeholder="' + sv('repsMin',0) + '" min="0" value="' + sv('repsMin',0) + '" style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:6px 8px;color:#0f1923;font-size:0.88rem;width:100%;outline:none"></div>'
+          + '<div style="display:flex;flex-direction:column;gap:3px"><label style="font-size:0.62rem;color:#ea580c">Der reps</label>'
+            + '<input type="number" id="' + pfx + 'reps_der_' + i + '" placeholder="' + sv('repsMin',0) + '" min="0" value="' + sv('repsMin',0) + '" style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:8px;padding:6px 8px;color:#0f1923;font-size:0.88rem;width:100%;outline:none"></div>'
           + '</div>'
           + '<div class="serie-field" style="display:none"><input type="number" id="' + pfx + 'reps_' + i + '" value="' + sv('repsMin',0) + '"></div>'
         : '<div class="serie-field"><label>Reps</label><input type="number" id="' + pfx + 'reps_' + i + '" placeholder="' + sv('repsMin',0) + '-' + sv('repsMax',0) + '" min="0" value="' + sv('repsMin',0) + '"></div>';
       // RPE/RIR: biextremidad → izq + der separados
       const rpeHtml = isBiextRow
-        ? '<div class="serie-field"><label style="color:#00e5a0">Izq ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_izq_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)"></div>'
-          + '<div class="serie-field"><label style="color:#ff6b35">Der ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_der_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)"></div>'
+        ? '<div class="serie-field"><label style="color:#059669">Izq ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_izq_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(0,229,160,0.4);background:rgba(0,229,160,0.06)"></div>'
+          + '<div class="serie-field"><label style="color:#ea580c">Der ' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_der_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:rgba(255,107,53,0.4);background:rgba(255,107,53,0.06)"></div>'
         : '<div class="serie-field"><label style="color:' + colorBase + '0.9)">' + metLbl + '</label><input type="number" id="' + pfx + 'rpe_' + i + '" placeholder="' + sv('rirRpe',0) + '" min="' + metMin + '" max="' + metMax + '" value="' + sv('rirRpe',0) + '" style="border-color:' + colorBase + '0.3);background:' + colorBase + '0.05)"></div>';
       return '<div style="background:' + colorBase + '0.04);padding:10px 14px;border-bottom:1px solid ' + colorBase + '0.1)">'
-        + '<div style="font-size:0.6rem;color:' + colorBase + '0.9);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">' + label + ' ' + (inf.nombre||'Ejercicio') + (isBiextRow ? ' <span style="font-size:0.55rem;background:rgba(0,229,160,0.15);color:#00e5a0;border-radius:4px;padding:1px 4px">Biext</span>' : '') + '</div>'
+        + '<div style="font-size:0.6rem;color:' + colorBase + '0.9);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">' + label + ' ' + (inf.nombre||'Ejercicio') + (isBiextRow ? ' <span style="font-size:0.55rem;background:rgba(0,229,160,0.15);color:#059669;border-radius:4px;padding:1px 4px">Biext</span>' : '') + '</div>'
         + '<div class="serie-inputs">'
         + repsHtml
         + '<div class="serie-field"><label>Peso (kg)</label><input type="number" id="' + pfx + 'peso_' + i + '" placeholder="' + sv('peso',0) + '" min="0" step="0.5" value="' + sv('peso',0) + '"></div>'
@@ -2608,6 +3602,21 @@ function renderEjercicioActual() {
         + '</div></div>';
     };
 
+    // Vídeos de la cadena: uno por ejercicio, con su color y etiqueta.
+    // En móvil se apilan (1 columna) para que cada uno conserve el 16:9.
+    const chainVideosHtml = _chainEjs.some(e => e.info && e.info.urlVideo)
+      ? '<div class="chain-videos">' + _chainEjs.map((e, n) => {
+          const col = _chainColors[n % _chainColors.length];
+          const lbl = _chainLabels[n] || ('#' + (n + 1));
+          return '<div class="chain-video-card" style="border-color:' + col + '0.3)">'
+            + '<div class="chain-video-head" style="background:' + col + '0.07);color:' + col + '0.95)">'
+            +   lbl + ' · ' + (e.info?.nombre || 'Ejercicio')
+            + '</div>'
+            + buildVideoBlock(e.info, 'chainVideo_' + n)
+            + '</div>';
+        }).join('') + '</div>'
+      : '';
+
     // Build info cards header
     const infoCardsHtml = _chainEjs.map((e, n) => {
       const col = _chainColors[n % _chainColors.length];
@@ -2617,9 +3626,9 @@ function renderEjercicioActual() {
         + '<div style="display:flex;flex-wrap:wrap;gap:4px">'
         + '<span class="meta-pill" style="font-size:0.7rem">' + (e.config?.repsMin||'?') + '-' + (e.config?.repsMax||'?') + '</span>'
         + '<span class="meta-pill" style="background:' + col + '0.15);border-color:' + col + '0.4);color:' + col + '0.9);font-weight:800;font-size:0.75rem">' + (e.config?.peso||0) + 'kg</span>'
-        + (e.config?.metodo ? '<span class="meta-pill" style="font-size:0.68rem;color:#c084fc">' + e.config.metodo + '</span>' : '')
+        + (e.config?.metodo ? '<span class="meta-pill" style="font-size:0.68rem;background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.28);color:#6d28d9">' + e.config.metodo + '</span>' : '')
         + '</div>'
-        + (e.config?.anotaciones ? '<div style="margin-top:6px;font-size:0.7rem;color:#ffd60a">' + e.config.anotaciones + '</div>' : '')
+        + (e.config?.anotaciones ? '<div style="margin-top:6px;font-size:0.7rem;color:#b45309">' + e.config.anotaciones + '</div>' : '')
         + '</div>';
     }).join('');
 
@@ -2639,7 +3648,7 @@ function renderEjercicioActual() {
       seriesHtml += '<div style="border:1px solid rgba(255,107,53,0.2);border-radius:14px;overflow:hidden;margin-bottom:12px">'
         + '<div style="background:rgba(255,107,53,0.08);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">'
         + '<span style="font-weight:800;font-size:0.9rem">Serie ' + (si+1) + '</span>'
-        + '<span style="font-size:0.7rem;color:rgba(255,107,53,0.7)">' + descansoSeg + 's descanso</span>'
+        + '<span style="font-size:0.7rem;color:#c2410c;font-weight:700">' + descansoSeg + 's descanso</span>'
         + '</div>'
         + _chainEjs.map((e, n) => {
             const col = _chainColors[n % _chainColors.length];
@@ -2660,9 +3669,11 @@ function renderEjercicioActual() {
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>
 
-      <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:0.78rem;color:#ff6b35;font-weight:600">
+      <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.3);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:0.78rem;color:#ea580c;font-weight:600">
         ${nLabel} — Alterna: ${_chainLabels.slice(0,nInChain).join(' → ')} → descanso → siguiente serie
       </div>
+
+      ${chainVideosHtml}
 
       <div style="display:grid;grid-template-columns:${gridCols};gap:10px;margin-bottom:14px">
         ${infoCardsHtml}
@@ -2693,9 +3704,7 @@ function renderEjercicioActual() {
       </div>
 
       <div class="training-card">
-        <div class="training-video" id="trainingVideoWrap">
-          ${ejInfo.urlVideo?`<iframe id="trainingVideoIframe" src="${ejInfo.urlVideo}?autoplay=0&mute=0&controls=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>}`:`<div class="no-video"><div style="font-size:3rem"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div><div>Sin video disponible</div></div>`}
-        </div>
+        ${buildVideoBlock(ejInfo, 'trainingVideoIframe')}
         <div class="training-info">
           <div class="training-title">${ejInfo.nombre||'Ejercicio'}</div>
           <div class="training-meta">
@@ -2704,9 +3713,9 @@ function renderEjercicioActual() {
             <span class="meta-pill">${ejConfig.peso}kg</span>
             <span class="meta-pill">${(currentUser.metodo === 'RPE' || esCardio) ? 'RPE' : currentUser.metodo} ${ejConfig.rirRpe}</span>
             <span class="meta-pill">${ejConfig.seriesConfig ? 'descanso por serie' : ejConfig.descanso+'s descanso'}</span>
-            ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(123,47,255,0.15);border-color:rgba(123,47,255,0.35);color:#c084fc">${ejConfig.metodo}</span>`:''}
+            ${ejConfig.metodo?`<span class="meta-pill" style="background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.28);color:#6d28d9">${ejConfig.metodo}</span>`:''}
           </div>
-          ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#ffd60a;margin-bottom:14px">${ejConfig.anotaciones}</div>`:''}
+          ${ejConfig.anotaciones?`<div style="background:rgba(255,210,0,0.08);border:1px solid rgba(255,210,0,0.15);border-radius:10px;padding:10px;font-size:0.82rem;color:#b45309;margin-bottom:14px">${ejConfig.anotaciones}</div>`:''}
           ${ejInfo.descripcion?`<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">${ejInfo.descripcion}</div>`:''}
         </div>
       </div>
@@ -2802,6 +3811,10 @@ function renderEjercicioActual() {
   document.querySelectorAll('.serie-field input, .serie-row input[type="text"]').forEach(input => {
     input.addEventListener('change', () => savePendingSessionDebounced(), { passive: true });
   });
+
+  // Corrige la proporción de los vídeos verticales en cuanto YouTube
+  // responde. No bloquea el render: si tarda o falla, no pasa nada.
+  autoAjustarVideos(document);
 }
 
 window.toggleSerie = (i) => {
@@ -3110,30 +4123,37 @@ window.showSessionMapOverlay = () => {
       repsMin: ej.repsMin, repsMax: ej.repsMax, peso: ej.peso, rirRpe: ej.rirRpe
     }));
 
-    let status = isDone ? '' : isCurrent ? '▶️' : '';
-    let borderColor = isDone ? 'rgba(0,229,160,0.4)' : isCurrent ? 'rgba(0,200,255,0.5)' : 'rgba(255,255,255,0.08)';
-    let bgColor = isDone ? 'rgba(0,229,160,0.06)' : isCurrent ? 'rgba(0,200,255,0.08)' : 'rgba(255,255,255,0.03)';
+    // Paleta clara, idéntica a la del mapa de sesión del entrenador
+    const status      = isDone ? '✓' : isCurrent ? '▶' : '';
+    const borderColor = isDone ? 'rgba(5,150,105,0.3)'  : isCurrent ? 'rgba(0,119,204,0.4)'  : 'rgba(0,0,0,0.08)';
+    const bgColor     = isDone ? 'rgba(5,150,105,0.05)' : isCurrent ? 'rgba(0,119,204,0.06)' : '#f8fafc';
+    const statusColor = isDone ? '#059669' : isCurrent ? '#0077cc' : '#8ea4b8';
 
-    const seriesDetail = nextSeries.slice(0,4).map((s,i) => {
-      const done = comp?.series?.[i]?.completada;
-      return `<span style="display:inline-flex;align-items:center;gap:3px;background:${done?'rgba(0,229,160,0.15)':'rgba(255,255,255,0.06)'};border:1px solid ${done?'rgba(0,229,160,0.3)':'rgba(255,255,255,0.1)'};border-radius:6px;padding:2px 6px;font-size:0.68rem;color:${done?'#00e5a0':'rgba(232,244,255,0.6)'}">
-        ${done?'✓':i+1} · ${s.repsMin||ej.repsMin}-${s.repsMax||ej.repsMax}r · ${s.peso||ej.peso}kg
-      </span>`;
+    const seriesDetail = nextSeries.slice(0,5).map((sr,i) => {
+      const done       = comp?.series?.[i]?.completada;
+      const actualReps = comp?.series?.[i]?.reps;
+      const actualPeso = comp?.series?.[i]?.peso;
+      const texto = done
+        ? `✓ ${actualReps||sr.repsMin||'?'}r · ${actualPeso||sr.peso||'?'}kg`
+        : `${i+1} · ${sr.repsMin||ej.repsMin||'?'}-${sr.repsMax||ej.repsMax||'?'}r · ${sr.peso||ej.peso||'?'}kg`;
+      return `<span style="display:inline-flex;align-items:center;gap:2px;background:${done?'rgba(5,150,105,0.12)':'#ffffff'};border:1.5px solid ${done?'rgba(5,150,105,0.3)':'rgba(0,0,0,0.1)'};border-radius:8px;padding:3px 8px;font-size:0.68rem;font-weight:600;color:${done?'#059669':'#3d5166'}">${texto}</span>`;
     }).join('');
 
+    const ejNombreB = esBiset ? (state.ejercicios[ejsDia[ejIdx+1]?.ejercicioId]?.nombre || 'Ejercicio B') : null;
+
     rows.push(`
-      <div style="border:1px solid ${borderColor};background:${bgColor};border-radius:12px;padding:10px 12px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="font-size:0.9rem">${status}</span>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:0.85rem">${ejInfo.nombre||'Ejercicio'}</div>
-            ${esBiset ? `<div style="font-size:0.72rem;color:#ff6b35">+ ${state.ejercicios[ejsDia[ejIdx+1]?.ejercicioId]?.nombre||'Ejercicio B'}</div>` : ''}
+      <div style="border:1.5px solid ${borderColor};background:${bgColor};border-radius:14px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          ${status
+            ? `<span style="width:22px;height:22px;border-radius:50%;background:${statusColor};display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:900;color:#fff;flex-shrink:0">${status}</span>`
+            : `<span style="width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.06);flex-shrink:0"></span>`}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:0.87rem;color:#0d1b2a">${ejInfo.nombre||'Ejercicio'}</div>
+            ${ejNombreB ? `<div style="font-size:0.72rem;color:#c94d00;font-weight:600;margin-top:1px">+ ${ejNombreB}</div>` : ''}
           </div>
-          <span style="font-size:0.72rem;font-weight:700;color:${isCurrent?'var(--primary)':'var(--text-muted)'}">
-            ${ej.series} series
-          </span>
+          <span style="font-size:0.72rem;font-weight:700;background:${isCurrent?'rgba(0,119,204,0.12)':'rgba(0,0,0,0.06)'};color:${isCurrent?'#0055a5':'#5a6e84'};padding:3px 9px;border-radius:20px;flex-shrink:0">${ej.series||'?'} series</span>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">${seriesDetail}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">${seriesDetail}</div>
       </div>
     `);
     ejIdx += esBiset ? 2 : 1;
@@ -3144,19 +4164,246 @@ window.showSessionMapOverlay = () => {
 
   const overlay = document.createElement('div');
   overlay.id = 'sessionMapOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);display:flex;align-items:flex-end;';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9100;background:rgba(13,27,42,0.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;';
   overlay.innerHTML = `
-    <div style="background:rgba(6,14,32,0.98);border-radius:24px 24px 0 0;padding:24px 16px 40px;width:100%;max-height:80vh;overflow-y:auto;animation:sheetUp 0.3s cubic-bezier(0.16,1,0.3,1)">
-      <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-size:1.05rem;font-weight:800">Mapa de sesión</div>
-        <div style="font-size:0.78rem;color:var(--text-muted)">M${mesActual}·S${semanaActual}·D${diaActual}</div>
+    <div style="background:#ffffff;border-radius:24px 24px 0 0;padding:20px 16px 40px;width:100%;max-width:600px;margin:0 auto;max-height:80vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.18);animation:sheetUp 0.3s cubic-bezier(0.16,1,0.3,1)">
+      <div style="width:36px;height:4px;background:rgba(0,85,165,0.2);border-radius:2px;margin:0 auto 18px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1.5px solid rgba(0,85,165,0.1)">
+        <div style="font-size:1.05rem;font-weight:800;color:#0d1b2a">Mapa de sesión</div>
+        <div style="font-size:0.78rem;color:#5a6e84;font-weight:700">M${mesActual}·S${semanaActual}·D${diaActual}</div>
       </div>
       ${rows.join('')}
     </div>
   `;
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// VÍDEO DEL EJERCICIO — normalización y render
+// ───────────────────────────────────────────────────────────────
+// Se normaliza AQUÍ, al pintar, y no solo al guardar: así los ejercicios
+// que ya estaban en la base de datos con una URL no convertida (shorts,
+// live, /v/, o el ID suelto) también se ven, sin tocar nada en Firebase.
+// ═══════════════════════════════════════════════════════════════
+function videoEmbedUrl(raw) {
+  if (!raw) return '';
+  let url = String(raw).trim();
+  if (!url) return '';
+  if (url.startsWith('//')) url = 'https:' + url;
+
+  // Vídeo alojado directamente (se resuelve con <video>, no con iframe)
+  if (/\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url)) return url;
+
+  const params = 'rel=0&modestbranding=1&playsinline=1';
+  const yt = id => 'https://www.youtube.com/embed/' + id + '?' + params;
+
+  let m;
+  // Ya es un embed: conservamos sus parámetros y añadimos los nuestros
+  if ((m = url.match(/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,})/))) {
+    const extra = url.split('?')[1];
+    return 'https://www.youtube.com/embed/' + m[1] + '?' + params + (extra ? '&' + extra : '');
+  }
+  if ((m = url.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/)))                 return yt(m[1]);
+  if ((m = url.match(/[?&]v=([A-Za-z0-9_-]{6,})/)))                      return yt(m[1]);
+  if ((m = url.match(/youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/)))      return yt(m[1]);
+  if ((m = url.match(/youtube\.com\/live\/([A-Za-z0-9_-]{6,})/)))        return yt(m[1]);
+  if ((m = url.match(/youtube\.com\/v\/([A-Za-z0-9_-]{6,})/)))           return yt(m[1]);
+  // Solo pegaron el identificador
+  if (/^[A-Za-z0-9_-]{11}$/.test(url))                                   return yt(url);
+
+  // Vimeo
+  if ((m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)))
+    return 'https://player.vimeo.com/video/' + m[1];
+
+  // Google Drive
+  if ((m = url.match(/drive\.google\.com\/file\/d\/([^/]+)/)))
+    return 'https://drive.google.com/file/d/' + m[1] + '/preview';
+
+  return url;
+}
+
+function isDirectVideoFile(u) {
+  return /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(u || '');
+}
+
+// ── Orientación del vídeo ──────────────────────────────────────
+// Muchos ejercicios se graban con el celular en vertical (Shorts). Si se
+// muestran en un marco 16:9 el vídeo queda diminuto entre dos franjas
+// negras. Aquí se decide la proporción real del marco:
+//   1º lo que el entrenador eligió a mano (videoOrient: 'v' | 'h')
+//   2º detección automática sobre el enlace ORIGINAL, porque `urlVideo`
+//      ya está normalizado a /embed/ y ha perdido la pista de /shorts/.
+function esVideoVertical(info) {
+  if (!info) return false;
+  if (info.videoOrient === 'v') return true;
+  if (info.videoOrient === 'h') return false;
+  const src = String(info.urlVideoOriginal || info.urlVideo || '');
+  return /\/shorts\//i.test(src) || /[?&]vertical=1/i.test(src);
+}
+
+
+// ── Detección en caliente de la proporción real ────────────────
+// Los ejercicios antiguos no tienen `urlVideoOriginal` ni `videoOrient`,
+// así que no hay forma de saber por el enlace si el vídeo es vertical.
+// La API oEmbed de YouTube sí devuelve el ancho y el alto reales. La
+// consulta es asíncrona y el marco se corrige en cuanto llega la
+// respuesta; si falla (sin red, CORS, vídeo privado) se queda como estaba
+// y siempre queda el alternador manual del modo teatro.
+const _aspectCache = Object.create(null);
+
+function _youtubeId(url) {
+  const m = String(url||'').match(/(?:embed|shorts|live|v)\/([A-Za-z0-9_-]{6,})|[?&]v=([A-Za-z0-9_-]{6,})|youtu\.be\/([A-Za-z0-9_-]{6,})/);
+  return m ? (m[1] || m[2] || m[3]) : null;
+}
+
+async function detectarVertical(url) {
+  const id = _youtubeId(url);
+  if (!id) return null;
+  if (id in _aspectCache) return _aspectCache[id];
+  try {
+    const r = await fetch('https://www.youtube.com/oembed?format=json&url='
+      + encodeURIComponent('https://www.youtube.com/watch?v=' + id));
+    if (!r.ok) throw new Error('oembed ' + r.status);
+    const d = await r.json();
+    const vertical = (d.width && d.height) ? (d.height > d.width) : null;
+    _aspectCache[id] = vertical;
+    return vertical;
+  } catch(e) {
+    _aspectCache[id] = null;   // no se reintenta en esta sesión
+    return null;
+  }
+}
+
+// Aplica la detección sobre los reproductores ya pintados
+function autoAjustarVideos(scope) {
+  const root = scope || document;
+  root.querySelectorAll('.training-video[data-vsrc]').forEach(async el => {
+    if (el.dataset.vchecked === '1' || el.classList.contains('is-vertical')) return;
+    el.dataset.vchecked = '1';
+    const vertical = await detectarVertical(el.dataset.vsrc);
+    if (vertical === true) el.classList.add('is-vertical');
+  });
+}
+
+// Devuelve el bloque .training-video completo (reproductor o marcador de
+// "sin vídeo"). `id` permite tener varios reproductores a la vez en biseries.
+function buildVideoBlock(info, id) {
+  const src  = videoEmbedUrl(info && info.urlVideo);
+  const vert = esVideoVertical(info);
+  const cls  = 'training-video' + (vert ? ' is-vertical' : '');
+  // Se codifica el nombre: así una comilla simple o doble en el nombre del
+  // ejercicio ("Press d'banca") no puede romper el atributo onclick.
+  // encodeURIComponent NO escapa la comilla simple, así que se fuerza:
+  // sin esto, un nombre como "Press d'banca" rompería el atributo onclick.
+  const nombreEsc = encodeURIComponent(String((info && info.nombre) || 'Ejercicio')).replace(/'/g, '%27');
+  // Botón para abrir el vídeo a pantalla completa (útil sobre todo en vertical)
+  const expandBtn = '<button class="video-theater-btn" type="button"'
+    + ' onclick="openVideoTheater(\'' + encodeURIComponent(src) + '\',' + (vert ? 'true' : 'false') + ',\'' + nombreEsc + '\')"'
+    + ' aria-label="Ver el video en grande" title="Ver en grande">'
+    + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>'
+    + '</button>';
+
+  if (!src) {
+    return '<div class="training-video"><div class="no-video">'
+      + '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>'
+      + '<div style="font-size:0.82rem">Sin video disponible</div></div></div>';
+  }
+  // data-vsrc permite que autoAjustarVideos() corrija la proporción después
+  const dataAttrs = ' data-vsrc="' + src + '"' + (vert ? ' data-vertical="1"' : '');
+
+  if (isDirectVideoFile(src)) {
+    return '<div class="' + cls + '"' + dataAttrs + '>'
+      + '<video id="' + id + '" src="' + src + '" controls playsinline preload="metadata"></video>'
+      + expandBtn
+      + '</div>';
+  }
+  return '<div class="' + cls + '"' + dataAttrs + '>'
+    + '<iframe id="' + id + '" src="' + src + '" title="Video del ejercicio" loading="lazy"'
+    + ' frameborder="0" allowfullscreen'
+    + ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>'
+    + expandBtn
+    + '</div>';
+}
+
+// ── Modo teatro ────────────────────────────────────────────────
+// Abre el vídeo a pantalla completa sobre un fondo oscuro. Es la mejor
+// forma de ver un vídeo vertical en un celular: ocupa todo el alto
+// disponible sin robarle sitio al resto de la ficha del ejercicio.
+window.openVideoTheater = (srcEnc, vertical, tituloEnc) => {
+  const src = decodeURIComponent(srcEnc);
+  let titulo = 'Video del ejercicio';
+  try { titulo = decodeURIComponent(tituloEnc || '') || titulo; } catch(e) {}
+  // Se escapa antes de inyectarlo como HTML
+  const tituloSeguro = titulo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('videoTheater')?.remove();
+
+  const esArchivo = isDirectVideoFile(src);
+  const sep = src.indexOf('?') === -1 ? '?' : '&';
+  const reproductor = esArchivo
+    ? '<video src="' + src + '" controls autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>'
+    : '<iframe src="' + src + sep + 'autoplay=1" style="width:100%;height:100%;border:0" frameborder="0" allowfullscreen'
+      + ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>';
+
+  const ov = document.createElement('div');
+  ov.id = 'videoTheater';
+  ov.className = 'video-theater' + (vertical ? ' is-vertical' : '');
+  ov.innerHTML =
+      '<div class="vt-bar">'
+    +   '<span class="vt-title">' + tituloSeguro + '</span>'
+    +   '<div class="vt-actions">'
+    +     '<button class="vt-ratio" type="button" title="Cambiar formato del video">'
+    +       '<span class="vt-ratio-ico"></span><span class="vt-ratio-txt">Ajustar</span>'
+    +     '</button>'
+    +     '<button class="vt-close" type="button" aria-label="Cerrar">✕</button>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="vt-stage"><div class="vt-frame">' + reproductor + '</div></div>'
+    + '<div class="vt-hint">¿Se ve pequeño? Toca el botón de formato: Ajustar → 9:16 → 16:9.</div>';
+
+  const cerrar = () => { ov.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey  = e => { if (e.key === 'Escape') cerrar(); };
+  ov.querySelector('.vt-close').addEventListener('click', cerrar);
+
+  // Alternador manual: la garantía de que siempre se puede ver bien,
+  // aunque la detección automática no haya acertado.
+  // El alternador rota entre tres modos. "Ajustar" ocupa toda la pantalla
+  // y es el que mejor funciona sin saber la orientación del video.
+  const MODOS = ['fit', 'vertical', 'wide'];
+  const ETIQ  = { fit:'Ajustar', vertical:'9:16', wide:'16:9' };
+  let modo = vertical ? 'vertical' : 'fit';
+  const aplicarModo = () => {
+    ov.classList.toggle('is-vertical', modo === 'vertical');
+    ov.classList.toggle('is-wide',     modo === 'wide');
+    ov.querySelector('.vt-ratio-txt').textContent = ETIQ[modo];
+    // Los reproductores en línea del mismo video siguen al modo elegido
+    const id = _youtubeId(src);
+    if (id && modo !== 'fit') _aspectCache[id] = (modo === 'vertical');
+    document.querySelectorAll('.training-video[data-vsrc]').forEach(el => {
+      if (_youtubeId(el.dataset.vsrc) === id) el.classList.toggle('is-vertical', modo === 'vertical');
+    });
+  };
+  aplicarModo();
+  ov.querySelector('.vt-ratio').addEventListener('click', () => {
+    modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
+    aplicarModo();
+  });
+
+  ov.addEventListener('click', e => { if (e.target === ov || e.target.classList.contains('vt-stage')) cerrar(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(ov);
+
+  // Si aún no se sabe la orientación, se consulta y se corrige en caliente
+  if (vertical !== true) {
+    detectarVertical(src).then(v => {
+      if (v === true && document.getElementById('videoTheater') === ov && modo === 'fit') {
+        modo = 'vertical'; aplicarModo();
+      }
+    });
+  }
 };
 
 function startRestTimer(totalSecs, nextInfo) {
@@ -3176,9 +4423,9 @@ function startRestTimer(totalSecs, nextInfo) {
   // Color states: normal → warm → urgent → done
   const getColors = (rem, tot) => {
     const pct = rem / tot;
-    if(pct > 0.5)  return { color:'#00c8ff', glow:'rgba(0,200,255,0.55)' };
-    if(pct > 0.25) return { color:'#ffd60a', glow:'rgba(255,214,10,0.55)' };
-    return               { color:'#ff4d6d', glow:'rgba(255,77,109,0.6)' };
+    if(pct > 0.5)  return { color:'#0099e6', glow:'rgba(0,153,230,0.40)' };
+    if(pct > 0.25) return { color:'#d97706', glow:'rgba(217,119,6,0.38)' };
+    return               { color:'#dc2626', glow:'rgba(220,38,38,0.40)' };
   };
 
   const getMsg = (rem, tot) => {
@@ -3218,21 +4465,21 @@ function startRestTimer(totalSecs, nextInfo) {
       <div class="rt-progress-fill" id="rtProgressFill" style="width:${(remaining/totalSecs)*100}%"></div>
     </div>
 
-    ${nextInfo ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(0,200,255,0.25);border-radius:16px;padding:14px 18px;margin-top:16px;width:90%;max-width:320px;text-align:left">
+    ${nextInfo ? `<div style="background:#ffffff;border:1.5px solid rgba(0,153,230,0.25);box-shadow:0 6px 22px rgba(0,60,120,0.10);border-radius:16px;padding:14px 18px;margin-top:16px;width:90%;max-width:320px;text-align:left">
       <div style="font-size:0.6rem;color:var(--primary);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px">
         ${(nextInfo.isBisetSwitch || nextInfo.isNextExercise) ? 'Siguiente ejercicio' : 'Siguiente serie'}
       </div>
-      <div style="font-weight:800;font-size:1rem;margin-bottom:8px;color:#e8f4ff">${nextInfo.nombre}</div>
+      <div style="font-weight:800;font-size:1rem;margin-bottom:8px;color:#0f1923">${nextInfo.nombre}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${nextInfo.reps ? `<div style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;font-weight:700;color:#00e5a0">${nextInfo.reps}</div>` : ''}
-        ${nextInfo.peso !== null ? `<div style="background:rgba(0,200,255,0.12);border:1px solid rgba(0,200,255,0.35);border-radius:10px;padding:6px 12px;font-size:1.1rem;font-weight:900;color:#00c8ff">${nextInfo.peso} kg</div>` : ''}
-        ${nextInfo.metodo ? `<div style="background:rgba(123,47,255,0.1);border:1px solid rgba(123,47,255,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;color:#a78bfa">${nextInfo.metodo}</div>` : ''}
+        ${nextInfo.reps ? `<div style="background:rgba(5,150,105,0.10);border:1px solid rgba(5,150,105,0.28);border-radius:10px;padding:6px 12px;font-size:0.8rem;font-weight:700;color:#047857">${nextInfo.reps}</div>` : ''}
+        ${nextInfo.peso !== null ? `<div style="background:rgba(0,153,230,0.12);border:1px solid rgba(0,153,230,0.35);border-radius:10px;padding:6px 12px;font-size:1.1rem;font-weight:900;color:#0077cc">${nextInfo.peso} kg</div>` : ''}
+        ${nextInfo.metodo ? `<div style="background:rgba(124,58,237,0.10);border:1px solid rgba(124,58,237,0.25);border-radius:10px;padding:6px 12px;font-size:0.8rem;color:#6d28d9">${nextInfo.metodo}</div>` : ''}
       </div>
-      ${nextInfo.anotaciones ? `<div style="margin-top:8px;font-size:0.75rem;color:#ffd60a;border-top:1px solid rgba(255,255,255,0.07);padding-top:6px">${nextInfo.anotaciones}</div>` : ''}
+      ${nextInfo.anotaciones ? `<div style="margin-top:8px;font-size:0.75rem;color:#b45309;border-top:1px solid rgba(0,85,165,0.12);padding-top:6px">${nextInfo.anotaciones}</div>` : ''}
     </div>` : ''}
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="rt-skip" onclick="skipRestTimer()">Saltar descanso</button>
-      <button class="rt-skip" onclick="showSessionMapOverlay()" style="background:rgba(0,200,255,0.08);border-color:rgba(0,200,255,0.25);color:rgba(0,200,255,0.8)">Ver sesión</button>
+      <button class="rt-skip" onclick="showSessionMapOverlay()" style="background:rgba(0,153,230,0.10);border-color:rgba(0,153,230,0.30);color:#0077cc">Ver sesión</button>
     </div>
   `;
 
@@ -3374,8 +4621,14 @@ window.skipRestTimer = () => {
 };
 
 // ── LANDSCAPE VIDEO FULLSCREEN ──
+function _mainVideoEl() {
+  // En biserie hay varios reproductores: se usa el primero visible.
+  return document.getElementById('trainingVideoIframe')
+      || document.querySelector('.training-video iframe, .training-video video');
+}
+
 window.toggleVideoFullscreen = () => {
-  const iframe = document.getElementById('trainingVideoIframe');
+  const iframe = _mainVideoEl();
   if(!iframe) return;
   if(iframe.requestFullscreen) iframe.requestFullscreen();
   else if(iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
@@ -3386,7 +4639,7 @@ window.toggleVideoFullscreen = () => {
 if(window.screen?.orientation) {
   screen.orientation.addEventListener('change', () => {
     const isLandscape = screen.orientation.type.includes('landscape');
-    const iframe = document.getElementById('trainingVideoIframe');
+    const iframe = _mainVideoEl();
     if(isLandscape && iframe) {
       if(iframe.requestFullscreen) iframe.requestFullscreen().catch(()=>{});
     }
@@ -3438,7 +4691,7 @@ window.completarEjercicio = async () => {
         icon:'warning', title:'¿Sin series completadas?',
         text:'No marcaste ninguna serie como hecha. ¿Continuar igual?',
         showCancelButton:true, confirmButtonText:'Sí, continuar', cancelButtonText:'Volver',
-        background:'rgba(10,20,40,0.95)', color:'#e8f4ff', confirmButtonColor:'#00c8ff'
+        background:'#ffffff', color:'#0f1923', confirmButtonColor:'#0099e6'
       });
       if(!res.isConfirmed) return;
     }
@@ -3458,7 +4711,7 @@ window.completarEjercicio = async () => {
         icon:'warning', title:'¿Sin series completadas?',
         text:'No marcaste ninguna serie como hecha. ¿Continuar igual?',
         showCancelButton:true, confirmButtonText:'Sí, continuar', cancelButtonText:'Volver',
-        background:'rgba(10,20,40,0.95)', color:'#e8f4ff', confirmButtonColor:'#00c8ff'
+        background:'#ffffff', color:'#0f1923', confirmButtonColor:'#0099e6'
       });
       if(!res.isConfirmed) return;
     }
@@ -3515,7 +4768,24 @@ window.ejercicioAnterior = () => {
   renderEjercicioActual();
 };
 
+let _finalizando = false;   // evita finalizaciones concurrentes
+
 async function finalizarSesion() {
+  // Guarda de reentrada: renderEjercicioActual() llama aquí en cuanto el
+  // índice pasa del último ejercicio, y varios toques o re-render seguidos
+  // disparaban varias finalizaciones a la vez. Todas leían el mismo estado
+  // y cada una escribía su propio registro.
+  if (_finalizando) return;
+  if (!state.sesionActiva) return;   // ya se finalizó y se limpió el estado
+  _finalizando = true;
+  try {
+    return await _finalizarSesionInterna();
+  } finally {
+    _finalizando = false;
+  }
+}
+
+async function _finalizarSesionInterna() {
   // Clear rest timer if running
   if(_restTimerInterval) { clearInterval(_restTimerInterval); _restTimerInterval = null; }
   const restToast = document.getElementById('restTimerToast');
@@ -3549,17 +4819,17 @@ async function finalizarSesion() {
   if(faltantes.length > 0) {
     const listaHTML = faltantes.map(f => `<li style="margin-bottom:6px"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>${f.nombre}</strong> — series sin completar</li>`).join('');
     const result = await Swal.fire({
-      background: 'rgba(8,16,36,0.98)', color: '#e8f4ff',
+      background: '#ffffff', color: '#0f1923',
       title: 'Series sin completar',
       html: `<div style="text-align:left">
-        <p style="margin-bottom:12px;color:rgba(232,244,255,0.7)">Los siguientes ejercicios tienen series sin marcar como hechas:</p>
+        <p style="margin-bottom:12px;color:#3d5166">Los siguientes ejercicios tienen series sin marcar como hechas:</p>
         <ul style="list-style:none;padding:0;font-size:0.88rem">${listaHTML}</ul>
-        <p style="margin-top:12px;font-size:0.82rem;color:rgba(232,244,255,0.5)">¿Finalizar así o regresar a completarlas?</p>
+        <p style="margin-top:12px;font-size:0.82rem;color:#5a6e84">¿Finalizar así o regresar a completarlas?</p>
       </div>`,
       showCancelButton: true,
       confirmButtonText: 'Finalizar igual',
       cancelButtonText: '← Ir a completarlas',
-      confirmButtonColor: '#00c8ff',
+      confirmButtonColor:'#0099e6',
       cancelButtonColor: '#7b2fff',
     });
     if(!result.isConfirmed) {
@@ -3577,8 +4847,14 @@ async function finalizarSesion() {
   state.sesionActiva.fechaFin = Date.now();
 
   // 2. Save session to Firebase IMMEDIATELY
-  const sesId = `ses_${state.sesionActiva.fechaFin}`;
+  // El id se deriva de fechaInicio, NO de Date.now(). Es la clave para que
+  // dos finalizaciones de la MISMA sesión escriban sobre el mismo registro
+  // en vez de crear uno nuevo cada vez. Antes se usaba `ses_${fechaFin}`,
+  // y eso convertía cada re-entrada en una sesión duplicada del historial.
+  const sesId = `ses_${state.sesionActiva.fechaInicio || state.sesionActiva.fechaFin}`;
   await set(ref(db,`sesiones/${currentUser.id}/historial/${sesId}`), state.sesionActiva);
+  // La sesión recién guardada debe verse en la próxima lectura del historial
+  dbCache.invalidate(HIST_PATH());
   if(!state.historial) state.historial = {};
   state.historial[sesId] = { ...state.sesionActiva };
 
@@ -3606,6 +4882,7 @@ async function finalizarSesion() {
 
   if(cansancio !== null) {
     await set(ref(db,`sesiones/${currentUser.id}/historial/${sesId}/nivelCansancioFin`), cansancio);
+    dbCache.invalidate(HIST_PATH());
     if(state.historial[sesId]) state.historial[sesId].nivelCansancioFin = cansancio;
   }
 
@@ -3615,6 +4892,13 @@ async function finalizarSesion() {
   const _diasSemActual = Object.keys(state.rutinaData?.meses?.[mesActual]?.semanas?.[semanaActual]?.dias||{}).map(Number);
   const maxDiaSem = _diasSemActual.length ? Math.max(..._diasSemActual) : 5;
 
+  // Comprueba si una semana quedó cerrada (todos sus días con ejercicios)
+  const _semanaCerrada = (mes, sem) => {
+    const ds = Object.keys(state.rutinaData?.meses?.[mes]?.semanas?.[sem]?.dias||{}).map(Number)
+      .filter(d => Object.keys(state.rutinaData?.meses?.[mes]?.semanas?.[sem]?.dias?.[d]?.ejercicios||{}).length > 0);
+    return ds.length > 0 && ds.every(d => sesionCompletada(state.historial, mes, sem, d));
+  };
+
   // La semana está terminada SOLO si todos los días con ejercicios han sido completados
   // (incluyendo la sesión que acaba de guardarse, que ya está en state.historial)
   const _diasConEj = _diasSemActual.filter(d => {
@@ -3623,7 +4907,11 @@ async function finalizarSesion() {
   });
   const semanaTerminada = _diasConEj.length > 0 &&
     _diasConEj.every(d => sesionCompletada(state.historial, mesActual, semanaActual, d));
-  const mesTerminado = semanaTerminada && semanaActual === 4;
+  // Última semana configurada de este mes (no se asume que sean 4)
+  const _semsMes = Object.keys(state.rutinaData?.meses?.[mesActual]?.semanas||{}).map(Number);
+  const _ultSem = _semsMes.length ? Math.max(..._semsMes) : 4;
+  const mesTerminado = semanaTerminada && semanaActual >= _ultSem &&
+    _semsMes.every(sm => sm === semanaActual || _semanaCerrada(mesActual, sm));
 
   if(newDia > maxDiaSem) { newDia=1; newSem++; }
   if(newSem>4) { newSem=1; newMes++; }
@@ -3631,36 +4919,64 @@ async function finalizarSesion() {
   const maxMes = Math.max(...Object.keys(state.rutinaData?.meses||{1:{}}).map(Number));
   if(newMes>maxMes) { newMes=maxMes; newSem=4; newDia=maxDiaSem; }
 
-  const newProgreso = { rutinaActiva:state.rutinaId, mesActual:newMes, semanaActual:newSem, diaActual:newDia };
+  // ── Control de revisión antes de cambiar de semana o de mes ──────
+  // Si esta sesión cierra la semana (o el mes) y falta su revisión, el
+  // progreso NO cruza la frontera: se queda en el último día de la semana
+  // terminada. Así, si el atleta cierra la app, al volver sigue debiendo
+  // la revisión y no puede empezar la semana nueva.
+  const cruzaSemana = (newSem !== semanaActual) || (newMes !== mesActual);
+  let revisionBloqueante = null;
+
+  if(cruzaSemana) {
+    if(mesTerminado) {
+      const rm = await get(ref(db,`revisiones_mes/${currentUser.id}/m${mesActual}`));
+      if(!rm.exists()) revisionBloqueante = { tipo:'mes', mes:mesActual };
+    }
+    if(!revisionBloqueante && semanaTerminada) {
+      const rs = await get(ref(db,`revisiones_semana/${currentUser.id}/m${mesActual}s${semanaActual}`));
+      if(!rs.exists()) revisionBloqueante = { tipo:'semana', mes:mesActual, semana:semanaActual };
+    }
+  }
+
+  const progresoDestino = { rutinaActiva:state.rutinaId, mesActual:newMes, semanaActual:newSem, diaActual:newDia };
+  const progresoRetenido = { rutinaActiva:state.rutinaId, mesActual:mesActual, semanaActual:semanaActual, diaActual:maxDiaSem };
+
+  const newProgreso = revisionBloqueante ? progresoRetenido : progresoDestino;
   await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
   state.progreso = newProgreso;
 
   await Swal.fire({
     icon:'success',
     title:'¡Sesión completada!',
-    html:`<div style="color:#e8f4ff">
+    html:`<div style="color:#0f1923">
       <div style="font-size:2rem;margin:10px 0"><svg class="ico" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.14em;flex-shrink:0"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div>
-      <div>Siguiente: Mes ${newMes} · Sem ${newSem} · Día ${newDia}</div>
+      <div>${revisionBloqueante
+        ? 'Antes de continuar necesitas registrar tu revisión ' + (revisionBloqueante.tipo==='mes' ? 'mensual' : 'semanal')
+        : `Siguiente: Mes ${newMes} · Sem ${newSem} · Día ${newDia}`}</div>
     </div>`,
-    background:'rgba(8,16,36,0.98)', confirmButtonColor:'#00c8ff',
+    background:'#ffffff', confirmButtonColor:'#0099e6',
     confirmButtonText:'Continuar', timer:2000, showConfirmButton:true
   });
 
-  // Check if monthly review is needed first (takes priority)
-  if(mesTerminado) {
-    const revSnap = await get(ref(db,`revisiones_mes/${currentUser.id}/m${mesActual}`));
-    if(!revSnap.exists()) {
-      await showRevisionMes(mesActual);
-      switchTab('progreso'); return;
+  // ── Pedir la revisión y, solo si se guarda, liberar el avance ────
+  if(revisionBloqueante) {
+    if(revisionBloqueante.tipo === 'mes') await showRevisionMes(revisionBloqueante.mes);
+    else                                  await showRevisionSemana(revisionBloqueante.mes, revisionBloqueante.semana);
+
+    // Se vuelve a leer: showRevision* solo resuelve tras guardar, pero si el
+    // atleta forzó la salida (recargar, botón atrás) hay que confirmarlo.
+    const path = revisionBloqueante.tipo === 'mes'
+      ? `revisiones_mes/${currentUser.id}/m${revisionBloqueante.mes}`
+      : `revisiones_semana/${currentUser.id}/m${revisionBloqueante.mes}s${revisionBloqueante.semana}`;
+    const ok = await get(ref(db, path));
+
+    if(ok.exists()) {
+      await set(ref(db,`sesiones/${currentUser.id}/progreso`), progresoDestino);
+      state.progreso = progresoDestino;
+      dbCache.invalidate(HIST_PATH());
     }
-  }
-  // Check if weekly review is needed
-  if(semanaTerminada) {
-    const revSnap = await get(ref(db,`revisiones_semana/${currentUser.id}/m${mesActual}s${semanaActual}`));
-    if(!revSnap.exists()) {
-      await showRevisionSemana(mesActual, semanaActual);
-      switchTab('progreso'); return;
-    }
+    switchTab('progreso');
+    return;
   }
 
   switchTab('progreso');
@@ -3771,7 +5087,7 @@ window.guardarRevSemana = async (mes, semana) => {
   const sueno = window._rev_sueno;
   const dolor = window._rev_dolor;
   if(!doms || !animo || !sueno || !dolor) {
-    return Swal.fire({icon:'warning',title:'Completa todos los campos',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    return Swal.fire({icon:'warning',title:'Completa todos los campos',background:'#ffffff',color:'#0f1923',confirmButtonColor:'#0099e6'});
   }
   const data = {
     mes, semana,
@@ -3787,7 +5103,7 @@ window.guardarRevSemana = async (mes, semana) => {
   if(window._revSemanaOverlay) document.body.removeChild(window._revSemanaOverlay);
   // reset temp vars
   ['doms','animo','sueno','dolor'].forEach(k => delete window[`_rev_${k}`]);
-  Swal.fire({icon:'success',title:'Revisión guardada',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  Swal.fire({icon:'success',title:'Revisión guardada',timer:1500,showConfirmButton:false,background:'#ffffff',color:'#0f1923'});
   // FIX 9: Notify trainer that user submitted weekly review
   notifyTrainerReview('semanal', mes, semana, data);
   if(window._revSemanaResolve) window._revSemanaResolve();
@@ -3875,7 +5191,7 @@ window.guardarRevMes = async (mes) => {
   const motivoFatiga = window._rev_motivoFatiga;
   const masDescanso  = window._rev_masDescanso;
   if(!mejora || !diaMasFatiga || !motivoFatiga || !masDescanso) {
-    return Swal.fire({icon:'warning',title:'Completa todos los campos',background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#00c8ff'});
+    return Swal.fire({icon:'warning',title:'Completa todos los campos',background:'#ffffff',color:'#0f1923',confirmButtonColor:'#0099e6'});
   }
   const data = {
     mes,
@@ -3891,7 +5207,7 @@ window.guardarRevMes = async (mes) => {
   await set(ref(db,`revisiones_mes/${currentUser.id}/m${mes}`), data);
   if(window._revMesOverlay) document.body.removeChild(window._revMesOverlay);
   ['mejora','diaMasFatiga','motivoFatiga','masDescanso'].forEach(k => delete window[`_rev_${k}`]);
-  Swal.fire({icon:'success',title:'¡Revisión mensual guardada!',timer:2000,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  Swal.fire({icon:'success',title:'¡Revisión mensual guardada!',timer:2000,showConfirmButton:false,background:'#ffffff',color:'#0f1923'});
   // FIX 9: Notify trainer that user submitted monthly review
   notifyTrainerReview('mensual', mes, null, data);
   if(window._revMesResolve) window._revMesResolve();
@@ -4074,10 +5390,10 @@ window.avanzarDia = async () => {
   if(hasEj && !done) {
     const res = await Swal.fire({
       icon:'warning', title:'Día pendiente',
-      html:`<div style="color:#e8f4ff">El día actual tiene ejercicios sin completar.<br><br>¿Saltar al siguiente día de todas formas?</div>`,
+      html:`<div style="color:#0f1923">El día actual tiene ejercicios sin completar.<br><br>¿Saltar al siguiente día de todas formas?</div>`,
       showCancelButton:true, confirmButtonText:'Sí, saltar',
       cancelButtonText:'Quedarse aquí',
-      confirmButtonColor:'#ff6b35', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+      confirmButtonColor:'#ff6b35', background:'#ffffff', color:'#0f1923'
     });
     if(!res.isConfirmed) return;
   }
@@ -4097,13 +5413,13 @@ window.resetProgreso = async () => {
     icon:'warning', title:'¿Reiniciar progreso?',
     text:'Volverás al Mes 1, Semana 1, Día 1. El historial de sesiones se conserva.',
     showCancelButton:true, confirmButtonText:'Sí, reiniciar', cancelButtonText:'Cancelar',
-    confirmButtonColor:'#ff4d6d', background:'rgba(10,20,40,0.95)', color:'#e8f4ff'
+    confirmButtonColor:'#ff4d6d', background:'#ffffff', color:'#0f1923'
   });
   if(!res.isConfirmed) return;
   const newProgreso = { rutinaActiva:state.rutinaId, mesActual:1, semanaActual:1, diaActual:1 };
   state.progreso = newProgreso;
   await set(ref(db,`sesiones/${currentUser.id}/progreso`), newProgreso);
-  Swal.fire({icon:'success',title:'Progreso reiniciado',timer:1500,showConfirmButton:false,background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+  Swal.fire({icon:'success',title:'Progreso reiniciado',timer:1500,showConfirmButton:false,background:'#ffffff',color:'#0f1923'});
   renderTab('entrenar');
 };
 
@@ -4297,10 +5613,10 @@ function renderCalendar(heatmap, year, month, sessionDays, sessionCount) {
       emoji = ''; textColor = 'var(--success)';
     } else if(status === 'weekend') {
       bg = 'rgba(123,47,255,0.12)'; border = 'rgba(123,47,255,0.2)';
-      emoji = ''; textColor = 'rgba(232,244,255,0.35)';
+      emoji = ''; textColor = '#8ea4b8';
     } else if(status === 'future') {
       bg = 'rgba(255,255,255,0.03)'; border = 'rgba(255,255,255,0.06)';
-      emoji = ''; textColor = 'rgba(232,244,255,0.2)';
+      emoji = ''; textColor = '#a8bcd0';
     } else {
       // missed weekday
       bg = 'rgba(255,77,109,0.1)'; border = 'rgba(255,77,109,0.25)';
@@ -4403,9 +5719,9 @@ async function renderProgreso() {
   p.innerHTML = '<div class="loading-box"><div class="spinner"></div><span>Cargando progreso...</span></div>';
 
   const [histSnap, valSnap, rutSnap, revSemSnap, revMesSnap] = await Promise.all([
-    get(ref(db,`sesiones/${currentUser.id}/historial`)),
-    get(ref(db,`valoraciones/${currentUser.id}`)),
-    get(ref(db,'rutinas')),
+    dbCache.snap(HIST_PATH()),
+    dbCache.snap(`valoraciones/${currentUser.id}`),
+    dbCache.snap('rutinas'),
     get(ref(db,`revisiones_semana/${currentUser.id}`)),
     get(ref(db,`revisiones_mes/${currentUser.id}`))
   ]);
@@ -4472,9 +5788,9 @@ async function renderProgreso() {
 
   // ─── Pro chart helpers (mismos que dashboard) ───
   const PRO_PALETTE = [
-    '#00c8ff','#7b2fff','#00e5a0','#ff6b35','#ffd60a',
-    '#ff4d6d','#4ade80','#818cf8','#f472b6','#38bdf8',
-    '#fb923c','#a3e635','#e879f9','#2dd4bf','#facc15'
+    '#0077cc','#7c3aed','#059669','#ea580c','#b45309',
+    '#dc2626','#16a34a','#4f46e5','#db2777','#0284c7',
+    '#c2410c','#4d7c0f','#a21caf','#0d9488','#a16207'
   ];
 
   function proChartOptions(extraY={}) {
@@ -4484,18 +5800,18 @@ async function renderProgreso() {
       plugins:{
         legend:{
           position:'bottom',
-          labels:{ color:'rgba(232,244,255,0.7)', font:{family:'Exo 2',size:10}, boxWidth:12, padding:12, usePointStyle:true, pointStyle:'circle' }
+          labels:{ color:'#3d5166', font:{family:'Exo 2',size:10}, boxWidth:12, padding:12, usePointStyle:true, pointStyle:'circle' }
         },
         tooltip:{
-          backgroundColor:'rgba(6,12,28,0.95)', borderColor:'rgba(0,200,255,0.25)', borderWidth:1,
-          titleColor:'#e8f4ff', bodyColor:'rgba(232,244,255,0.75)',
+          backgroundColor:'#ffffff', borderColor:'rgba(0,153,230,0.3)', borderWidth:1,
+          titleColor:'#0d1b2a', bodyColor:'#3d5166',
           titleFont:{family:'Exo 2',weight:'700',size:12}, bodyFont:{family:'Exo 2',size:11},
           padding:10, cornerRadius:10
         }
       },
       scales:{
-        x:{ grid:{color:'rgba(255,255,255,0.04)',drawBorder:false}, ticks:{color:'rgba(232,244,255,0.5)',font:{family:'Exo 2',size:10}} },
-        y:{ grid:{color:'rgba(255,255,255,0.04)',drawBorder:false}, ticks:{color:'rgba(232,244,255,0.5)',font:{family:'Exo 2',size:10}}, min:extraY.min, max:extraY.max }
+        x:{ grid:{color:'rgba(0,0,0,0.06)',drawBorder:false}, ticks:{color:'#5a6e84',font:{family:'Exo 2',size:10}} },
+        y:{ grid:{color:'rgba(0,0,0,0.06)',drawBorder:false}, ticks:{color:'#5a6e84',font:{family:'Exo 2',size:10}}, min:extraY.min, max:extraY.max }
       }
     };
   }
@@ -4555,8 +5871,8 @@ async function renderProgreso() {
 
   // Cargar ejercicios y categorias para los charts
   const [ejSnap2, catSnap2] = await Promise.all([
-    get(ref(db,'ejercicios')),
-    get(ref(db,'categorias'))
+    dbCache.snap('ejercicios'),
+    dbCache.snap('categorias')
   ]);
   const ejs = ejSnap2.val()||{};
   const cats = catSnap2.val()||{};
@@ -4750,7 +6066,7 @@ async function renderProgreso() {
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
         <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);border-radius:14px;padding:12px;text-align:center">
           <div style="font-size:0.65rem;color:rgba(255,107,53,0.8);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">% Grasa</div>
-          <div style="font-size:1.7rem;font-weight:900;color:#ff6b35">${lastVal.grasa}%</div>
+          <div style="font-size:1.7rem;font-weight:900;color:#ea580c">${lastVal.grasa}%</div>
           ${valoraciones.length>1?`<div style="font-size:0.72rem;margin-top:2px">${deltaFmt(deltaGrasa, true)}</div>`:''}
         </div>
         <div style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.25);border-radius:14px;padding:12px;text-align:center">
@@ -4883,13 +6199,13 @@ async function renderProgreso() {
             <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:8px">
               <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:8px">M${rev.mes||'?'} · S${rev.semana||'?'}</div>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-                <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">DOMS</div><div style="font-weight:800;color:#ff6b35">${rev.doms}/10</div></div>
+                <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">DOMS</div><div style="font-weight:800;color:#ea580c">${rev.doms}/10</div></div>
                 <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">Ánimo</div><div style="font-weight:800;color:var(--primary)">${rev.animo}/5</div></div>
-                <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">Sueño</div><div style="font-weight:800;color:#a78bfa">${rev.sueno||'?'}</div></div>
+                <div style="text-align:center"><div style="font-size:0.6rem;color:var(--text-muted)">Sueño</div><div style="font-weight:800;color:#7c3aed">${rev.sueno||'?'}</div></div>
               </div>
               ${rev.observacionesEntrenador ? `<div style="margin-top:8px;padding:8px;background:rgba(0,200,255,0.06);border:1px solid rgba(0,200,255,0.15);border-radius:8px;font-size:0.78rem">
                 <div style="font-size:0.65rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Observaciones del entrenador</div>
-                <div>${rev.observacionesEntrenador}</div>
+                <div class="obs-texto">${rev.observacionesEntrenador}</div>
               </div>` : ''}
             </div>`).join('')}
           ${revMeses.length > 0 ? `
@@ -4899,7 +6215,7 @@ async function renderProgreso() {
               <div style="font-size:0.78rem;font-weight:700;color:var(--accent);margin-bottom:8px">Mes ${rev.mes||'?'}</div>
               ${rev.observacionesEntrenador ? `<div style="padding:8px;background:rgba(123,47,255,0.06);border:1px solid rgba(123,47,255,0.15);border-radius:8px;font-size:0.78rem">
                 <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Observaciones del entrenador</div>
-                <div>${rev.observacionesEntrenador}</div>
+                <div class="obs-texto">${rev.observacionesEntrenador}</div>
               </div>` : ''}
             </div>`).join('')}
           ` : ''}
@@ -4914,8 +6230,8 @@ async function renderProgreso() {
       responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
-        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}},
-        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(232,244,255,0.5)',font:{size:10}}}
+        x:{grid:{color:'rgba(0,0,0,0.06)'},ticks:{color:'#5a6e84',font:{size:10}}},
+        y:{grid:{color:'rgba(0,0,0,0.06)'},ticks:{color:'#5a6e84',font:{size:10}}}
       }
     };
 
@@ -4928,11 +6244,11 @@ async function renderProgreso() {
           data:{
             labels: valLabels,
             datasets:[
-              { label:'% Grasa', data:valoraciones.map(v=>v.grasa), borderColor:'#ff6b35', backgroundColor:'rgba(255,107,53,0.15)', tension:0.4, fill:true, pointBackgroundColor:'#ff6b35', pointRadius:5 },
-              { label:'% Músculo', data:valoraciones.map(v=>v.muscular), borderColor:'#00e5a0', backgroundColor:'rgba(0,229,160,0.15)', tension:0.4, fill:true, pointBackgroundColor:'#00e5a0', pointRadius:5 }
+              { label:'% Grasa', data:valoraciones.map(v=>v.grasa), borderColor:'#ea580c', backgroundColor:'rgba(234,88,12,0.14)', tension:0.4, fill:true, pointBackgroundColor:'#ea580c', pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:5 },
+              { label:'% Músculo', data:valoraciones.map(v=>v.muscular), borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.14)', tension:0.4, fill:true, pointBackgroundColor:'#059669', pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:5 }
             ]
           },
-          options:{...baseChartOpts, plugins:{...baseChartOpts.plugins, legend:{display:true, labels:{color:'rgba(232,244,255,0.7)',font:{size:10}}}}}
+          options:{...baseChartOpts, plugins:{...baseChartOpts.plugins, legend:{display:true, labels:{color:'#3d5166',font:{size:10}}}}}
         });
       }
       const cPeso = document.getElementById('chartPesoTrend');
@@ -4942,7 +6258,7 @@ async function renderProgreso() {
           type:'line',
           data:{
             labels: valLabels,
-            datasets:[{ label:'Peso (kg)', data:valoraciones.map(v=>v.peso), borderColor:'#00c8ff', backgroundColor:(ctx)=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,130); g.addColorStop(0,'rgba(0,200,255,0.25)'); g.addColorStop(1,'rgba(0,200,255,0)'); return g; }, tension:0.4, fill:true, pointBackgroundColor:'#00c8ff', pointRadius:5 }]
+            datasets:[{ label:'Peso (kg)', data:valoraciones.map(v=>v.peso), borderColor:'#0077cc', backgroundColor:(ctx)=>{ const g=ctx.chart.ctx.createLinearGradient(0,0,0,130); g.addColorStop(0,'rgba(0,119,204,0.22)'); g.addColorStop(1,'rgba(0,119,204,0)'); return g; }, tension:0.4, fill:true, pointBackgroundColor:'#0077cc', pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:5 }]
           },
           options:baseChartOpts
         });
@@ -4984,7 +6300,7 @@ async function renderProgreso() {
         } else if(chartId==='desc') {
           const ds = buildDescanso();
           const optsDesc = proChartOptions({min:0,max:10});
-          optsDesc.scales.y.ticks = { color:'rgba(232,244,255,0.5)', font:{family:'Exo 2',size:10}, callback:v=>v===0?'0':v===5?'5':v===10?'10':v };
+          optsDesc.scales.y.ticks = { color:'#5a6e84', font:{family:'Exo 2',size:10}, callback:v=>v===0?'0':v===5?'5':v===10?'10':v };
           let canvas2 = document.getElementById('myChartDesc');
           if(!canvas2) { const w=document.querySelector('[data-canvas="myChartDesc"]'); if(w){w.innerHTML=`<canvas id="myChartDesc"></canvas>`;canvas2=document.getElementById('myChartDesc');} }
           if(!canvas2) return;
@@ -5113,9 +6429,9 @@ async function renderPerfil() {
       document.getElementById('userAvatar').src = selectedAvatarUser;
       document.getElementById('avatarPickerWrap').style.display = 'none';
       Swal.fire({icon:'success',title:'¡Avatar actualizado!',timer:1500,showConfirmButton:false,
-        background:'rgba(10,20,40,0.95)',color:'#e8f4ff'});
+        background:'#ffffff',color:'#0f1923'});
     } catch(e) {
-      Swal.fire({icon:'error',title:'Error',text:e.message,background:'rgba(10,20,40,0.95)',color:'#e8f4ff',confirmButtonColor:'#ff4d6d'});
+      Swal.fire({icon:'error',title:'Error',text:e.message,background:'#ffffff',color:'#0f1923',confirmButtonColor:'#ff4d6d'});
     }
   };
 }
@@ -5132,6 +6448,7 @@ async function renderPerfil() {
 let _swRef      = null;
 let _swListener = null;
 let _swBooted   = false; // ignora el primer disparo (estado inicial al conectar)
+let _swLastData = null;  // último snapshot del nodo usuarios/{uid} (evita polling)
 
 function parseEndOfLocalDay(str) {
   if (!str) return null;
@@ -5144,11 +6461,18 @@ function parseEndOfLocalDay(str) {
 let _membershipCheckInterval = null;
 
 async function checkMembershipExpiry() {
-  // Lee el nodo actual del usuario desde Firebase (no caché)
+  // OPTIMIZACIÓN: sobre `usuarios/{uid}` ya hay un listener onValue abierto
+  // (setupSessionWatcher). Reutilizamos ese último snapshot en vez de lanzar
+  // un get() cada 60 s por atleta conectado. Solo si aún no llegó ningún
+  // evento del listener hacemos una lectura puntual de respaldo.
   try {
-    const snap = await get(ref(db, `usuarios/${currentUser.id}`));
-    if (!snap.exists()) return;
-    const data = snap.val();
+    let data = _swLastData;
+    if (!data) {
+      const snap = await get(ref(db, `usuarios/${currentUser.id}`));
+      if (!snap.exists()) return;
+      data = snap.val();
+      _swLastData = data;
+    }
     let titulo = null, mensaje = null;
     if (data.activo === false) {
       titulo  = 'Cuenta desactivada';
@@ -5166,7 +6490,7 @@ async function checkMembershipExpiry() {
       if (_swRef) off(_swRef, 'value', _swListener);
       await Swal.fire({
         icon: 'warning', title: titulo, text: mensaje,
-        background: 'rgba(10,20,40,0.97)', color: '#e8f4ff',
+        background: '#ffffff', color: '#0f1923',
         confirmButtonColor: '#ff4d6d', confirmButtonText: 'Entendido',
         allowOutsideClick: false, allowEscapeKey: false
       });
@@ -5186,6 +6510,9 @@ function setupSessionWatcher(uid) {
   _membershipCheckInterval = setInterval(checkMembershipExpiry, 60000);
 
   _swListener = onValue(_swRef, async (snap) => {
+    // Guardamos SIEMPRE el último estado, incluso en el disparo inicial:
+    // checkMembershipExpiry lo reutiliza y así evitamos el get() periódico.
+    if (snap.exists()) _swLastData = snap.val();
     // Primer disparo = estado actual al registrar el listener, no un cambio real
     if (!_swBooted) { _swBooted = true; return; }
     if (!snap.exists()) return;
@@ -5216,8 +6543,8 @@ function setupSessionWatcher(uid) {
         icon: 'warning',
         title: titulo,
         text: mensaje,
-        background: 'rgba(10,20,40,0.97)',
-        color: '#e8f4ff',
+        background: '#ffffff',
+        color: '#0f1923',
         confirmButtonColor: '#ff4d6d',
         confirmButtonText: 'Entendido',
         allowOutsideClick: false,
